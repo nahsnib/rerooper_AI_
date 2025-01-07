@@ -1,4 +1,4 @@
-from datebase.RuleSet import load_RuleSet
+from datebase.RuleTable import load_RuleTable
 from datebase.character_database import load_character_database
 from scriptwriter.script_edit import ScriptEditor
 from game_phases.action_phase import ActionPhase
@@ -13,11 +13,11 @@ from common.board import Board
 
 def main():
     # 初始化主要規則表和角色資料庫
-    RuleSet = load_RuleSet()
+    RuleTable = load_RuleTable()
     character_database = load_character_database()
     
     # 劇本家進行劇本編輯
-    script_editor = ScriptEditor(RuleSet, character_database)
+    script_editor = ScriptEditor(RuleTable, character_database)
     script_editor.edit_script()
     
     # 初始化遊戲板和階段
