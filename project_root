@@ -1,0 +1,25 @@
+project_root/
+│
+├── main.py
+├── rules/
+│   ├── main_rules.py
+│   └── character_database.py
+├── scriptwriter/
+│   ├── script_edit.py
+├── game_phases/
+│   ├── action_phase.py
+│   ├── event_phase.py
+│   ├── night_phase.py
+│   ├── cycle_end.py
+│   └── final_battle.py
+├── ai/
+│   ├── scriptwriter_ai.py
+│   ├── detective_ai.py
+│   └── ai_tools.py
+├── history/
+│   ├── game_history.py
+└── common/
+    ├── character.py
+    ├── action.py
+    ├── player.py
+    └── board.py
