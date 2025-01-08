@@ -1,3 +1,4 @@
+# common/character.py
 
 import tkinter as tk
 from tkinter import ttk
@@ -46,7 +47,7 @@ class Character:
         self.friendship += amount
 
     def __str__(self):
-        return f"{self.name} (位置: {self.current_location}, 不安: {self.anxiety}, 陰謀: {self.conspiracy}, 友好: {self.friendship}, 死亡: {self.alive})"
+        return f"{self.name} (位置: {self.current_location}, 不安: {self.anxiety}, 陰謀: {self.conspiracy}, 友好: {self.friendship}, 死亡: {'是' if not self.alive else '否'})"
 
 class CharacterManager(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
