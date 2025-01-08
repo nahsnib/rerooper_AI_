@@ -193,6 +193,6 @@ def load_character_database():
              'special_ability': "不能在此角色上設置行動卡。設置在此角色所在地區的行動卡，會同時作用於此角色"
         },
     ]
-
+;
 
 
