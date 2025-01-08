@@ -114,7 +114,7 @@ ruleTable.addMainRule(ancientMyth);
 ruleTable.addSubRule(causalLine);
 
 // 顯示所有規則
-ruleTable.displayRules();
+ruleTable.loadplayRules();
 // 定義主要規則表 Basic Tragedy X
 const BasicTragedyX = {
     name: "Basic Tragedy X",
