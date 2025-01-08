@@ -1,4 +1,4 @@
-class Character:
+class character_database:
     def __init__(self, name, anxiety_threshold, initial_location, forbidden_area, attribute, friendly_abilities=None, special_ability=None):
         # 固定資訊
         self.name = name
@@ -61,7 +61,7 @@ class Character:
         print(f"{self.name} 的陰謀增加被禁止")
 
     def __str__(self):
-        return f"Character({self.name}, Anxiety: {self.anxiety}, Conspiracy: {self.conspiracy}, Friendship: {self.friendship}, Location: {self.current_location}, Alive: {self.alive})"
+        return f"character_database({self.name}, Anxiety: {self.anxiety}, Conspiracy: {self.conspiracy}, Friendship: {self.friendship}, Location: {self.current_location}, Alive: {self.alive})"
 
 
 class Action:
