@@ -1,4 +1,6 @@
 # main.py
+import os
+os.environ["DISPLAY"] = ":0.0"
 
 import tkinter as tk
 from tkinter import messagebox
