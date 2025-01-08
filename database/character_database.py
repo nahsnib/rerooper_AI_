@@ -131,7 +131,7 @@ def load_character_database():
             'attribute'=["學生", "少女"],
             'friendly_abilities'=[
                 "友好3：同地區的１名另一個角色-1不安",
-                "友好4：同地區的１名角色+1友好"
+                "友好4：同地區的１名角色+1友好"]
         },
         {
             'name'="記者",
@@ -141,7 +141,7 @@ def load_character_database():
             'attribute'=["大人", "男性"],
             'friendly_abilities'=[
                 "友好2：對同地區另一名角色+1不安",
-                "友好2：對同地區另一名角色或該地區+1陰謀"
+                "友好2：對同地區另一名角色或該地區+1陰謀"]
         },
         {
             'name'="耆老",
