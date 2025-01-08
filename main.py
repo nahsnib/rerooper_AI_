@@ -1,6 +1,7 @@
 # main.py
 
 import tkinter as tk
+from tkinter import messagebox
 from common.character import CharacterManager
 from game_phases.action_phase import ActionPhase
 from game_phases.event_phase import EventPhase
@@ -30,8 +31,32 @@ class Game:
         
         self.current_phase = None
         
-        # 開始遊戲
-        self.construct_scenario()
+        # 角色選擇
+        self.player_role = None
+        self.ai_role = None
+
+        # 開始角色選擇
+        self.choose_role()
+
+    def choose_role(self):
+        role_window = tk.Toplevel(self.root)
+        role_window.title("選擇角色")
+
+        label = tk.Label(role_window, text="請選擇您的角色:")
+        label.pack(pady=10)
+
+        detective_button = tk.Button(role_window, text="偵探", command=lambda: self.set_role("偵探", "劇本家", role_window))
+        detective_button.pack(pady=5)
+
+        scriptwriter_button = tk.Button(role_window, text="劇本家", command=lambda: self.set_role("劇本家", "偵探", role_window))
+        scriptwriter_button.pack(pady=5)
+
+    def set_role(self, player_role, ai_role, window):
+        self.player_role = player_role
+        self.ai_role = ai_role
+        window.destroy()
+        messagebox.showinfo("角色選擇", f"您選擇了扮演 {self.player_role}，AI 將扮演 {self.ai_role}")
+        self.start_game()
 
     def construct_scenario(self):
         self.script_editor.construct_scenario()
@@ -42,6 +67,8 @@ class Game:
         self.start_game()
 
     def start_game(self):
+        if self.player_role == "偵探":
+            self.construct_scenario()  # AI 構築劇本
         self.next_phase(self.action_phase)
 
     def next_phase(self, phase):
