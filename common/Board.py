@@ -6,7 +6,7 @@ class GameBoard:
     def __init__(self, root):
         self.root = root
         self.root.title("遊戲板")
-        
+
         self.setup_ui()
 
     def setup_ui(self):
@@ -42,6 +42,23 @@ class GameBoard:
         label = tk.Label(frame, text=name)
         label.pack()
 
+        # 行動設置功能
+        action_label = tk.Label(frame, text="設置行動：")
+        action_label.pack()
+        action_entry = tk.Entry(frame)
+        action_entry.pack()
+
+        # 陰謀數量顯示與變動
+        self.conspiracy_var = tk.IntVar(value=0)
+        conspiracy_label = tk.Label(frame, textvariable=self.conspiracy_var)
+        conspiracy_label.pack()
+
+        add_conspiracy_button = tk.Button(frame, text="增加陰謀", command=lambda: self.change_conspiracy(1))
+        add_conspiracy_button.pack()
+
+        remove_conspiracy_button = tk.Button(frame, text="減少陰謀", command=lambda: self.change_conspiracy(-1))
+        remove_conspiracy_button.pack()
+
         # Add additional widgets to each area as needed
         # Example: List of characters in this area
         character_list = tk.Listbox(frame)
@@ -52,6 +69,11 @@ class GameBoard:
         # Example: Add more detailed information if necessary
         details_label = tk.Label(frame, text="詳細資訊")
         details_label.pack()
+
+    def change_conspiracy(self, amount):
+        current_value = self.conspiracy_var.get()
+        new_value = current_value + amount
+        self.conspiracy_var.set(new_value)
 
 if __name__ == "__main__":
     root = tk.Tk()
