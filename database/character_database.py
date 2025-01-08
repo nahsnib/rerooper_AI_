@@ -6,7 +6,7 @@ def load_character_database():
             'name'="男學生",
             'anxiety_threshold'=2,
             'initial_location'="學校",
-            'forbidden_are'a=None,
+            'forbidden_area'=None,
             'attribute'=["學生", "少年"],
             'friendly_abilities'=["友好2：同地區的１名另外一個\"學生\"-1不安"]
             'special_ability': None
