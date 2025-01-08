@@ -279,48 +279,46 @@ const BasicTragedyX = {
                 ]
             },
            {
-  "roles": [
-    {
-      "name": "邪教徒",
-      "traits": ["友好無效"],
-      "abilities": [
-        {
-          "type": "passive",
-          "description": "行動結算階段，取消此地區偵探設置的陰謀禁止卡片",
-          "effect": (area, isScriptwriterView) => {
-            area.removeConspiracyBan();
-            if (isScriptwriterView) {
-              console.log(`陰謀禁止卡片在地區 ${area.name} 被取消`);
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "魔女",
-      "traits": ["友好無效"],
-      "abilities": []
-    },
-    {
-      "name": "時間旅行者",
-      "traits": ["無法被殺害"],
-      "abilities": [
-        {
-          "type": "passive",
-          "description": "最後一天夜晚階段，若友好值<2，腳本家勝利，輪迴結束",
-          "effect": (character, gameState, isScriptwriterView) => {
-            if (gameState.currentDay === gameState.finalDay && character.friendship < 2) {
-              gameState.endLoop("腳本家勝利");
-              if (isScriptwriterView) {
-                console.log(`${character.name} 的友好值不足，腳本家勝利`);
-              }
-            }
-          }
-        }
-      ]
-    },
-
-        ],
+                  name: "邪教徒",
+                  traits: ["友好無效"],
+                  abilities: [
+                    {
+                      type: "passive",
+                      description: "行動結算階段，取消此地區偵探設置的陰謀禁止卡片",
+                      effect: (area, isScriptwriterView) => {
+                        area.removeConspiracyBan();
+                        if (isScriptwriterView) {
+                          console.log(`陰謀禁止卡片在地區 ${area.name} 被取消`);
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  name: "魔女",
+                  traits: ["友好無效"],
+                  abilities: []
+                },
+                {
+                  name: "時間旅行者",
+                  traits: ["無法被殺害"],
+                  abilities: [
+                    {
+                      type: passive,
+                      description: "最後一天夜晚階段，若友好值<2，腳本家勝利，輪迴結束",
+                      effect: (character, gameState, isScriptwriterView) => {
+                        if (gameState.currentDay === gameState.finalDay && character.friendship < 2) {
+                          gameState.endLoop("腳本家勝利");
+                          if (isScriptwriterView) {
+                            console.log(`${character.name} 的友好值不足，腳本家勝利`);
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+            
+                    ],
         minor: [
             {
                 name: "朋友",
@@ -339,100 +337,100 @@ const BasicTragedyX = {
                 ]
             },
             
-    {
-      "name": "誤導者",
-      "traits": [],
-      "abilities": [
-        {
-          "type": "active",
-          "description": "能力階段對同地區角色+1不安",
-          "effect": (target, isScriptwriterView) => {
-            target.addAnxiety(1);
-            if (isScriptwriterView) {
-              console.log(`${target.name} +1 不安`);
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "戀人",
-      "traits": [],
-      "abilities": [
-        {
-          "type": "passive",
-          "description": "死亡時使情人+6不安",
-          "effect": (partner, isScriptwriterView) => {
-            partner.addAnxiety(6);
-            if (isScriptwriterView) {
-              console.log(`情人增加 6 不安`);
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "情人",
-      "traits": [],
-      "abilities": [
-        {
-          "type": "passive",
-          "description": "死亡時使戀人+6不安",
-          "effect": (partner, isScriptwriterView) => {
-            partner.addAnxiety(6);
-            if (isScriptwriterView) {
-              console.log(`戀人增加 6 不安`);
-            }
-          }
-        },
-        {
-          "type": "passive",
-          "description": "夜晚階段若不安>3且陰謀值>0，腳本家勝利，輪迴結束",
-          "effect": (character, gameState, isScriptwriterView) => {
-            if (character.anxiety > 3 && character.conspiracy > 0) {
-              gameState.endLoop("腳本家勝利");
-              if (isScriptwriterView) {
-                console.log(`因為 ${character.name} 的條件滿足，腳本家勝利`);
-              }
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "殺人魔",
-      "traits": [],
-      "abilities": [
-        {
-          "type": "passive",
-          "description": "夜晚階段若與其他角色獨處，殺害該角色",
-          "effect": (character, targets, isScriptwriterView) => {
-            if (targets.length === 1) {
-              targets[0].kill();
-              if (isScriptwriterView) {
-                console.log(`${targets[0].name} 被 ${character.name} 殺害`);
-              }
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "因子",
-      "traits": ["友好無效"],
-      "abilities": [
-        {
-          "type": "passive",
-          "description": "學校陰謀值>1時，獲得誤導者能力",
-          "effect": (area, character, isScriptwriterView) => {
-            if (area.name === "學校" && area.conspiracy > 1) {
-              character.gainAbility("能力階段對同地區角色+1不安");
-              if (isScriptwriterView) {
-                console.log(`${character.name} 獲得了誤導者能力`);
-              }
-            }
-          }
-        },
+            {
+              "name": "誤導者",
+              "traits": [],
+              "abilities": [
+                {
+                  "type": "active",
+                  "description": "能力階段對同地區角色+1不安",
+                  "effect": (target, isScriptwriterView) => {
+                    target.addAnxiety(1);
+                    if (isScriptwriterView) {
+                      console.log(`${target.name} +1 不安`);
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "name": "戀人",
+              "traits": [],
+              "abilities": [
+                {
+                  "type": "passive",
+                  "description": "死亡時使情人+6不安",
+                  "effect": (partner, isScriptwriterView) => {
+                    partner.addAnxiety(6);
+                    if (isScriptwriterView) {
+                      console.log(`情人增加 6 不安`);
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "name": "情人",
+              "traits": [],
+              "abilities": [
+                {
+                  "type": "passive",
+                  "description": "死亡時使戀人+6不安",
+                  "effect": (partner, isScriptwriterView) => {
+                    partner.addAnxiety(6);
+                    if (isScriptwriterView) {
+                      console.log(`戀人增加 6 不安`);
+                    }
+                  }
+                },
+                {
+                  "type": "passive",
+                  "description": "夜晚階段若不安>3且陰謀值>0，腳本家勝利，輪迴結束",
+                  "effect": (character, gameState, isScriptwriterView) => {
+                    if (character.anxiety > 3 && character.conspiracy > 0) {
+                      gameState.endLoop("腳本家勝利");
+                      if (isScriptwriterView) {
+                        console.log(`因為 ${character.name} 的條件滿足，腳本家勝利`);
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "name": "殺人魔",
+              "traits": [],
+              "abilities": [
+                {
+                  "type": "passive",
+                  "description": "夜晚階段若與其他角色獨處，殺害該角色",
+                  "effect": (character, targets, isScriptwriterView) => {
+                    if (targets.length === 1) {
+                      targets[0].kill();
+                      if (isScriptwriterView) {
+                        console.log(`${targets[0].name} 被 ${character.name} 殺害`);
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "name": "因子",
+              "traits": ["友好無效"],
+              "abilities": [
+                {
+                  "type": "passive",
+                  "description": "學校陰謀值>1時，獲得誤導者能力",
+                  "effect": (area, character, isScriptwriterView) => {
+                    if (area.name === "學校" && area.conspiracy > 1) {
+                      character.gainAbility("能力階段對同地區角色+1不安");
+                      if (isScriptwriterView) {
+                        console.log(`${character.name} 獲得了誤導者能力`);
+                      }
+                    }
+                  }
+                },
         {
           "type": "passive",
           "description": "鬧區陰謀值>1時，獲得關鍵人物能力",
