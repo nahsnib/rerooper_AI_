@@ -5,7 +5,7 @@ project_root/
 │   ├── RuleTable.py
 │   └── character_database.py
 ├── scriptwriter/
-│   ├── script_edit.py
+│   ├── gameset.py
 ├── game_phases/
 │   ├── action_phase.py
 │   ├── event_phase.py
