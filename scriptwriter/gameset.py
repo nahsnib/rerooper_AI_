@@ -1,5 +1,8 @@
 # scriptwriter/gameset.py
 
+import random
+from database.character_database import load_character_database
+
 class ScriptEditor:
     def __init__(self):
         self.rules = []
@@ -44,22 +47,21 @@ class ScriptEditor:
 
     def select_characters(self):
         # 示例：選擇角色
-        from database.character_database import load_character_database
         character_list = load_character_database()
-        return character_list[:5]  # 示例：選擇前五個角色
+        return random.sample(character_list, 5)  # 隨機選擇五個角色
 
     def assign_roles(self):
         # 示例：賦予角色身分
         for character in self.characters:
-            character.secret_identity = "隱藏身分"
+            character.secret_identity = random.choice(["角色A", "角色B", "角色C"])
 
     def choose_rounds(self):
         # 示例：決定輪迴次數
-        return 3
+        return random.randint(2, 5)
 
     def choose_days_per_round(self):
         # 示例：決定每輪回合數
-        return 5
+        return random.randint(3, 7)
 
     def schedule_events(self):
         # 示例：決定哪些日子會發生事件
@@ -68,5 +70,5 @@ class ScriptEditor:
     def assign_event_criminals(self):
         # 示例：決定事件犯人
         for event in self.events:
-            event_criminal = "犯人"
+            event_criminal = random.choice(self.characters).name
             print(f"為事件 {event} 分配犯人 {event_criminal}")
