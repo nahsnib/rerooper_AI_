@@ -1,6 +1,6 @@
 from datebase.RuleTable import load_RuleTable
-from datebase.character_database import load_character_database
-from scriptwriter.script_edit import ScriptEditor
+from datebase.character import load_character_database
+from scriptwriter.gameset import ScriptEditor
 from game_phases.action_phase import ActionPhase
 from game_phases.event_phase import EventPhase
 from game_phases.night_phase import NightPhase
@@ -17,8 +17,8 @@ def main():
     character_database = load_character_database()
     
     # 劇本家進行劇本編輯
-    script_editor = ScriptEditor(RuleTable, character_database)
-    script_editor.edit_script()
+    gameset = ScriptEditor(RuleTable, character)
+    gameset.edit_script()
     
     # 初始化遊戲板和階段
     board = Board()
