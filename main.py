@@ -1,5 +1,5 @@
 from datebase.RuleTable import load_RuleTable
-from datebase.characterdatabase import load_character_database
+from datebase.character_database import load_character_database
 from scriptwriter.gameset import ScriptEditor
 from game_phases.action_phase import ActionPhase
 from game_phases.event_phase import EventPhase
