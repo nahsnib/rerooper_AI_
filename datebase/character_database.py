@@ -1,4 +1,4 @@
-class characterdatabase:
+class character_database:
     def __init__(self, name, anxiety_threshold, initial_location, forbidden_area, attribute, friendly_abilities=None, special_ability=None):
         # 固定資訊
         self.name = name
