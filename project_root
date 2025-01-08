@@ -1,8 +1,8 @@
 project_root/
 │
 ├── main.py
-├── rules/
-│   ├── main_rules.py
+├── datebase/
+│   ├── RuleTable.py
 │   └── character_database.py
 ├── scriptwriter/
 │   ├── script_edit.py
