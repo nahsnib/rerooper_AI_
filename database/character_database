@@ -331,7 +331,45 @@ characters.append(Character(
 for character in characters:
     print(character)
 # 這裡省略了其他角色的添加，類似於上述代碼添加其他角色
-
+def load_character_database():
+    return [
+        {
+            'name': '男學生',
+            'anxiety_threshold': 2,
+            'initial_location': '學校',
+            'forbidden_area': None,
+            'attribute': ['學生', '少年'],
+            'friendly_abilities': ['友好2：同地區的１名另外一個"學生"-1不安']
+        },
+        {
+            'name': '女學生',
+            'anxiety_threshold': 3,
+            'initial_location': '學校',
+            'forbidden_area': None,
+            'attribute': ['學生', '少女'],
+            'friendly_abilities': ['友好2：同地區的１名另外一個"學生"-1不安']
+        },
+        {
+            'name': '大小姐',
+            'anxiety_threshold': 1,
+            'initial_location': '學校',
+            'forbidden_area': None,
+            'attribute': ['學生', '少女'],
+            'friendly_abilities': ['友好3：當此角色位於學校或都市時才能使用此能力。對同地區的１名角色放置+1友好']
+        },
+        {
+            'name': '巫女',
+            'anxiety_threshold': 2,
+            'initial_location': '神社',
+            'forbidden_area': '鬧區',
+            'attribute': ['學生', '少女'],
+            'friendly_abilities': [
+                '友好3：當此角色位於神社時才能使用此能力。神社-1陰謀',
+                '友好5：得知同地區的一名角色的身分（１輪迴限用１次）'
+            ]
+        },
+        # 其他角色類似添加
+    ]
 
 
 
