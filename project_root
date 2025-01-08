@@ -1,7 +1,7 @@
 project_root/
 │
 ├── main.py
-├── datebase/
+├── database/
 │   ├── RuleTable.py
 │   └── character_database.py
 ├── scriptwriter/
