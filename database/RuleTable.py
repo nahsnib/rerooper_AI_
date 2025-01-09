@@ -1,64 +1,97 @@
-// 主要規則表框架
+# rule_table.py
 
-// 規則表主體
-class RuleTable {
-    constructor() {
-        this.mainRules = []; // 主規則Y列表
-        this.subRules = [];  // 副規則X列表
-        this.Event = [];    // 事件列表
-        this.Role = [];    // 身分列表
-        this.SpecialRule = []; // 特殊規則 
-    }
-    // 顯示所有規則
-    displayRules() {
-        console.log("主規則:");
-        this.mainRules.forEach((rule, index) => {
-            console.log(`${index + 1}. ${rule.name}: ${rule.description}`);
-        });
-        console.log("副規則:");
-        this.subRules.forEach((rule, index) => {
-            console.log(`${index + 1}. ${rule.name}: ${rule.description}`);
-        });
-    }
-}
+class RuleTable:
+    def __init__(self, name):
+        self.name = name
+        self.main_rules = []  # 主規則列表
+        self.sub_rules = []   # 副規則列表
+        self.events = []      # 事件列表
+        self.roles = []       # 身分列表
+        self.special_rules = []  # 特殊規則列表
 
-// 事件類
-class Event {
-    constructor(name, effect) {
-        this.name = name; // 事件名稱
-        this.effect = effect; // 事件效果描述
-    }
-}
+    def add_main_rule(self, rule):
+        self.main_rules.append(rule)
 
-// 身分類
-class Role {
-    constructor(name, traits = [], abilities = []) {
-        this.name = name; // 身分名稱
-        this.traits = traits; // 特性列表
-        this.abilities = abilities; // 能力列表
-    }
+    def add_sub_rule(self, rule):
+        self.sub_rules.append(rule)
 
-// 規則類
-class Rule {
-    constructor(name, description, specialConditions = [], roles = []) {
-        this.name = name; // 規則名稱
-        this.description = description; // 規則描述
-        this.specialConditions = specialConditions; // 特殊條件列表
-        this.roles = roles; // 涉及的身分列表
-    }
-}
+    def add_event(self, event):
+        self.events.append(event)
 
-// 能力類
-class Ability {
-    constructor(name, type, effect) {
-        this.name = name; // 能力名稱
-        this.type = type; // 能力類型 ("主動" 或 "被動")
-        this.effect = effect; // 能力效果描述
-    }
-}
+    def add_role(self, role):
+        self.roles.append(role)
 
-// 顯示所有規則
-ruleTable.load_RuleTable();
+    def add_special_rule(self, rule):
+        self.special_rules.append(rule)
+    
+    def display_rules(self):
+        print("主規則:")
+        for index, rule in enumerate(self.main_rules, start=1):
+            print(f"{index}. {rule.name}: {rule.description}")
+        
+        print("副規則:")
+        for index, rule in enumerate(self.sub_rules, start=1):
+            print(f"{index}. {rule.name}: {rule.description}")
+        
+        print("事件:")
+        for index, event in enumerate(self.events, start=1):
+            print(f"{index}. {event.name}: {event.effect}")
+        
+        print("身分:")
+        for index, role in enumerate(self.roles, start=1):
+            print(f"{index}. {role.name}")
+            for idx, ability in enumerate(role.abilities, start=1):
+                print(f"  {idx}. {ability.name} ({ability.type}): {ability.description}")
+        
+        print("特殊規則:")
+        for index, rule in enumerate(self.special_rules, start=1):
+            print(f"{index}. {rule}")
+
+
+class Event:
+    def __init__(self, name, effect):
+        self.name = name  # 事件名稱
+        self.effect = effect  # 事件效果函數
+
+
+class Role:
+    def __init__(self, name, traits=None, abilities=None):
+        self.name = name  # 身分名稱
+        self.traits = traits if traits is not None else []  # 特性列表
+        self.abilities = abilities if abilities is not None else []  # 能力列表
+
+    def add_trait(self, trait):
+        self.traits.append(trait)
+
+    def add_ability(self, ability):
+        self.abilities.append(ability)
+
+
+class Rule:
+    def __init__(self, name, description, special_conditions=None, roles=None):
+        self.name = name  # 規則名稱
+        self.description = description  # 規則描述
+        self.special_conditions = special_conditions if special_conditions is not None else []  # 特殊條件列表
+        self.roles = roles if roles is not None else []  # 涉及的身分列表
+
+    def add_special_condition(self, condition):
+        self.special_conditions.append(condition)
+
+    def add_role(self, role):
+        self.roles.append(role)
+
+
+class Ability:
+    def __init__(self, name, type, description, effect):
+        self.name = name  # 能力名稱
+        self.type = type  # 能力類型 (主動 或 被動)
+        self.description = description  # 能力描述
+        self.effect = effect  # 能力效果函數
+
+
+# 建立範例規則表
+rule_table = RuleTable("Basic Tragedy X")
+
 
 // 定義主要規則表 Basic Tragedy X
 const BasicTragedyX = {
