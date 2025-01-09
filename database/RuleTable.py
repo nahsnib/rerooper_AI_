@@ -1,4 +1,4 @@
-# rule_table.py
+# database/RuleTable.py
 
 class RuleTable:
     def __init__(self, name):
@@ -89,361 +89,182 @@ class Ability:
         self.effect = effect  # 能力效果函數
 
 
-# 建立範例規則表
-rule_table = RuleTable("Basic Tragedy X")
+# 定義主要規則表 Basic Tragedy X
+basic_tragedy_x = RuleTable("Basic Tragedy X")
 
+# 範例事件
+event1 = Event("殺人事件", lambda culprit, area: [
+    character.die() for character in area.characters if character != culprit
+])
+event2 = Event("流言蜚語", lambda culprit, area, script_writer: [
+    targets[0].add_anxiety(2) and targets[1].add_conspiracy_points(1)
+    for targets in [script_writer.choose_two_characters()]
+])
+event3 = Event("自殺", lambda culprit: culprit.die())
+event4 = Event("醫院事件", lambda area, script_writer: [
+    character.die() if area.conspiracy_points > 0 else None
+    for character in area.characters
+] + [
+    script_writer.win_cycle() if area.conspiracy_points > 1 else None
+])
+event5 = Event("遠距殺人", lambda script_writer: [
+    target.die()
+    for target in [script_writer.choose_character_with_condition(lambda char: char.conspiracy_points > 1)]
+])
+event6 = Event("失蹤", lambda culprit, area, script_writer: [
+    culprit.move_to(new_area) and new_area.add_conspiracy_points(1)
+    for new_area in [script_writer.choose_area_except(area)]
+])
+event7 = Event("流傳", lambda culprit, script_writer: [
+    target1.add_friendliness(-2) and target2.add_friendliness(2)
+    for target1, target2 in [script_writer.choose_two_characters()]
+])
+event8 = Event("蝴蝶效應", lambda culprit, area, script_writer: [
+    setattr(target, stat, getattr(target, stat) + 1)
+    for target in [script_writer.choose_character_in_area(area)]
+    for stat in [script_writer.choose_stat(["anxiety", "friendliness", "conspiracy_points"])]
+])
+event9 = Event("褻瀆", lambda shrine: shrine.add_conspiracy_points(2))
 
-// 定義主要規則表 Basic Tragedy X
-const BasicTragedyX = {
-    name: "Basic Tragedy X",
-    events: [
-        {
-            name: "殺人事件",
-            effect: (culprit, area) => {
-                const target = area.getRandomCharacterExcept(culprit); // 隨機選擇同地區的其他角色
-                if (target) {
-                    target.die();
-                    console.log(`${culprit.name} 殺害了 ${target.name}`);
-                }
-            }
-        },
-        {
-            name: "流言蜚語",
-            effect: (culprit, area, scriptWriter) => {
-                const targets = scriptWriter.chooseTwoCharacters(); // 腳本家選擇兩個角色
-                targets[0].addAnxiety(2);
-                targets[1].addConspiracyPoints(1);
-                console.log(`${targets[0].name} +2 不安, ${targets[1].name} +1 陰謀`);
-            }
-        },
-        {
-            name: "自殺",
-            effect: (culprit) => {
-                culprit.die();
-                console.log(`${culprit.name} 自殺`);
-            }
-        },
-        {
-            name: "醫院事件",
-            effect: (area, scriptWriter) => {
-                if (area.conspiracyPoints > 0) {
-                    area.characters.forEach(character => character.die());
-                    console.log(`醫院事件觸發，所有角色死亡`);
-                }
-                if (area.conspiracyPoints > 1) {
-                    console.log(`醫院陰謀數量超過1，腳本家勝利，輪迴結束`);
-                    scriptWriter.winCycle();
-                }
-            }
-        },
-        {
-            name: "遠距殺人",
-            effect: (scriptWriter) => {
-                const target = scriptWriter.chooseCharacterWithCondition(
-                    char => char.conspiracyPoints > 1
-                );
-                if (target) {
-                    target.die();
-                    console.log(`${target.name} 被遠距殺害`);
-                }
-            }
-        },
-        {
-            name: "失蹤",
-            effect: (culprit, area, scriptWriter) => {
-                const newArea = scriptWriter.chooseAreaExcept(area);
-                culprit.moveTo(newArea);
-                newArea.addConspiracyPoints(1);
-                console.log(`${culprit.name} 移動到 ${newArea.name}, 該地區 +1 陰謀`);
-            }
-        },
-        {
-            name: "流傳",
-            effect: (culprit, scriptWriter) => {
-                const [target1, target2] = scriptWriter.chooseTwoCharacters();
-                target1.addFriendliness(-2);
-                target2.addFriendliness(2);
-                console.log(`${target1.name} -2 友好, ${target2.name} +2 友好`);
-            }
-        },
-        {
-            name: "蝴蝶效應",
-            effect: (culprit, area, scriptWriter) => {
-                const target = scriptWriter.chooseCharacterInArea(area);
-                const stat = scriptWriter.chooseStat(["anxiety", "friendliness", "conspiracyPoints"]);
-                target[stat] += 1;
-                console.log(`${target.name} 的 ${stat} +1`);
-            }
-        },
-        {
-            name: "褻瀆",
-            effect: (shrine) => {
-                shrine.addConspiracyPoints(2);
-                console.log(`神社 +2 陰謀`);
-            }
-        }
-    ],
-    roles: {
-        major: [
-            {
-                name: "關鍵人物",
-                traits: [],
-                abilities: [
-                    {
-                        type: "passive",
-                        description: "死亡時腳本家勝利，輪迴結束",
-                        trigger: (character, game) => {
-                            if (character.isDead) {
-                                console.log(`關鍵人物 ${character.name} 死亡，腳本家勝利`);
-                                game.scriptWriter.winCycle();
-                            }
-                        }
-                    }
-                ]
-            },
-            {
-                name: "殺手",
-                traits: ["友好無視"],
-                abilities: [
-                    {
-                        type: "passive",
-                        description: "夜晚階段時，殺害同地區且陰謀>1的關鍵人物",
-                        trigger: (character, game) => {
-                            const area = character.currentArea;
-                            const target = area.findCharacter(
-                                char => char.role === "關鍵人物" && char.conspiracyPoints > 1
-                            );
-                            if (target) {
-                                target.die();
-                                console.log(`${character.name} 殺害了 ${target.name}`);
-                            }
-                        }
-                    },
-                    {
-                        type: "passive",
-                        description: "夜晚階段時，陰謀>3，腳本家勝利，輪迴結束",
-                        trigger: (character, game) => {
-                            if (character.conspiracyPoints > 3) {
-                                console.log(`殺手 ${character.name} 陰謀 > 3，腳本家勝利`);
-                                game.scriptWriter.winCycle();
-                            }
-                        }
-                    }
-                ]
-            },
-            {
-                name: "黑幕",
-                traits: ["友好無視"],
-                abilities: [
-                    {
-                        type: "active",
-                        description: "同地區其他角色或地區+1陰謀",
-                        effect: (character, scriptWriter) => {
-                            const target = scriptWriter.chooseTargetOrArea(character.currentArea);
-                            if (target instanceof Character) {
-                                target.addConspiracyPoints(1);
-                                 if (isScriptwriterView) {
-                                    console.log(`${target.name} +1 陰謀`);
-                                }
-                                console.log(`${target.name} +1 陰謀`);
-                            } else {
-                                target.addConspiracyPoints(1);
-                                 if (isScriptwriterView) {
-                                    console.log(`${target.name} +1 陰謀`);
-                                }
-                            }
-                        }
-                    }
-                ]
-            },
-           {
-                  name: "邪教徒",
-                  traits: ["友好無效"],
-                  abilities: [
-                    {
-                      type: "passive",
-                      description: "行動結算階段，取消此地區偵探設置的陰謀禁止卡片",
-                      effect: (area, isScriptwriterView) => {
-                        area.removeConspiracyBan();
-                        if (isScriptwriterView) {
-                          console.log(`陰謀禁止卡片在地區 ${area.name} 被取消`);
-                        }
-                      }
-                    }
-                  ]
-                },
-                {
-                  name: "魔女",
-                  traits: ["友好無效"],
-                  abilities: []
-                },
-                {
-                  name: "時間旅行者",
-                  traits: ["無法被殺害"],
-                  abilities: [
-                    {
-                      type: passive,
-                      description: "最後一天夜晚階段，若友好值<2，腳本家勝利，輪迴結束",
-                      effect: (character, gameState, isScriptwriterView) => {
-                        if (gameState.currentDay === gameState.finalDay && character.friendship < 2) {
-                          gameState.endLoop("腳本家勝利");
-                          if (isScriptwriterView) {
-                            console.log(`${character.name} 的友好值不足，腳本家勝利`);
-                          }
-                        }
-                      }
-                    }
-                  ]
-                },
-            
-                    ],
-        minor: [
-            {
-                name: "朋友",
-                traits: [],
-                abilities: [
-                    {
-                        type: "passive",
-                        description: "輪迴結束死亡時，腳本家勝利並公開身分",
-                        trigger: (character, game) => {
-                            if (character.isDead) {
-                                console.log(`朋友 ${character.name} 死亡，腳本家勝利`);
-                                game.scriptWriter.winCycle();
-                            }
-                        }
-                    }
-                ]
-            },
-            
-            {
-              "name": "誤導者",
-              "traits": [],
-              "abilities": [
-                {
-                  "type": "active",
-                  "description": "能力階段對同地區角色+1不安",
-                  "effect": (target, isScriptwriterView) => {
-                    target.addAnxiety(1);
-                    if (isScriptwriterView) {
-                      console.log(`${target.name} +1 不安`);
-                    }
-                  }
-                }
-              ]
-            },
-            {
-              "name": "戀人",
-              "traits": [],
-              "abilities": [
-                {
-                  "type": "passive",
-                  "description": "死亡時使情人+6不安",
-                  "effect": (partner, isScriptwriterView) => {
-                    partner.addAnxiety(6);
-                    if (isScriptwriterView) {
-                      console.log(`情人增加 6 不安`);
-                    }
-                  }
-                }
-              ]
-            },
-            {
-              "name": "情人",
-              "traits": [],
-              "abilities": [
-                {
-                  "type": "passive",
-                  "description": "死亡時使戀人+6不安",
-                  "effect": (partner, isScriptwriterView) => {
-                    partner.addAnxiety(6);
-                    if (isScriptwriterView) {
-                      console.log(`戀人增加 6 不安`);
-                    }
-                  }
-                },
-                {
-                  "type": "passive",
-                  "description": "夜晚階段若不安>3且陰謀值>0，腳本家勝利，輪迴結束",
-                  "effect": (character, gameState, isScriptwriterView) => {
-                    if (character.anxiety > 3 && character.conspiracy > 0) {
-                      gameState.endLoop("腳本家勝利");
-                      if (isScriptwriterView) {
-                        console.log(`因為 ${character.name} 的條件滿足，腳本家勝利`);
-                      }
-                    }
-                  }
-                }
-              ]
-            },
-            {
-              "name": "殺人魔",
-              "traits": [],
-              "abilities": [
-                {
-                  "type": "passive",
-                  "description": "夜晚階段若與其他角色獨處，殺害該角色",
-                  "effect": (character, targets, isScriptwriterView) => {
-                    if (targets.length === 1) {
-                      targets[0].kill();
-                      if (isScriptwriterView) {
-                        console.log(`${targets[0].name} 被 ${character.name} 殺害`);
-                      }
-                    }
-                  }
-                }
-              ]
-            },
-            {
-              "name": "因子",
-              "traits": ["友好無效"],
-              "abilities": [
-                {
-                  "type": "passive",
-                  "description": "學校陰謀值>1時，獲得誤導者能力",
-                  "effect": (area, character, isScriptwriterView) => {
-                    if (area.name === "學校" && area.conspiracy > 1) {
-                      character.gainAbility("能力階段對同地區角色+1不安");
-                      if (isScriptwriterView) {
-                        console.log(`${character.name} 獲得了誤導者能力`);
-                      }
-                    }
-                  }
-                },
-        {
-          "type": "passive",
-          "description": "鬧區陰謀值>1時，獲得關鍵人物能力",
-          "effect": (area, character, isScriptwriterView) => {
-            if (area.name === "鬧區" && area.conspiracy > 1) {
-              character.gainAbility("死亡時，腳本家勝利，輪迴結束");
-              if (isScriptwriterView) {
-                console.log(`${character.name} 獲得了關鍵人物能力`);
-              }
-            }
-          }
-        }
-      ]
-    }
-  ]
-}        ]
-    },
-    mainRules: [
-        {
-            name: "殺人計畫",
-            description: "關鍵人物*1、殺手*1、黑幕*1"
-        },
-        {
-            name: "被封印之物",
-            description: "黑幕*1、邪教徒*1，神社陰謀>1時輪迴結束，腳本家勝利"
-        },
-        {
-            name: "和我簽下契約吧！",
-            description: "關鍵人物*1，陰謀>1時腳本家勝利，必須設定角色關鍵人物為少女"
-        }
-    ]
-};
+basic_tragedy_x.add_event(event1)
+basic_tragedy_x.add_event(event2)
+basic_tragedy_x.add_event(event3)
+basic_tragedy_x.add_event(event4)
+basic_tragedy_x.add_event(event5)
+basic_tragedy_x.add_event(event6)
+basic_tragedy_x.add_event(event7)
+basic_tragedy_x.add_event(event8)
+basic_tragedy_x.add_event(event9)
 
-// 輸入到遊戲系統
-game.addMainRule(BasicTragedyX);
+# 建立範例身分與能力
+key_figure = Role("關鍵人物")
+key_figure.add_ability(Ability(
+    "犧牲的代價", "被動", "此角色死亡時，輪迴直接結束，腳本家勝利",
+    lambda character, game: game.script_writer.win_cycle() if character.is_dead else None
+))
 
+murderer = Role("殺手")
+murderer.add_trait("友好無視")
+murderer.add_ability(Ability(
+    "夜晚殺戮", "被動", "夜晚階段時，若與其他角色獨處，則殺害之",
+    lambda character, game: (
+        target.die() if (target := character.current_area.get_random_character_except(character)) and character.current_area.is_night else None
+    )
+))
+murderer.add_ability(Ability(
+    "陰謀操控", "被動", "夜晚階段時，陰謀>3，腳本家勝利，輪迴結束",
+    lambda character, game: (
+        game.script_writer.win_cycle() if character.conspiracy_points > 3 else None
+    )
+))
 
+mastermind = Role("黑幕")
+mastermind.add_trait("友好無視")
+mastermind.add_ability(Ability(
+    "陰謀操控", "主動", "同地區其他角色或地區+1陰謀",
+    lambda character, script_writer: (
+        target.add_conspiracy_points(1) if isinstance(target := script_writer.choose_target_or_area(character.current_area), Character) else target.add_conspiracy_points(1)
+    )
+))
 
+cultist = Role("邪教徒")
+cultist.add_trait("友好無效")
+cultist.add_ability(Ability(
+    "陰謀取消", "被動", "行動結算階段，取消此地區偵探設置的陰謀禁止卡片",
+    lambda area, is_scriptwriter_view: (
+        area.remove_conspiracy_ban(), 
+        print(f"陰謀禁止卡片在地區 {area.name} 被取消") if is_scriptwriter_view else None
+    )
+))
+
+witch = Role("魔女")
+witch.add_trait("友好無效")
+
+time_traveler = Role("時間旅行者")
+time_traveler.add_trait("無法被殺害")
+time_traveler.add_ability(Ability(
+    "友好檢查", "被動", "最後一天夜晚階段，若友好值<2，腳本家勝利，輪迴結束",
+    lambda character, game_state, is_scriptwriter_view: (
+        game_state.end_loop("腳本家勝利")
+        if game_state.current_day == game_state.final_day and character.friendship < 2 else None,
+        print(f"{character.name} 的友好值不足，腳本家勝利") if is_scriptwriter_view else None
+    )
+))
+
+# 添加次要角色
+friend = Role("朋友")
+friend.add_ability(Ability(
+    "犧牲的代價", "被動", "輪迴結束死亡時，腳本家勝利並公開身分",
+    lambda character, game: game.script_writer.win_cycle() if character.is_dead else None
+))
+
+misleader = Role("誤導者")
+misleader.add_ability(Ability(
+    "不安增加", "主動", "能力階段對同地區角色+1不安",
+    lambda target, is_scriptwriter_view: (
+        target.add_anxiety(1),
+        print(f"{target.name} +1 不安") if is_scriptwriter_view else None
+    )
+))
+
+lover = Role("戀人")
+lover.add_ability(Ability(
+    "不安增加", "被動", "死亡時使情人+6不安",
+    lambda partner, is_scriptwriter_view: (
+        partner.add_anxiety(6),
+        print(f"情人增加 6 不安") if is_scriptwriter_view else None
+    )
+))
+
+loved_one = Role("情人")
+loved_one.add_ability(Ability(
+    "不安增加", "被動", "死亡時使戀人+6不安",
+    lambda partner, is_scriptwriter_view: (
+        partner.add_anxiety(6),
+        print(f"戀人增加 6 不安") if is_scriptwriter_view else None
+    )
+))
+loved_one.add_ability(Ability(
+    "腳本家勝利", "被動", "夜晚階段若不安>3且陰謀值>0，腳本家勝利，輪迴結束",
+    lambda character, game_state, is_scriptwriter_view: (
+        game_state.end_loop("腳本家勝利")
+        if character.anxiety > 3 and character.conspiracy > 0 else None,
+        print(f"因為 {character.name} 的條件滿足，腳本家勝利") if is_scriptwriter_view else None
+    )
+))
+
+# 添加規則表到遊戲系統
+rule_tables = {
+    1: basic_tragedy_x
+}
+
+def display_all_rule_tables():
+    for idx, rule_table in rule_tables.items():
+        print(f"{idx}. {rule_table.name}")
+
+def get_rule_table_by_id(rule_table_id):
+    return rule_tables.get(rule_table_id, None)
+
+# 新增主要規則
+additional_main_rules = [
+    Rule("未來改變作戰", "邪教徒*1，時間旅行者*1。蝴蝶效應事件發生後，該輪迴結束時腳本家勝利。"),
+    Rule("巨型定時炸彈", "魔女*1。輪迴結束時，若魔女的初期所在區域陰謀>1，腳本家勝利。")
+]
+
+# 新增副規則
+additional_sub_rules = [
+    Rule("友情小圈圈", "朋友*2，誤導者*1"),
+    Rule("戀愛的模樣", "戀人*1，情人*1"),
+    Rule("殺人魔潛伏", "朋友*1，殺人魔*1"),
+    Rule("人心惶惶", "每輪迴一次，腳本家可以在能力階段使任意地區+1陰謀。"),
+    Rule("惡性譫妄病毒", "誤導者*1。本遊戲中，普通人不安>2時，變成殺人魔。"),
+    Rule("因果之線", "輪迴重啟後，前一輪迴友好>0的角色+2不安。"),
+    Rule("不定因子", "因子*1")
+]
+
+# 將這些規則添加到基礎悲劇 X 中
+for rule in additional_main_rules:
+    basic_tragedy_x.add_main_rule(rule)
+
+for rule in additional_sub_rules:
+    basic_tragedy_x.add_sub_rule(rule)
