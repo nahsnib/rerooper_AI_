@@ -5,16 +5,9 @@ class RuleTable {
     constructor() {
         this.mainRules = []; // 主規則Y列表
         this.subRules = [];  // 副規則X列表
-    }
-
-    // 新增主規則
-    addMainRule(rule) {
-        this.mainRules.push(rule);
-    }
-
-    // 新增副規則
-    addSubRule(rule) {
-        this.subRules.push(rule);
+        this.Event = [];    // 事件列表
+        this.Role = [];    // 身分列表
+        this.SpecialRule = []; // 特殊規則 
     }
 
     // 顯示所有規則
@@ -46,16 +39,6 @@ class Role {
         this.abilities = abilities; // 能力列表
     }
 
-    // 新增特性
-    addTrait(trait) {
-        this.traits.push(trait);
-    }
-
-    // 新增能力
-    addAbility(ability) {
-        this.abilities.push(ability);
-    }
-}
 
 // 規則類
 class Rule {
@@ -66,15 +49,6 @@ class Rule {
         this.roles = roles; // 涉及的身分列表
     }
 
-    // 新增特殊條件
-    addSpecialCondition(condition) {
-        this.specialConditions.push(condition);
-    }
-
-    // 新增相關身分
-    addRole(role) {
-        this.roles.push(role);
-    }
 }
 
 // 能力類
@@ -85,33 +59,6 @@ class Ability {
         this.effect = effect; // 能力效果描述
     }
 }
-
-// 建立範例規則表
-const ruleTable = new RuleTable();
-
-// 範例事件
-const event1 = new Event("人心惶惶", "犯人會增加其他角色的不安值");
-
-// 範例身分與能力
-const keyFigure = new Role("關鍵人物");
-keyFigure.addTrait("友好能力無效");
-keyFigure.addAbility(new Ability("犧牲的代價", "被動", "此角色死亡時，輪迴直接結束，腳本家勝利"));
-
-const murderer = new Role("殺人魔");
-murderer.addAbility(new Ability("夜晚殺戮", "被動", "夜晚階段時，若與其他角色獨處，則殺害之"));
-
-// 範例主規則
-const ancientMyth = new Rule("遠古的神話", "夜晚階段時，神社若有2個或更多的陰謀，此輪迴結束，腳本家勝利");
-ancientMyth.addSpecialCondition("神社有2個或更多陰謀");
-ancientMyth.addRole(keyFigure);
-
-// 範例副規則
-const causalLine = new Rule("因果之線", "每個輪迴開始時，至少有一個角色友好+1，一個角色不安+1");
-causalLine.addSpecialCondition("前一輪迴必須滿足條件");
-
-// 添加規則到規則表
-ruleTable.addMainRule(ancientMyth);
-ruleTable.addSubRule(causalLine);
 
 // 顯示所有規則
 ruleTable.load_RuleTable();
