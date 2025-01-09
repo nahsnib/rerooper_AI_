@@ -1,3 +1,76 @@
+# database/character_database.py
+
+class Character:
+    def __init__(self, name, anxiety_threshold, initial_location, forbidden_area, attribute, friendly_abilities=None, special_ability=None, hidden_abilities=None):
+        # 固定資訊
+        self.name = name
+        self.anxiety_threshold = anxiety_threshold
+        self.initial_location = initial_location
+        self.forbidden_area = forbidden_area
+        self.attribute = attribute
+        self.special_ability = special_ability
+        self.friendly_abilities = friendly_abilities or []
+        self.hidden_abilities = hidden_abilities or []
+
+        # 浮動資訊
+        self.anxiety = 0
+        self.conspiracy = 0
+        self.friendship = 0
+        self.current_location = initial_location
+        self.alive = True
+        self.is_criminal = False
+        self.secret_identity = None
+        self.abilities_used = []
+
+    def reset(self):
+        self.anxiety = 0
+        self.conspiracy = 0
+        self.friendship = 0
+        self.current_location = self.initial_location
+        self.alive = True
+        self.is_criminal = False
+        self.secret_identity = None
+        self.abilities_used.clear()
+
+    def move(self, location):
+        if self.alive and location != self.forbidden_area:
+            self.current_location = location
+
+    def change_anxiety(self, amount):
+        self.anxiety += amount
+
+    def change_conspiracy(self, amount):
+        self.conspiracy += amount
+
+    def change_friendship(self, amount):
+        self.friendship += amount
+
+    def use_ability(self, ability, target=None):
+        if ability in self.friendly_abilities:
+            # 根據能力的不同實現相應的邏輯
+            if ability == "友好2：同地區的１名另外一個\"學生\"-1不安" and target:
+                target.change_anxiety(-1)
+            # 添加更多能力的實現邏輯
+            self.abilities_used.append(ability)
+            print(f"{self.name} 使用了能力：{ability}")
+        else:
+            print(f"{self.name} 沒有這個能力：{ability}")
+
+    def use_hidden_ability(self, ability, target=None):
+        if ability in self.hidden_abilities:
+            # 根據隱藏能力的不同實現相應的邏輯
+            print(f"{self.name} 使用了隱藏能力：{ability}，通知劇本家")
+            self.abilities_used.append(ability)
+            # 這裡可以添加邏輯來通知劇本家
+        else:
+            print(f"{self.name} 沒有這個隱藏能力：{ability}")
+
+    def can_use_ability(self, ability):
+        return ability not in self.abilities_used
+
+    def __str__(self):
+        return f"Character({self.name}, Anxiety: {self.anxiety}, Conspiracy: {self.conspiracy}, Friendship: {self.friendship}, Location: {self.current_location}, Alive: {self.alive})"
+
 def load_character_database():
     return [
         {
