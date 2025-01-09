@@ -2,6 +2,7 @@
 
 import random
 from database.character_database import load_character_database
+from database.RuleTable import display_all_rule_tables, get_rule_table_by_id
 
 class ScriptEditor:
     def __init__(self):
@@ -11,13 +12,27 @@ class ScriptEditor:
         self.rounds = 0
         self.days_per_round = 0
         self.events = []
+        self.current_rule_table = None  # 當前選擇的規則表
+
+    def choose_rule_table(self):
+        # 顯示所有規則表
+        display_all_rule_tables()
+        choice = int(input("選擇規則表索引: "))
+        self.current_rule_table = get_rule_table_by_id(choice)
+        if self.current_rule_table:
+            print(f"選擇的規則表: {self.current_rule_table.name}")
+        else:
+            print("無效的規則表索引")
 
     def construct_scenario(self):
+        # 選擇規則表
+        self.choose_rule_table()
+
         # 劇本家從公開規則表中選擇一張
-        self.rules = self.choose_public_rule()
+        self.rules = self.current_rule_table.main_rules
         
         # 劇本家秘密選擇數條規則
-        self.secret_rules = self.choose_secret_rules()
+        self.secret_rules = self.current_rule_table.sub_rules
         
         # 從角色庫中選擇角色
         self.characters = self.select_characters()
@@ -25,7 +40,7 @@ class ScriptEditor:
         # 依據規則賦予角色身分
         self.assign_roles()
         
-        # 決定輪迴次數
+        # 決定輪迾次數
         self.rounds = self.choose_rounds()
         
         # 決定每輪回合數
@@ -72,3 +87,7 @@ class ScriptEditor:
         for event in self.events:
             event_criminal = random.choice(self.characters).name
             print(f"為事件 {event} 分配犯人 {event_criminal}")
+
+# 遊戲初始化
+script_editor = ScriptEditor()
+script_editor.construct_scenario()
