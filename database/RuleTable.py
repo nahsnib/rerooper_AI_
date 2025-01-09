@@ -9,7 +9,6 @@ class RuleTable {
         this.Role = [];    // 身分列表
         this.SpecialRule = []; // 特殊規則 
     }
-
     // 顯示所有規則
     displayRules() {
         console.log("主規則:");
@@ -39,7 +38,6 @@ class Role {
         this.abilities = abilities; // 能力列表
     }
 
-
 // 規則類
 class Rule {
     constructor(name, description, specialConditions = [], roles = []) {
@@ -48,7 +46,6 @@ class Rule {
         this.specialConditions = specialConditions; // 特殊條件列表
         this.roles = roles; // 涉及的身分列表
     }
-
 }
 
 // 能力類
@@ -62,6 +59,7 @@ class Ability {
 
 // 顯示所有規則
 ruleTable.load_RuleTable();
+
 // 定義主要規則表 Basic Tragedy X
 const BasicTragedyX = {
     name: "Basic Tragedy X",
