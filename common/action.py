@@ -59,7 +59,7 @@ def get_action_by_id(action_id, role):
 def display_all_actions(role):
     actions = scriptwriter_actions if role == 'scriptwriter' else detective_actions
     for action in actions:
-        print(f"行動編號: {action.id}, 名稱: {action.name}, 描述: {action.description}")
+        print(f"名稱: {action.name}, 描述: {action.description}")
 
 # 測試顯示所有行動
 if __name__ == "__main__":
