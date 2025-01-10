@@ -1,5 +1,3 @@
-# common/character.py
-
 import tkinter as tk
 from tkinter import ttk
 from database.character_database import load_character_database
@@ -23,7 +21,7 @@ class Character:
         self.alive = True
         self.is_criminal = False
         self.secret_identity = None
-        self.abilities_used = []
+        self.abilities_used_today = []
 
     def reset(self):
         self.anxiety = 0
@@ -33,7 +31,7 @@ class Character:
         self.alive = True
         self.is_criminal = False
         self.secret_identity = None
-        self.abilities_used.clear()
+        self.abilities_used_today.clear()
 
     def move(self, location):
         if self.alive and location != self.forbidden_area:
@@ -55,7 +53,7 @@ class Character:
                     if ability['target_required']:
                         if target and ability['target_condition'](target, self):
                             ability['effect'](target)
-                            self.abilities_used.append(ability_name)
+                            self.abilities_used_today.append(ability_name)
                             print(f"{self.name} 使用了能力：{ability_name} 對 {target.name}")
                             return
                         else:
@@ -63,7 +61,7 @@ class Character:
                             return
                     else:
                         ability['effect'](self)
-                        self.abilities_used.append(ability_name)
+                        self.abilities_used_today.append(ability_name)
                         print(f"{self.name} 使用了能力：{ability_name}")
                         return
                 else:
@@ -72,7 +70,10 @@ class Character:
         print(f"{self.name} 沒有這個友好能力：{ability_name}")
 
     def can_use_ability(self, ability_name):
-        return ability_name not in self.abilities_used
+        return ability_name not in self.abilities_used_today
+
+    def reset_ability_usage(self):
+        self.abilities_used_today.clear()
 
     def __str__(self):
         return f"Character({self.name}, Anxiety: {self.anxiety}, Conspiracy: {self.conspiracy}, Friendship: {self.friendship}, Location: {self.current_location}, Alive: {self.alive})"
