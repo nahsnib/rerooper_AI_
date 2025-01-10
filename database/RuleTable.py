@@ -51,13 +51,15 @@ class RuleTable:
             print(f"{index}. {rule}")
 
 class Event:
-    def __init__(self, name, effect):
+    def __init__(self, id, name, effect):
+        self.id = id  # 新增的編號屬性
         self.name = name  # 事件名稱
         self.effect = effect  # 事件效果函數
 
 
 class Role:
-    def __init__(self, name, traits=None, abilities=None):
+    def __init__(self, id, name, traits=None, abilities=None):
+        self.id = id  # 新增的編號屬性
         self.name = name  # 身分名稱
         self.traits = traits if traits is not None else []  # 特性列表
         self.abilities = abilities if abilities is not None else []  # 能力列表
@@ -70,7 +72,8 @@ class Role:
 
 
 class Rule:
-    def __init__(self, name, description, special_conditions=None, roles=None):
+    def __init__(self, id, name, description, special_conditions=None, roles=None):
+        self.id = id  # 新增的編號屬性
         self.name = name  # 規則名稱
         self.description = description  # 規則描述
         self.special_conditions = special_conditions if special_conditions is not None else []  # 特殊條件列表
