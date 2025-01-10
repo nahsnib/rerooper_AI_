@@ -3,15 +3,17 @@ from tkinter import ttk
 from database.character_database import load_character_database
 
 class Character:
-    def __init__(self, name, anxiety_threshold, initial_location, forbidden_area, attribute, friendly_abilities=None, special_ability=None):
+    def __init__(self, id, name, anxiety_threshold, initial_location, forbidden_area, attributes, friendly_abilities=None, role_abilities=None, special_ability=None):
         # 固定資訊
+        self.id = id
         self.name = name
         self.anxiety_threshold = anxiety_threshold
         self.initial_location = initial_location
         self.forbidden_area = forbidden_area
-        self.attribute = attribute
+        self.attributes = attributes
         self.special_ability = special_ability
         self.friendly_abilities = friendly_abilities or []
+        self.role_abilities = role_abilities or []
 
         # 浮動資訊
         self.anxiety = 0
@@ -21,7 +23,8 @@ class Character:
         self.alive = True
         self.is_criminal = False
         self.secret_identity = None
-        self.abilities_used_today = []
+        self.friendly_ability_usage = {ability['id']: False for ability in self.friendly_abilities}
+        self.role_ability_usage = {ability['id']: False for ability in self.role_abilities}
 
     def reset(self):
         self.anxiety = 0
@@ -31,7 +34,7 @@ class Character:
         self.alive = True
         self.is_criminal = False
         self.secret_identity = None
-        self.abilities_used_today.clear()
+        self.reset_ability_usage()
 
     def move(self, location):
         if self.alive and location != self.forbidden_area:
@@ -46,34 +49,61 @@ class Character:
     def change_friendship(self, amount):
         self.friendship += amount
 
-    def use_friendly_ability(self, ability_name, target=None):
+    def use_friendly_ability(self, ability_id, target=None):
         for ability in self.friendly_abilities:
-            if ability['name'] == ability_name:
-                if ability['trigger'](self):
+            if ability['id'] == ability_id:
+                if not self.friendly_ability_usage[ability_id] and ability['trigger'](self):
                     if ability['target_required']:
                         if target and ability['target_condition'](target, self):
                             ability['effect'](target)
-                            self.abilities_used_today.append(ability_name)
-                            print(f"{self.name} 使用了能力：{ability_name} 對 {target.name}")
+                            self.friendly_ability_usage[ability_id] = True
+                            print(f"{self.name} 使用了能力：{ability['name']} 對 {target.name}")
                             return
                         else:
                             print(f"無效的目標：{target.name} 不符合條件")
                             return
                     else:
                         ability['effect'](self)
-                        self.abilities_used_today.append(能力名稱)
-                        print(f"{self.name} 使用了能力：{ability_name}")
+                        self.friendly_ability_usage[ability_id] = True
+                        print(f"{self.name} 使用了能力：{ability['name']}")
                         return
                 else:
-                    print(f"{self.name} 的友好度不足以使用能力：{ability_name}")
+                    print(f"{self.name} 的友好度不足以使用能力：{ability['name']} 或今天已使用過")
                     return
-        print(f"{self.name} 沒有這個友好能力：{ability_name}")
+        print(f"{self.name} 沒有這個友好能力：{ability_id}")
 
-    def can_use_ability(self, ability_name):
-        return ability_name not in self.abilities_used_today
+    def use_role_ability(self, ability_id, target=None):
+        for ability in self.role_abilities:
+            if ability['id'] == ability_id:
+                if not self.role_ability_usage[ability_id]:
+                    if ability['target_required']:
+                        if target and ability['target_condition'](target, self):
+                            ability['effect'](target)
+                            self.role_ability_usage[ability_id] = True
+                            print(f"{self.name} 使用了身分能力：{ability['name']} 對 {target.name}")
+                            return
+                        else:
+                            print(f"無效的目標：{target.name} 不符合條件")
+                            return
+                    else:
+                        ability['effect'](self)
+                        self.role_ability_usage[ability_id] = True
+                        print(f"{self.name} 使用了身分能力：{ability['name']}")
+                        return
+                else:
+                    print(f"{self.name} 今天已使用過身分能力：{ability['name']}")
+                    return
+        print(f"{self.name} 沒有這個身分能力：{ability_id}")
+
+    def can_use_ability(self, ability_id):
+        return (ability_id not in self.friendly_ability_usage or not self.friendly_ability_usage[ability_id]) and \
+               (ability_id not in self.role_ability_usage or not self.role_ability_usage[ability_id])
 
     def reset_ability_usage(self):
-        self.abilities_used_today.clear()
+        for ability in self.friendly_ability_usage:
+            self.friendly_ability_usage[ability] = False
+        for ability in self.role_ability_usage:
+            self.role_ability_usage[ability] = False
 
     def reveal_identity(self):
         self.identity_revealed = True
@@ -141,23 +171,23 @@ class CharacterManager(tk.Frame):
         actions_label = tk.Label(self.actions_frame, text="可用行動與能力")
         actions_label.pack()
 
-        # 顯示角色的友好能力
-        for ability in self.selected_character.friendly_abilities:
+        # 顯示角色的友好能力和身分能力
+        for ability in self.selected_character.friendly_abilities + self.selected_character.role_abilities:
             ability_name = ability['name']
-            if self.selected_character.can_use_ability(ability_name):
-                ability_button = tk.Button(self.actions_frame, text=ability_name, command=lambda a=ability_name: self.select_ability(a))
+            if self.selected_character.can_use_ability(ability['id']):
+                ability_button = tk.Button(self.actions_frame, text=ability_name, command=lambda a=ability['id']: self.select_ability(a))
                 ability_button.pack()
             else:
                 ability_button = tk.Button(self.actions_frame, text=ability_name, state=tk.DISABLED)
                 ability_button.pack()
 
-    def select_ability(self, ability_name):
-        self.selected_ability = ability_name
-        self.character_details.config(text=f"選擇的能力: {ability_name}")
+    def select_ability(self, ability_id):
+        self.selected_ability = ability_id
+        self.character_details.config(text=f"選擇的能力: {ability_id}")
         # 檢查是否需要選擇目標角色
-        selected_ability = next((a for a in self.selected_character.friendly_abilities if a['name'] == ability_name), None)
+        selected_ability = next((a for a in self.selected_character.friendly_abilities + self.selected_character.role_abilities if a['id'] == ability_id), None)
         if selected_ability and selected_ability['target_required']:
-            self.character_details.config(text=f"選擇的能力: {ability_name}\n請選擇目標角色")
+            self.character_details.config(text=f"選擇的能力: {selected_ability['name']}\n請選擇目標角色")
             self.character_listbox.bind("<<ListboxSelect>>", self.on_target_select)
         else:
             self.execute_ability()
@@ -171,7 +201,10 @@ class CharacterManager(tk.Frame):
 
     def execute_ability(self, target=None):
         if self.selected_character and self.selected_ability:
-            self.selected_character.use_friendly_ability(self.selected_ability, target)
+            if self.selected_ability in [ability['id'] for ability in self.selected_character.friendly_abilities]:
+                self.selected_character.use_friendly_ability(self.selected_ability, target)
+            elif self.selected_ability in [ability['id'] for ability in self.selected_character.role_abilities]:
+                self.selected_character.use_role_ability(self.selected_ability, target)
             self.update_character_details()
             self.selected_ability = None
             self.character_listbox.bind("<<ListboxSelect>>", self.on_character_select)
