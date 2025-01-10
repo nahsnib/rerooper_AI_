@@ -61,7 +61,7 @@ class Character:
                             return
                     else:
                         ability['effect'](self)
-                        self.abilities_used_today.append(ability_name)
+                        self.abilities_used_today.append(能力名稱)
                         print(f"{self.name} 使用了能力：{ability_name}")
                         return
                 else:
@@ -74,6 +74,10 @@ class Character:
 
     def reset_ability_usage(self):
         self.abilities_used_today.clear()
+
+    def reveal_identity(self):
+        self.identity_revealed = True
+        print(f"{self.name} 的身份已公開")
 
     def __str__(self):
         return f"Character({self.name}, Anxiety: {self.anxiety}, Conspiracy: {self.conspiracy}, Friendship: {self.friendship}, Location: {self.current_location}, Alive: {self.alive})"
