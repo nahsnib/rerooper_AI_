@@ -20,6 +20,7 @@ def load_character_database():
             attributes=['學生', '少年'],
             friendly_abilities=[
                 {
+                    'id': 1,
                     'name': '友好2：同地區的１名另外一個"學生"-1不安',
                     'trigger': lambda character: character.friendship >= 2,
                     'target_required': True,
@@ -37,6 +38,7 @@ def load_character_database():
             attributes=['學生', '少女'],
             friendly_abilities=[
                 {
+                    'id': 2,
                     'name': '友好2：同地區的１名另外一個"學生"-1不安',
                     'trigger': lambda character: character.friendship >= 2,
                     'target_required': True,
@@ -54,6 +56,7 @@ def load_character_database():
             attributes=['學生', '少女'],
             friendly_abilities=[
                 {
+                    'id': 3,
                     'name': '友好3：當此角色位於學校或都市時才能使用此能力。對同地區的1名角色放置+1友好',
                     'trigger': lambda character: character.friendship >= 3 and character.current_location in ['學校', '都市'],
                     'target_required': True,
@@ -71,12 +74,14 @@ def load_character_database():
             attributes=['學生', '少女'],
             friendly_abilities=[
                 {
+                    'id': 4,
                     'name': '友好3：當此角色位於神社時才能使用此能力。神社-1陰謀',
                     'trigger': lambda character: character.friendship >= 3 and character.current_location == '神社',
                     'target_required': False,
                     'effect': lambda area: area.change_conspiracy(-1)
                 },
                 {
+                    'id': 5,
                     'name': '友好5：得知同地區的一名角色的身份（1輪迴限用1次）',
                     'trigger': lambda character: character.friendship >= 5,
                     'target_required': True,
@@ -94,12 +99,14 @@ def load_character_database():
             attributes=['大人', '男性'],
             friendly_abilities=[
                 {
+                    'id': 6,
                     'name': '友好4：得知此輪迴中，一個已發生的事件之犯人。（1輪迴限用1次）',
                     'trigger': lambda character: character.friendship >= 4,
                     'target_required': False,
                     'effect': lambda game: game.reveal_event_culprit()
                 },
                 {
+                    'id': 7,
                     'name': '友好5：當同地區的角色死亡時可立即使用此能力，使該死亡無效。（1輪迴限用1次）',
                     'trigger': lambda character: character.friendship >= 5,
                     'target_required': True,
@@ -117,10 +124,11 @@ def load_character_database():
             attributes=['大人', '男性'],
             friendly_abilities=[
                 {
+                    'id': 8,
                     'name': '友好3：公開此角色的身份',
                     'trigger': lambda character: character.friendship >= 3,
                     'target_required': False,
-                    'effect': lambda character: character.reveal_identity()
+                    'effect': lambda character: print(f"{character.name} 的身份已公開")
                 }
             ]
         ),
@@ -133,6 +141,7 @@ def load_character_database():
             attributes=['大人', '女性'],
             friendly_abilities=[
                 {
+                    'id': 9,
                     'name': '友好5：指定規則X1或規則X2，腳本家公開被指定的規則。（1輪迴限用1次）',
                     'trigger': lambda character: character.friendship >= 5,
                     'target_required': False,
@@ -149,13 +158,15 @@ def load_character_database():
             attributes=['大人', '男性'],
             friendly_abilities=[
                 {
-                    'name': '友好2：同地區另一名角色+1不安或者-1不安。若此角色擁有友好無視，則劇本家也可以在劇本家能力使用階段時使用此能力',
+                    'id': 10,
+                    'name': '友好2：同地區另一名角色+1不安或者-1不安。若此角色的身分擁有特性友好無視、友好無效，則劇本家也可以在劇本家能力使用階段時使用此能力',
                     'trigger': lambda character: character.friendship >= 2,
                     'target_required': True,
                     'target_condition': lambda target, character: target.current_location == character.current_location,
                     'effect': lambda target: target.change_anxiety(1)  # 或者 -1，取決於劇本家的選擇
                 },
                 {
+                    'id': 11,
                     'name': '友好3：本輪迴中，住院病人解除移動限制',
                     'trigger': lambda character: character.friendship >= 3,
                     'target_required': False,
@@ -182,6 +193,7 @@ def load_character_database():
             attributes=['學生', '少女'],
             friendly_abilities=[
                 {
+                    'id': 12,
                     'name': '友好2：偵探回收1張【1輪迴只能使用1次】的行動卡（1輪迴限用1次）',
                     'trigger': lambda character: character.friendship >= 2,
                     'target_required': False,
@@ -198,6 +210,7 @@ def load_character_database():
             attributes=['少女'],
             friendly_abilities=[
                 {
+                    'id': 13,
                     'name': '友好4：殺害同地區的1名角色（1輪迴限用1次）',
                     'trigger': lambda character: character.friendship >= 4,
                     'target_required': True,
@@ -205,6 +218,7 @@ def load_character_database():
                     'effect': lambda target: target.die()
                 },
                 {
+                    'id': 14,
                     'name': '友好5：復活同地區的1具屍體（1輪迴限用1次）',
                     'trigger': lambda character: character.friendship >= 5,
                     'target_required': True,
@@ -222,12 +236,14 @@ def load_character_database():
             attributes=['少年', '少女'],
             friendly_abilities=[
                 {
+                    'id': 15,
                     'name': '友好3：得知一個事件的犯人（1輪迴限用1次）',
                     'trigger': lambda character: character.friendship >= 3,
                     'target_required': False,
                     'effect': lambda game: game.reveal_event_culprit()
                 },
                 {
+                    'id': 16,
                     'name': '友好5：從同一地區的1名角色或板塊上-1陰謀',
                     'trigger': lambda character: character.friendship >= 5,
                     'target_required': True,
@@ -246,6 +262,7 @@ def load_character_database():
             attributes=['學生', '少女'],
             friendly_abilities=[
                 {
+                    'id': 17,
                     'name': '友好3：同地區的1名另外一個角色-1不安',
                     'trigger': lambda character: character.friendship >= 3,
                     'target_required': True,
@@ -253,6 +270,7 @@ def load_character_database():
                     'effect': lambda target: target.change_anxiety(-1)
                 },
                 {
+                    'id': 18,
                     'name': '友好4：同地區的1名角色+1友好',
                     'trigger': lambda character: character.friendship >= 4,
                     'target_required': True,
@@ -270,6 +288,7 @@ def load_character_database():
             attributes=['大人', '男性'],
             friendly_abilities=[
                 {
+                    'id': 19,
                     'name': '友好2：對同地區另外一名角色+1不安',
                     'trigger': lambda character: character.friendship >= 2,
                     'target_required': True,
@@ -277,6 +296,7 @@ def load_character_database():
                     'effect': lambda target: target.change_anxiety(1)
                 },
                 {
+                    'id': 20,
                     'name': '友好2：對同地區另外一名角色或該地區+1陰謀',
                     'trigger': lambda character: character.friendship >= 2,
                     'target_required': True,
@@ -294,6 +314,7 @@ def load_character_database():
             attributes=['大人', '男性'],
             friendly_abilities=[
                 {
+                    'id': 21,
                     'name': '友好5：公開"領地"上的1名角色的身份（1輪迴限用1次）',
                     'trigger': lambda character: character.friendship >= 5,
                     'target_required': True,
@@ -312,6 +333,7 @@ def load_character_database():
             attributes=['大人', '女性'],
             friendly_abilities=[
                 {
+                    'id': 22,
                     'name': '友好2：同地區另外一名角色-1不安，僅能對不安達到或超過不安臨界的角色使用。這個能力不會被"友好無視"或"友好無效"取消',
                     'trigger': lambda character: character.friendship >= 2,
                     'target_required': True,
@@ -329,6 +351,7 @@ def load_character_database():
             attributes=['大人', '男性'],
             friendly_abilities=[
                 {
+                    'id': 23,
                     'name': '友好3：直到本輪迴結束，不會觸發此角色為犯人的事件',
                     'trigger': lambda character: character.friendship >= 3,
                     'target_required': False,
@@ -345,6 +368,7 @@ def load_character_database():
             attributes=['大人', '男性'],
             friendly_abilities=[
                 {
+                    'id': 24,
                     'name': '友好3：此角色的不安、友好、陰謀歸零。之後，若使用劇本中有使用"EX"的話，將該值增加或者減少1',
                     'trigger': lambda character: character.friendship >= 3,
                     'target_required': False,
@@ -362,6 +386,7 @@ def load_character_database():
             attributes=['虛構', '女性'],
             friendly_abilities=[
                 {
+                    'id': 25,
                     'name': '友好3：將與此角色同地區的1名角色移動至任何地區（1輪迴限用1次）',
                     'trigger': lambda character: character.friendship >= 3,
                     'target_required': True,
@@ -369,6 +394,7 @@ def load_character_database():
                     'effect': lambda target, new_area: target.move_to(new_area)
                 },
                 {
+                    'id': 26,
                     'name': '友好4：將此角色從遊戲版圖中移除，代表她不與任何角色相鄰，也不存在於任何一個地區',
                     'trigger': lambda character: character.friendship >= 4,
                     'target_required': False,
