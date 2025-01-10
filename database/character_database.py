@@ -1,3 +1,9 @@
+class Character:
+    def __init__(self, id, name, attributes):
+        self.id = id  # 新增的編號屬性
+        self.name = name  # 角色名稱
+        self.attributes = attributes  # 角色屬性
+
 def load_character_database():
     return [
         {
