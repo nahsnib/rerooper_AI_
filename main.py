@@ -5,7 +5,7 @@ from game_phase.ability_phase_1 import AbilityPhase1
 from game_phase.ability_phase_2 import AbilityPhase2
 from game_phase.event_phase import EventPhase
 from game_phase.night_phase import NightPhase
-from scriptwriter.gameset import GameSet
+from scriptwriter.gameset import ScriptEditor
 from common.character import CharacterManager
 from game import Player, GameLoop
 from game_phase.cycle_end import CycleEnd
@@ -55,9 +55,9 @@ class Game:
 
     def setup_script(self):
         self.show_message("劇本家正在設置劇本...")
-        # 使用 GameSet 模組進行劇本設置
-        self.game_set = GameSet(self.character_manager)
-        self.game_set.setup()
+        # 使用 ScriptEditor 模組進行劇本設置
+        self.script_editor = ScriptEditor()
+        self.script_editor.construct_scenario()
         self.show_message("劇本設置完成！")
         # 劇本設置完成後開始遊戲
         self.start_game()
