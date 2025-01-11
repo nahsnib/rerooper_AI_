@@ -8,6 +8,7 @@ from game_phase.night_phase import NightPhase
 from scriptwriter.gameset import GameSet
 from common.character import CharacterManager
 from game import Player
+from game_phase.cycle_end import CycleEnd
 
 class Game:
     def __init__(self, root):
@@ -92,6 +93,46 @@ class Game:
         self.ability_phase_2.execute()
         self.event_phase.execute()
         self.night_phase.execute()
+
+        # 判斷是否需要進入cycle_end階段
+        if self.night_phase.is_last_day() or self.scriptwriter_triggered_end_condition():
+            self.cycle_end()
+
+    def cycle_end(self):
+        self.cycle_end_phase = CycleEnd(self.character_manager)
+        result = self.cycle_end_phase.execute()
+        
+        if result == "detective_win":
+            self.show_message("偵探勝利！")
+            self.end_game()
+        elif result == "scriptwriter_win":
+            if self.cycle_end_phase.remaining_cycles() == 0:
+                self.start_final_battle()
+            else:
+                self.ask_detective_for_final_battle()
+
+    def start_final_battle(self):
+        self.show_message("進入最後決戰！")
+        # 在這裡調用final_battle.py的相關邏輯
+        # self.final_battle = FinalBattle(self.character_manager)
+        # self.final_battle.execute()
+        self.show_message("遊戲結束，進行最後決戰（未實現）")
+
+    def ask_detective_for_final_battle(self):
+        response = messagebox.askyesno("最後決戰", "劇本家觸發了勝利條件，你要進入最後決戰嗎？")
+        if response:
+            self.start_final_battle()
+        else:
+            self.cycle_end_phase.decrement_cycles()
+            self.show_message("輪迴數減少，繼續遊戲")
+            self.start_game()
+
+    def end_game(self):
+        self.show_message("遊戲結束")
+
+    def scriptwriter_triggered_end_condition(self):
+        # 判斷劇本家是否觸發了某些條件
+        return False
 
 if __name__ == "__main__":
     root = tk.Tk()
