@@ -1,5 +1,10 @@
 # game.py
 
+from player_detective_ability_phase import PlayerDetectiveAbilityPhase
+from ai_detective_ability_phase import AiDetectiveAbilityPhase
+from player_scriptwriter_ability_phase import PlayerScriptwriterAbilityPhase
+from ai_scriptwriter_ability_phase import AiScriptwriterAbilityPhase
+
 class Player:
     def __init__(self, role):
         self.role = role
@@ -18,20 +23,33 @@ class Player:
 
 
 class GameLoop:
-    def __init__(self, character_manager):
+    def __init__(self, character_manager, role):
         self.character_manager = character_manager
+        self.role = role
         self.action_phase = ActionPhase(self.character_manager)
-        self.ability_phase_1 = AbilityPhase1(self.character_manager)
-        self.ability_phase_2 = AbilityPhase2(self.character_manager)
         self.event_phase = EventPhase(self.character_manager)
         self.night_phase = NightPhase(self.character_manager)
         self.cycle_end_phase = CycleEnd(self.character_manager)
+        self.ability_phase_1 = None
+        self.ability_phase_2 = None
+
+        if self.role == "偵探":
+            self.ability_phase_1 = PlayerDetectiveAbilityPhase(self.character_manager, self, self.scriptwriter)
+        else:
+            self.ability_phase_1 = AiDetectiveAbilityPhase(self.character_manager, self, self.scriptwriter)
+        
+        if self.role == "劇本家":
+            self.ability_phase_2 = PlayerScriptwriterAbilityPhase(self.character_manager, self, self.scriptwriter)
+        else:
+            self.ability_phase_2 = AiScriptwriterAbilityPhase(self.character_manager, self, self.scriptwriter)
 
     def run(self):
         # 每個回合依序啟用各個階段
         self.action_phase.execute()
-        self.ability_phase_1.execute()
-        self.ability_phase_2.execute()
+        if self.ability_phase_1:
+            self.ability_phase_1.start()
+        if self.ability_phase_2:
+            self.ability_phase_2.start()
         self.event_phase.execute()
         self.night_phase.execute()
 
