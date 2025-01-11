@@ -1,10 +1,10 @@
-
 # ability_phase_1.py
 
 class AbilityPhase1:
-    def __init__(self, character_manager, game):
+    def __init__(self, character_manager, game, scriptwriter):
         self.character_manager = character_manager
         self.game = game
+        self.scriptwriter = scriptwriter
         self.active_abilities = []
 
     def check_abilities(self):
@@ -18,7 +18,7 @@ class AbilityPhase1:
 
     def can_use_ability(self, character, ability):
         # 判斷角色的能力是否可以啟用
-        if ability['trigger'](character) and not character.ability_used and character.friendship >= ability['friendship_cost']:
+        if ability['trigger'](character) and not character.friendly_ability_usage[ability['name']]:
             if ability.get('target_required', False):
                 for target in self.character_manager.get_all_characters():
                     if ability['target_condition'](target, character):
@@ -40,13 +40,22 @@ class AbilityPhase1:
                 valid_targets = [target for target in self.character_manager.get_all_characters() if ability['target_condition'](target, character)]
                 if valid_targets:
                     target = self.choose_target(valid_targets)
-                    ability['effect'](target)
+                    if self.ask_scriptwriter_for_approval(character, ability, target):
+                        ability['effect'](target)
+                        character.friendly_ability_usage[ability['name']] = True
+                        print(f"{character.name} 使用了能力：{ability['name']} 對 {target.name}")
+                    else:
+                        print(f"劇本家否決了 {character.name} 的能力：{ability['name']}")
                 else:
                     print("沒有有效的目標")
                     return
             else:
-                ability['effect'](self.game)
-            character.ability_used = True
+                if self.ask_scriptwriter_for_approval(character, ability):
+                    ability['effect'](self.game)
+                    character.friendly_ability_usage[ability['name']] = True
+                    print(f"{character.name} 使用了能力：{ability['name']}")
+                else:
+                    print(f"劇本家否決了 {character.name} 的能力：{ability['name']}")
             self.check_abilities()
         else:
             print("該角色的能力無法啟用")
@@ -58,6 +67,14 @@ class AbilityPhase1:
             print(f"{i + 1}. {target.name}")
         choice = int(input("選擇目標編號: ")) - 1
         return valid_targets[choice]
+
+    def ask_scriptwriter_for_approval(self, character, ability, target=None):
+        # 詢問劇本家是否允許使用能力
+        print(f"偵探希望使用 {character.name} 的能力：{ability['name']}")
+        if target:
+            print(f"目標角色：{target.name}")
+        approval = input("劇本家是否允許（yes/no）？: ")
+        return approval.lower() == 'yes'
 
     def start(self):
         self.check_abilities()
