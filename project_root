@@ -10,6 +10,8 @@ project_root/
 ├── game_phases/
 │   ├── action_phase.py
 │   ├── event_phase.py
+│   ├── ability_phase_1.py
+│   ├── ability_phase_2.py 
 │   ├── night_phase.py
 │   ├── cycle_end.py
 │   └── final_battle.py
