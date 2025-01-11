@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
-from game_phase.night_phase import NightPhase
+from game_phases.night_phase import NightPhase
 from common.character import CharacterManager
 from game import Player  # 確保正確導入 Player 類
 
