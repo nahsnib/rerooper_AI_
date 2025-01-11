@@ -69,19 +69,19 @@ class AbilityPhase1:
         return valid_targets[choice]
 
     def ask_scriptwriter_for_approval(self, character, ability, target=None):
-        # 詢問劇本家是否允許使用能力
+        # 自動決策是否允許使用能力
         identity = self.scriptwriter.get_identity(character)
         if '友好無效' in identity.attribute:
             print("必須拒絕此友好能力啟用")
-            input("點選確定繼續...")
             return False
         elif '友好無視' in identity.attribute:
             print("是否要拒絕此友好能力的啟用？")
-            approval = input("劇本家是否允許（yes/no）？: ")
-            return approval.lower() == 'yes'
+            # AI 自動決策邏輯
+            # 假設 AI 根據某些條件決定是否允許
+            allow_use = self.scriptwriter.decide_allow_use(character, ability)
+            return allow_use
         else:
             print("必須接受此友好能力啟用")
-            input("點選確定繼續...")
             return True
 
     def start(self):
