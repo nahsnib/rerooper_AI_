@@ -1,6 +1,6 @@
-# ability_phase_1.py
+# ai_detective_ability_phase.py
 
-class AbilityPhase1:
+class AiDetectiveAbilityPhase:
     def __init__(self, character_manager, game, scriptwriter):
         self.character_manager = character_manager
         self.game = game
@@ -62,55 +62,20 @@ class AbilityPhase1:
 
     def choose_target(self, valid_targets):
         # 選擇目標
-        print("可選目標:")
-        for i, target in enumerate(valid_targets):
-            print(f"{i + 1}. {target.name}")
-        choice = int(input("選擇目標編號: ")) - 1
-        return valid_targets[choice]
+        return valid_targets[0]  # AI 隨機選擇第一個目標
 
     def ask_scriptwriter_for_approval(self, character, ability, target=None):
-        # 自動決策是否允許使用能力
+        # AI 根據設定自動決策是否允許使用能力
         identity = self.scriptwriter.get_identity(character)
         if '友好無效' in identity.attribute:
-            print("必須拒絕此友好能力啟用")
             return False
         elif '友好無視' in identity.attribute:
-            print("是否要拒絕此友好能力的啟用？")
-            # AI 自動決策邏輯
-            # 假設 AI 根據某些條件決定是否允許
-            allow_use = self.scriptwriter.decide_allow_use(character, ability)
-            return allow_use
+            return self.scriptwriter.decide_allow_use(character, ability)
         else:
-            print("必須接受此友好能力啟用")
             return True
 
     def start(self):
         self.check_abilities()
-        while True:
-            choice = input("選擇要啟用的角色能力或輸入 'end' 結束階段: ")
-            if choice == 'end':
-                break
-            else:
-                selected_character = self.get_character_by_name(choice)
-                if selected_character:
-                    self.choose_ability(selected_character)
-                else:
-                    print("無效的選擇")
-
-    def get_character_by_name(self, name):
-        for character in self.character_manager.get_all_characters():
-            if character.name == name:
-                return character
-        return None
-
-    def choose_ability(self, character):
-        # 選擇角色的能力
-        valid_abilities = [ability for ability in character.friendly_abilities if self.can_use_ability(character, ability)]
-        if valid_abilities:
-            print(f"{character.name} 的可用能力:")
-            for i, ability in enumerate(valid_abilities):
-                print(f"{i + 1}. {ability['name']}")
-            choice = int(input("選擇能力編號: ")) - 1
-            self.execute_ability(character, valid_abilities[choice])
-        else:
-            print("該角色沒有可用的能力")
+        while self.active_abilities:
+            character, ability = self.active_abilities.pop(0)
+            self.execute_ability(character, ability)
