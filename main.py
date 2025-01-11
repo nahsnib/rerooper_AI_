@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import messagebox
 from game_phase.night_phase import NightPhase
 from common.character import CharacterManager
-from game import Player
+from game import Player  # 確保正確導入 Player 類
 
 class Game:
     def __init__(self, root):
