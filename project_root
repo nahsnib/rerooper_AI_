@@ -1,5 +1,6 @@
 project_root/
 │
+├── game.py
 ├── main.py
 ├── database/
 │   ├── RuleTable.py
