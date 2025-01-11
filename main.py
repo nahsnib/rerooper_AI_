@@ -1,8 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
 from game_phase.action_phase import ActionPhase
-from game_phase.ability_phase_1 import AbilityPhase1
-from game_phase.ability_phase_2 import AbilityPhase2
 from game_phase.event_phase import EventPhase
 from game_phase.night_phase import NightPhase
 from scriptwriter.gameset import ScriptEditor
@@ -32,7 +30,7 @@ class Game:
         detective_button = tk.Button(self.role_window, text="偵探", command=lambda: self.set_role("偵探"))
         detective_button.pack(pady=5)
         
-        scriptwriter_button = tk.Button(self.role_window, text="劇本家（未實現）", state=tk.DISABLED)
+        scriptwriter_button = tk.Button(self.role_window, text="劇本家", command=lambda: self.set_role("劇本家"))
         scriptwriter_button.pack(pady=5)
 
     def set_role(self, role):
@@ -68,7 +66,7 @@ class Game:
         self.show_game_areas()
         
         # 初始化並運行遊戲循環
-        self.game_loop = GameLoop(self.character_manager)
+        self.game_loop = GameLoop(self.character_manager, self.role)
         self.game_loop.run()
 
     def show_game_areas(self):
