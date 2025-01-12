@@ -1,4 +1,5 @@
-# player_detective_ability_phase.py
+import tkinter as tk
+from tkinter import messagebox
 
 class PlayerDetectiveAbilityPhase:
     def __init__(self, character_manager, game, scriptwriter):
@@ -114,3 +115,62 @@ class PlayerDetectiveAbilityPhase:
             self.execute_ability(character, valid_abilities[choice])
         else:
             print("該角色沒有可用的能力")
+
+# PlayerDetectiveAbilityPhase GUI 的簡單範例
+class DetectiveAbilityGUI:
+    def __init__(self, root, phase):
+        self.root = root
+        self.phase = phase
+        self.create_widgets()
+
+    def create_widgets(self):
+        self.label = tk.Label(self.root, text="選擇要啟用的角色能力")
+        self.label.pack()
+
+        self.character_listbox = tk.Listbox(self.root)
+        self.character_listbox.pack()
+        self.update_character_list()
+
+        self.ability_listbox = tk.Listbox(self.root)
+        self.ability_listbox.pack()
+
+        self.character_listbox.bind('<<ListboxSelect>>', self.on_character_select)
+
+        self.confirm_button = tk.Button(self.root, text="確認", command=self.confirm_selection)
+        self.confirm_button.pack()
+
+    def update_character_list(self):
+        self.character_listbox.delete(0, tk.END)
+        for character, ability in self.phase.active_abilities:
+            self.character_listbox.insert(tk.END, character.name)
+
+    def on_character_select(self, event):
+        selected_index = self.character_listbox.curselection()
+        if selected_index:
+            character_name = self.character_listbox.get(selected_index)
+            character = self.phase.get_character_by_name(character_name)
+            self.update_ability_list(character)
+
+    def update_ability_list(self, character):
+        self.ability_listbox.delete(0, tk.END)
+        valid_abilities = [ability for ability in character.friendly_abilities if self.phase.can_use_ability(character, ability)]
+        for ability in valid_abilities:
+            self.ability_listbox.insert(tk.END, ability['name'])
+
+    def confirm_selection(self):
+        selected_character_index = self.character_listbox.curselection()
+        selected_ability_index = self.ability_listbox.curselection()
+        if selected_character_index and selected_ability_index:
+            character_name = self.character_listbox.get(selected_character_index)
+            ability_name = self.ability_listbox.get(selected_ability_index)
+            character = self.phase.get_character_by_name(character_name)
+            ability = next(ability for ability in character.friendly_abilities if ability['name'] == ability_name)
+            self.phase.execute_ability(character, ability)
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    phase = PlayerDetectiveAbilityPhase(character_manager, game, scriptwriter)
+    phase.check_abilities()
+
+    app = DetectiveAbilityGUI(root, phase)
+    root.mainloop()
