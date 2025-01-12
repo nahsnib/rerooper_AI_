@@ -3,8 +3,9 @@ from tkinter import ttk
 from database.character_database import load_character_database
 
 class Character:
-    def __init__(self, name, anxiety_threshold, initial_location, forbidden_area, attribute, friendly_abilities=None, role_abilities=None, special_ability=None):
+    def __init__(self, id, name, anxiety_threshold, initial_location, forbidden_area, attribute, friendly_abilities=None, role_abilities=None, special_ability=None):
         # 固定資訊
+        self.id = id  # 角色編號
         self.name = name
         self.anxiety_threshold = anxiety_threshold
         self.initial_location = initial_location
@@ -135,13 +136,13 @@ class CharacterManager(tk.Frame):
     def load_characters(self):
         characters_data = load_character_database()
         for char_data in characters_data:
-            character = Character(**char_data)
+            character = Character(**char_data.__dict__)  # 使用角色的字典來初始化
             self.characters.append(character)
 
     def update_listbox(self):
         self.character_listbox.delete(0, tk.END)
         for character in self.characters:
-            self.character_listbox.insert(tk.END, character.name)
+            self.character_listbox.insert(tk.END, f"{character.id}: {character.name}")
 
     def on_character_select(self, event):
         selection = self.character_listbox.curselection()
