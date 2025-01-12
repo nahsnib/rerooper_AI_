@@ -5,7 +5,7 @@ from game_phases.player_detective.player_night_phase import PlayerNightPhase
 from game_phases.player_detective.player_cycle_end import PlayerCycleEnd
 from scriptwriter.ai_gameset import AIGameSet
 from common.character import CharacterManager
-from common.board import Area
+from common.board import GameBoard
 
 class Player:
     def __init__(self, role):
