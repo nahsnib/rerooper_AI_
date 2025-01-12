@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
-from common.board import Board
+from common.board import Area
 from scriptwriter.ai_gameset import AIGameSet
 from game import GameLoop, Player
 from common.character import CharacterManager
