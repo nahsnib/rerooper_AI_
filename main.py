@@ -1,12 +1,10 @@
 import tkinter as tk
 from tkinter import messagebox
-from game_phase.action_phase import ActionPhase
-from game_phase.event_phase import EventPhase
-from game_phase.night_phase import NightPhase
-from scriptwriter.gameset import ScriptEditor
+from common.board import Board
+from scriptwriter.ai_gameset import AIGameSet
+from game import GameLoop, Player
 from common.character import CharacterManager
-from game import Player, GameLoop
-from game_phase.cycle_end import CycleEnd
+
 
 class Game:
     def __init__(self, root):
@@ -30,7 +28,7 @@ class Game:
         detective_button = tk.Button(self.role_window, text="偵探", command=lambda: self.set_role("偵探"))
         detective_button.pack(pady=5)
         
-        scriptwriter_button = tk.Button(self.role_window, text="劇本家", command=lambda: self.set_role("劇本家"))
+        scriptwriter_button = tk.Button(self.role_window, text="劇本家（目前不可用）", state=tk.DISABLED)
         scriptwriter_button.pack(pady=5)
 
     def set_role(self, role):
@@ -38,45 +36,39 @@ class Game:
         self.role_window.destroy()
         self.show_message(f"您選擇了角色：{role}")
 
-        # 初始化玩家
+        # 無論選擇什麼角色，都當成玩家想扮演偵探
+        self.role = "偵探"
         self.player = Player(self.role)
-        
-        # 如果玩家選擇劇本家，進行劇本編寫
-        if self.role == "劇本家":
-            self.setup_script()
-        else:
-            # 如果玩家選擇偵探，直接開始遊戲
-            self.start_game()
+
+        # 設置遊戲版圖
+        self.setup_board()
+
+        # 啟用 AI 劇本家設置
+        self.setup_ai_scriptwriter()
+
+        # 開始遊戲
+        self.start_game()
 
     def show_message(self, message):
         messagebox.showinfo("提示", message)
 
-    def setup_script(self):
-        self.show_message("劇本家正在設置劇本...")
-        # 使用 ScriptEditor 模組進行劇本設置
-        self.script_editor = ScriptEditor()
-        self.script_editor.construct_scenario()
+    def setup_board(self):
+        self.show_message("設置遊戲版圖...")
+        self.board = Board()
+        self.board.setup()
+
+    def setup_ai_scriptwriter(self):
+        self.show_message("AI 劇本家正在設置劇本...")
+        ai_gameset = AIGameSet()
+        ai_gameset.construct_scenario()
         self.show_message("劇本設置完成！")
-        # 劇本設置完成後開始遊戲
-        self.start_game()
 
     def start_game(self):
         self.show_message("遊戲開始！")
-        # 展示遊戲地區等要素
-        self.show_game_areas()
-        
         # 初始化並運行遊戲循環
         self.game_loop = GameLoop(self.character_manager, self.role)
         self.game_loop.run()
 
-    def show_game_areas(self):
-        self.area_window = tk.Toplevel(self.root)
-        self.area_window.title("遊戲地區")
-        
-        areas = ["學校", "都市", "神社", "醫院"]
-        for area in areas:
-            label = tk.Label(self.area_window, text=area)
-            label.pack(pady=5)
 
 if __name__ == "__main__":
     root = tk.Tk()
