@@ -1,3 +1,6 @@
+我想我們需要重新整理一下架構：
+我先貼出我預想中的Project_root，並且解釋之，請你評論這個架構是否完善。
+
 project_root/
 │
 ├── game.py
@@ -6,15 +9,26 @@ project_root/
 │   ├── RuleTable.py
 │   └── character_database.py
 ├── scriptwriter/
-│   ├── gameset.py
+│   ├── ai_gameset.py
+│   ├── Player_gameset.py
 ├── game_phases/
-│   ├── action_phase.py
-│   ├── event_phase.py
-│   ├── ability_phase_1.py
-│   ├── ability_phase_2.py 
-│   ├── night_phase.py
-│   ├── cycle_end.py
-│   └── final_battle.py
+│   ├──  player_detective/
+│   │   ├── player_detective_action_phase.py
+│   │   ├── ai_event_phase.py
+│   │   ├── player_detective_ability_phase.py
+│   │   ├── ai_scriptwriter_ability_phase.py
+│   │   ├── ai_night_phase.py
+│   │   ├── ai_cycle_end.py
+│   │   └── ai_final_battle.py
+│   ├──  ai_detective/
+│   │   ├── player_scriptwriter/
+│   │   ├── ai_detective_action_phase.py
+│   │   ├── player_event_phase.py
+│   │   ├── ai_detective_ability_phase.py
+│   │   ├── player_scriptwriter_ability_phase.py
+│   │   ├── player_night_phase.py
+│   │   ├── player_cycle_end.py
+│   └────── player_final_battle.py
 ├── ai/
 │   ├── scriptwriter_ai.py
 │   ├── detective_ai.py
