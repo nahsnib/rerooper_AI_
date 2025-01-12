@@ -1,9 +1,13 @@
 # game.py
 
-from player_detective_ability_phase import PlayerDetectiveAbilityPhase
-from ai_detective_ability_phase import AiDetectiveAbilityPhase
-from player_scriptwriter_ability_phase import PlayerScriptwriterAbilityPhase
-from ai_scriptwriter_ability_phase import AiScriptwriterAbilityPhase
+from game_phases.player_detective.player_detective_action_phase import PlayerDetectiveActionPhase
+from game_phases.player_detective.player_detective_ability_phase import PlayerDetectiveAbilityPhase
+from game_phases.player_detective.player_event_phase import PlayerEventPhase
+from game_phases.player_detective.player_night_phase import PlayerNightPhase
+from game_phases.player_detective.player_cycle_end import PlayerCycleEnd
+from scriptwriter.ai_gameset import AIGameSet
+from common.character import CharacterManager
+from common.board import Board
 
 class Player:
     def __init__(self, role):
@@ -26,36 +30,35 @@ class GameLoop:
     def __init__(self, character_manager, role):
         self.character_manager = character_manager
         self.role = role
-        self.action_phase = ActionPhase(self.character_manager)
-        self.event_phase = EventPhase(self.character_manager)
-        self.night_phase = NightPhase(self.character_manager)
-        self.cycle_end_phase = CycleEnd(self.character_manager)
-        self.ability_phase_1 = None
-        self.ability_phase_2 = None
+        self.action_phase = None
+        self.ability_phase = None
+        self.event_phase = None
+        self.night_phase = None
+        self.cycle_end_phase = None
+        self.setup_phases()
 
+    def setup_phases(self):
         if self.role == "偵探":
-            self.ability_phase_1 = PlayerDetectiveAbilityPhase(self.character_manager, self, self.scriptwriter)
-        else:
-            self.ability_phase_1 = AiDetectiveAbilityPhase(self.character_manager, self, self.scriptwriter)
-        
-        if self.role == "劇本家":
-            self.ability_phase_2 = PlayerScriptwriterAbilityPhase(self.character_manager, self, self.scriptwriter)
-        else:
-            self.ability_phase_2 = AiScriptwriterAbilityPhase(self.character_manager, self, self.scriptwriter)
+            self.action_phase = PlayerDetectiveActionPhase(self.character_manager)
+            self.ability_phase = PlayerDetectiveAbilityPhase(self.character_manager, self)
+            self.event_phase = PlayerEventPhase(self.character_manager)
+            self.night_phase = PlayerNightPhase(self.character_manager)
+            self.cycle_end_phase = PlayerCycleEnd(self.character_manager)
+        elif self.role == "劇本家":
+            # 將來可以在這裡添加 AI 劇本家的相應階段
+            pass
 
     def run(self):
-        # 每個回合依序啟用各個階段
-        self.action_phase.execute()
-        if self.ability_phase_1:
-            self.ability_phase_1.start()
-        if self.ability_phase_2:
-            self.ability_phase_2.start()
-        self.event_phase.execute()
-        self.night_phase.execute()
+        while True:
+            # 每個回合依序啟用各個階段
+            self.action_phase.execute()
+            self.ability_phase.start()
+            self.event_phase.execute()
+            self.night_phase.execute()
 
-        # 判斷是否需要進入cycle_end階段
-        if self.night_phase.is_last_day() or self.scriptwriter_triggered_end_condition():
-            self.cycle_end()
+            # 判斷是否需要進入 cycle_end 階段
+            if self.night_phase.is_last_day() or self.scriptwriter_triggered_end_condition():
+                self.cycle_end()
 
     def cycle_end(self):
         result = self.cycle_end_phase.execute()
@@ -70,14 +73,14 @@ class GameLoop:
 
     def start_final_battle(self):
         self.end_game("進入最後決戰！")
-        # 在這裡調用final_battle.py的相關邏輯
+        # 在這裡調用 final_battle.py 的相關邏輯
         # self.final_battle = FinalBattle(self.character_manager)
         # self.final_battle.execute()
         print("遊戲結束，進行最後決戰（未實現）")
 
     def ask_detective_for_final_battle(self):
-        response = messagebox.askyesno("最後決戰", "劇本家觸發了勝利條件，你要進入最後決戰嗎？")
-        if response:
+        response = input("劇本家觸發了勝利條件，你要進入最後決戰嗎？（yes/no）: ")
+        if response.lower() == 'yes':
             self.start_final_battle()
         else:
             self.cycle_end_phase.decrement_cycles()
