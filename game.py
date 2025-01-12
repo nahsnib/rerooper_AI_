@@ -24,10 +24,13 @@ class Player:
         print("劇本家行動：設置情節")
 
 class GameLoop:
-    def __init__(self, character_manager, role):
+    def __init__(self, character_manager, role, total_days, scheduled_events):
         self.character_manager = character_manager
         self.role = role
         self.day_counter = 1  # 初始化日期計數器
+        self.remaining_cycles = 5  # 初始化剩餘輪迴數
+        self.total_days = total_days
+        self.scheduled_events = scheduled_events
         self.action_phase = None
         self.ability_phase = None
         self.event_phase = None
@@ -41,7 +44,7 @@ class GameLoop:
             self.ability_phase = PlayerDetectiveAbilityPhase(self.character_manager, self)
             self.event_phase = PlayerEventPhase(self.character_manager)
             self.night_phase = PlayerNightPhase(self.character_manager, self)
-            self.cycle_end_phase = PlayerCycleEnd(self.character_manager)
+            self.cycle_end_phase = PlayerCycleEnd(self.character_manager, self)
         elif self.role == "劇本家":
             # 將來可以在這裡添加 AI 劇本家的相應階段
             pass
@@ -58,8 +61,7 @@ class GameLoop:
             if self.night_phase.is_last_day() or self.scriptwriter_triggered_end_condition():
                 self.cycle_end()
             else:
-                self.day_counter += 1  # 增量日期計數器
-                print(f"進入第 {self.day_counter} 天")
+                self.increment_day()
 
     def cycle_end(self):
         result = self.cycle_end_phase.execute()
@@ -67,10 +69,7 @@ class GameLoop:
         if result == "detective_win":
             self.end_game("偵探勝利！")
         elif result == "scriptwriter_win":
-            if self.cycle_end_phase.remaining_cycles() == 0:
-                self.start_final_battle()
-            else:
-                self.ask_detective_for_final_battle()
+            self.start_final_battle()
 
     def start_final_battle(self):
         self.end_game("進入最後決戰！")
@@ -79,18 +78,19 @@ class GameLoop:
         # self.final_battle.execute()
         print("遊戲結束，進行最後決戰（未實現）")
 
-    def ask_detective_for_final_battle(self):
-        response = input("劇本家觸發了勝利條件，你要進入最後決戰嗎？（yes/no）: ")
-        if response.lower() == 'yes':
-            self.start_final_battle()
-        else:
-            self.cycle_end_phase.decrement_cycles()
-            print("輪迴數減少，繼續遊戲")
-            self.run()
-
     def end_game(self, message):
         print(message)
 
     def scriptwriter_triggered_end_condition(self):
         # 判斷劇本家是否觸發了某些條件
         return False
+
+    def increment_day(self):
+        self.day_counter += 1  # 增量日期計數器
+        print(f"進入第 {self.day_counter} 天")
+
+    def decrement_cycles(self):
+        self.remaining_cycles -= 1
+
+    def get_scheduled_events(self):
+        return self.scheduled_events
