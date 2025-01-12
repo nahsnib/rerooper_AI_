@@ -1,3 +1,8 @@
+import tkinter as tk
+from tkinter import ttk
+from datetime import datetime
+from game import GameLoop
+
 class Area:
     def __init__(self, id, name):
         self.id = id  # 新增的編號屬性
@@ -47,3 +52,73 @@ def display_all_areas():
 
 def get_area_by_id(area_id):
     return areas.get(area_id, None)
+
+class GameBoard:
+    def __init__(self, root, game):
+        self.root = root
+        self.game = game
+        self.create_widgets()
+
+    def create_widgets(self):
+        self.frame = tk.Frame(self.root)
+        self.frame.pack(padx=10, pady=10)
+
+        # 剩餘輪迴數量
+        tk.Label(self.frame, text="剩餘輪迴數量:").grid(row=0, column=0, sticky="w")
+        self.remaining_cycles_label = tk.Label(self.frame, text=str(self.game.remaining_cycles))
+        self.remaining_cycles_label.grid(row=0, column=1, sticky="w")
+
+        # 預定的總日期
+        tk.Label(self.frame, text="預定的總日期:").grid(row=1, column=0, sticky="w")
+        self.total_days_label = tk.Label(self.frame, text=str(self.game.total_days))
+        self.total_days_label.grid(row=1, column=1, sticky="w")
+
+        # 今天的日期
+        tk.Label(self.frame, text="今天的日期:").grid(row=2, column=0, sticky="w")
+        self.current_day_label = tk.Label(self.frame, text=str(self.game.day_counter))
+        self.current_day_label.grid(row=2, column=1, sticky="w")
+
+        # 安排事件的日期和名稱
+        tk.Label(self.frame, text="安排事件的日期和名稱:").grid(row=3, column=0, sticky="w")
+        self.events_frame = tk.Frame(self.frame)
+        self.events_frame.grid(row=4, column=0, columnspan=2, sticky="w")
+
+        self.update_events()
+
+    def update_events(self):
+        for widget in self.events_frame.winfo_children():
+            widget.destroy()
+
+        events = self.game.get_scheduled_events()
+        for day, event_name in events.items():
+            tk.Label(self.events_frame, text=f"{day}: {event_name}").pack(anchor="w")
+
+    def update(self):
+        self.remaining_cycles_label.config(text=str(self.game.remaining_cycles))
+        self.total_days_label.config(text=str(self.game.total_days))
+        self.current_day_label.config(text=str(self.game.day_counter))
+        self.update_events()
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    root.title("遊戲版面")
+
+    character_manager = CharacterManager()
+    role = "偵探"
+    total_days = 30
+    scheduled_events = {
+        3: "事件A",
+        7: "事件B",
+        15: "事件C"
+    }
+
+    game = GameLoop(character_manager, role, total_days, scheduled_events)
+    game_board = GameBoard(root, game)
+
+    def update_game_board():
+        game.increment_day()
+        game_board.update()
+        root.after(1000, update_game_board)
+
+    root.after(1000, update_game_board)
+    root.mainloop()
