@@ -1,5 +1,3 @@
-# game.py
-
 from game_phases.player_detective.player_detective_action_phase import PlayerDetectiveActionPhase
 from game_phases.player_detective.player_detective_ability_phase import PlayerDetectiveAbilityPhase
 from game_phases.player_detective.player_event_phase import PlayerEventPhase
@@ -25,11 +23,11 @@ class Player:
     def scriptwriter_action(self):
         print("劇本家行動：設置情節")
 
-
 class GameLoop:
     def __init__(self, character_manager, role):
         self.character_manager = character_manager
         self.role = role
+        self.day_counter = 1  # 初始化日期計數器
         self.action_phase = None
         self.ability_phase = None
         self.event_phase = None
@@ -42,7 +40,7 @@ class GameLoop:
             self.action_phase = PlayerDetectiveActionPhase(self.character_manager)
             self.ability_phase = PlayerDetectiveAbilityPhase(self.character_manager, self)
             self.event_phase = PlayerEventPhase(self.character_manager)
-            self.night_phase = PlayerNightPhase(self.character_manager)
+            self.night_phase = PlayerNightPhase(self.character_manager, self)
             self.cycle_end_phase = PlayerCycleEnd(self.character_manager)
         elif self.role == "劇本家":
             # 將來可以在這裡添加 AI 劇本家的相應階段
@@ -59,6 +57,9 @@ class GameLoop:
             # 判斷是否需要進入 cycle_end 階段
             if self.night_phase.is_last_day() or self.scriptwriter_triggered_end_condition():
                 self.cycle_end()
+            else:
+                self.day_counter += 1  # 增量日期計數器
+                print(f"進入第 {self.day_counter} 天")
 
     def cycle_end(self):
         result = self.cycle_end_phase.execute()
