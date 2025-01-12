@@ -16,7 +16,7 @@ project_root/
 │   │   ├── ai_scriptwriter_ability_phase.py
 │   │   ├── ai_night_phase.py
 │   │   ├── ai_cycle_end.py
-│   │   └── ai_final_battle.py
+│   │   └── player_final_battle.py
 │   ├──  ai_detective/
 │   │   ├── player_scriptwriter/
 │   │   ├── ai_detective_action_phase.py
@@ -25,7 +25,7 @@ project_root/
 │   │   ├── player_scriptwriter_ability_phase.py
 │   │   ├── player_night_phase.py
 │   │   ├── player_cycle_end.py
-│   └────── player_final_battle.py
+│   └────── ai_final_battle.py
 ├── ai/
 │   ├── scriptwriter_ai.py
 │   ├── detective_ai.py
