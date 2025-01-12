@@ -18,7 +18,6 @@ project_root/
 │   │   ├── ai_cycle_end.py
 │   │   └── player_final_battle.py
 │   ├──  ai_detective/
-│   │   ├── player_scriptwriter/
 │   │   ├── ai_detective_action_phase.py
 │   │   ├── player_event_phase.py
 │   │   ├── ai_detective_ability_phase.py
