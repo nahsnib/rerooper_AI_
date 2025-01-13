@@ -10,8 +10,11 @@ if __name__ == "__main__":
 
     character_manager = CharacterManager()
     gameset = AIGameSet(character_manager)
-    total_days = gameset.get_total_days()
-    scheduled_events = gameset.get_scheduled_events()
+
+    # 獲取公開信息
+    public_info = gameset.get_public_info()
+    total_days = public_info["total_days"]
+    scheduled_events = public_info["scheduled_events"]
 
     game = GameLoop(character_manager, total_days, scheduled_events)
     game_board = GameBoard(root, game)
