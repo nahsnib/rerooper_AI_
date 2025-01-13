@@ -35,4 +35,5 @@ project_root/
     ├── character.py
     ├── action.py
     ├── player.py
+    ├── secret_rule.py
     └── board.py
