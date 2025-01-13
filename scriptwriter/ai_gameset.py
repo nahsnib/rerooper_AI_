@@ -1,93 +1,107 @@
-# scriptwriter/gameset.py
-
 import random
-from database.character_database import load_character_database
-from database.RuleTable import display_all_rule_tables, get_rule_table_by_id
+from database.RuleTable import RuleTable, get_rule_table_by_id
+from database.character_database import CharacterDatabase
 
-class ScriptEditor:
-    def __init__(self):
-        self.rules = []
-        self.secret_rules = []
-        self.characters = []
-        self.rounds = 0
-        self.days_per_round = 0
-        self.events = []
-        self.current_rule_table = None  # 當前選擇的規則表
+class AIGameSet:
+    def __init__(self, character_manager):
+        self.character_manager = character_manager
+        self.rule_tables = self.load_rule_tables()
+        self.character_db = CharacterDatabase()
+        self.initialize_script()
 
-    def choose_rule_table(self):
-        # 顯示所有規則表
-        display_all_rule_tables()
-        choice = int(input("選擇規則表索引: "))
-        self.current_rule_table = get_rule_table_by_id(choice)
-        if self.current_rule_table:
-            print(f"選擇的規則表: {self.current_rule_table.name}")
-        else:
-            print("無效的規則表索引")
+    def load_rule_tables(self):
+        # 假設這裡讀取並返回所有規則表
+        return {
+            1: RuleTable(1, "Basic Tragedy X"),
+            2: RuleTable(2, "Basic Tragedy Y"),
+            3: RuleTable(3, "Basic Tragedy Z"),
+            4: RuleTable(4, "Basic Tragedy W")
+        }
 
-    def construct_scenario(self):
-        # 選擇規則表
-        self.choose_rule_table()
-
-        # 劇本家從公開規則表中選擇一張
-        self.rules = self.current_rule_table.main_rules
+    def initialize_script(self):
+        # 步驟 1: 選擇主要規則表
+        self.main_rule_table = self.select_main_rule_table()
         
-        # 劇本家秘密選擇數條規則
-        self.secret_rules = self.current_rule_table.sub_rules
+        # 步驟 2: 選擇角色
+        self.characters = self.select_characters(7, 12)
         
-        # 從角色庫中選擇角色
-        self.characters = self.select_characters()
+        # 步驟 3: 決定總日期數
+        self.total_days = self.select_total_days(4, 7)
         
-        # 依據規則賦予角色身分
-        self.assign_roles()
+        # 步驟 4: 決定事件及其發生日期
+        self.scheduled_events = self.select_events()
         
-        # 決定輪迾次數
-        self.rounds = self.choose_rounds()
+        # 步驟 5: 決定輪迴數
+        self.total_cycles = self.select_total_cycles(4, 7)
         
-        # 決定每輪回合數
-        self.days_per_round = self.choose_days_per_round()
+        # 步驟 6: 選定主規則和副規則
+        self.secret_main_rule = self.select_main_rule()
+        self.secret_sub_rules = self.select_sub_rules(2)
         
-        # 決定哪些日子會發生事件
-        self.events = self.schedule_events()
+        # 步驟 7: 秘密分配角色身分
+        self.identities = self.assign_identities()
         
-        # 決定事件犯人
-        self.assign_event_criminals()
+        # 步驟 8: 設定事件的犯人
+        self.event_criminals = self.assign_event_criminals()
 
-    def choose_public_rule(self):
-        # 示例：選擇公開規則
-        return ["公開規則1", "公開規則2"]
+    def select_main_rule_table(self):
+        # 假設我們隨機選擇一個規則表
+        rule_table_id = random.choice(list(self.rule_tables.keys()))
+        return get_rule_table_by_id(rule_table_id)
 
-    def choose_secret_rules(self):
-        # 示例：選擇秘密規則
-        return ["秘密規則1", "秘密規則2"]
+    def select_characters(self, min_characters, max_characters):
+        # 假設我們隨機選擇角色數量並從角色資料庫中選擇角色
+        num_characters = random.randint(min_characters, max_characters)
+        return self.character_db.select_characters(num_characters)
 
-    def select_characters(self):
-        # 示例：選擇角色
-        character_list = load_character_database()
-        return random.sample(character_list, 5)  # 隨機選擇五個角色
+    def select_total_days(self, min_days, max_days):
+        return random.randint(min_days, max_days)
 
-    def assign_roles(self):
-        # 示例：賦予角色身分
-        for character in self.characters:
-            character.secret_identity = random.choice(["角色A", "角色B", "角色C"])
+    def select_total_cycles(self, min_cycles, max_cycles):
+        return random.randint(min_cycles, max_cycles)
 
-    def choose_rounds(self):
-        # 示例：決定輪迴次數
-        return random.randint(2, 5)
+    def select_events(self):
+        events = random.sample(self.main_rule_table.events, k=self.total_days)
+        scheduled_events = {}
+        available_days = list(range(1, self.total_days + 1))
+        random.shuffle(available_days)
+        for event in events:
+            if available_days:
+                day = available_days.pop()
+                scheduled_events[day] = event
+        return scheduled_events
 
-    def choose_days_per_round(self):
-        # 示例：決定每輪回合數
-        return random.randint(3, 7)
+    def select_main_rule(self):
+        return random.choice(self.main_rule_table.main_rules)
 
-    def schedule_events(self):
-        # 示例：決定哪些日子會發生事件
-        return ["事件1", "事件2", "事件3"]
+    def select_sub_rules(self, num_sub_rules):
+        return random.sample(self.main_rule_table.sub_rules, k=num_sub_rules)
+
+    def assign_identities(self):
+        identities = {character: "普通人" for character in self.characters}
+        for role in self.secret_main_rule.roles:
+            character = random.choice(list(identities.keys()))
+            identities[character] = role.name
+        return identities
 
     def assign_event_criminals(self):
-        # 示例：決定事件犯人
-        for event in self.events:
-            event_criminal = random.choice(self.characters).name
-            print(f"為事件 {event} 分配犯人 {event_criminal}")
+        criminals = list(self.characters)
+        random.shuffle(criminals)
+        return {day: criminals.pop() for day in self.scheduled_events}
 
-# 遊戲初始化
-script_editor = ScriptEditor()
-script_editor.construct_scenario()
+    def get_public_info(self):
+        return {
+            "main_rule_table": self.main_rule_table.name,
+            "total_days": self.total_days,
+            "total_cycles": self.total_cycles,
+            "characters": [character.name for character in self.characters],
+            "scheduled_events": {day: event.name for day, event in self.scheduled_events.items()}
+        }
+
+    def get_secret_info(self):
+        return {
+            "secret_main_rule": self.secret_main_rule.name,
+            "secret_sub_rules": [rule.name for rule in self.secret_sub_rules],
+            "identities": self.identities,
+            "event_criminals": {day: criminal.name for day, criminal in self.event_criminals.items()}
+        }
