@@ -70,18 +70,18 @@ class Role:
 
 
 class Rule:
-    def __init__(self, id, name, description, special_conditions=None, roles=None):
+    def __init__(self, id, name, description, roles, special_effect=None):
         self.id = id  # 新增的編號屬性
         self.name = name  # 規則名稱
         self.description = description  # 規則描述
-        self.special_conditions = special_conditions if special_conditions is not None else []  # 特殊條件列表
-        self.roles = roles if roles is not None else []  # 涉及的身分列表
-
-    def add_special_condition(self, condition):
-        self.special_conditions.append(condition)
+        self.roles = roles  # 涉及的身分列表
+        self.special_effect = special_effect  # 特殊效果函數
 
     def add_role(self, role):
         self.roles.append(role)
+
+    def set_special_effect(self, effect):
+        self.special_effect = effect
 
 
 class Ability:
@@ -252,22 +252,22 @@ basic_tragedy_x.add_role(loved_one)
 
 # 新增主要規則
 additional_main_rules = [
-    Rule(1, "殺人計畫", "關鍵人物*1、殺手*1、黑幕*1。"),
-    Rule(2, "被封印之物", "黑幕*1、邪教徒*1。輪迴結束時，如果神社陰謀>1，腳本家勝利"),
-    Rule(3, "和我簽下契約吧！", "關鍵人物*1。輪迴結束時，若關鍵人物陰謀>1，腳本家勝利。關鍵人物必須為少女"),
-    Rule(4, "未來改變作戰", "邪教徒*1，時間旅行者*1。蝴蝶效應事件發生後，該輪迴結束時腳本家勝利。"),
-    Rule(5, "巨型定時炸彈", "魔女*1。輪迴結束時，若魔女的初期所在區域陰謀>1，腳本家勝利。")
+    Rule(1, "殺人計畫", "關鍵人物*1、殺手*1、黑幕*1。", roles={"關鍵人物": 1, "殺手": 1, "黑幕": 1}),
+    Rule(2, "被封印之物", "黑幕*1、邪教徒*1。輪迴結束時，如果神社陰謀>1，腳本家勝利", roles={"黑幕": 1, "邪教徒": 1}, special_effect=lambda game_state: game_state.end_loop("腳本家勝利") if game_state.shrine.conspiracy_points > 1 else None),
+    Rule(3, "和我簽下契約吧！", "關鍵人物*1。輪迴結束時，若關鍵人物陰謀>1，腳本家勝利。關鍵人物必須為少女", roles={"關鍵人物": 1}, special_effect=lambda game_state: game_state.end_loop("腳本家勝利") if game_state.key_figure.conspiracy_points > 1 else None),
+    Rule(4, "未來改變作戰", "邪教徒*1，時間旅行者*1。蝴蝶效應事件發生後，該輪迴結束時腳本家勝利。", roles={"邪教徒": 1, "時間旅行者": 1}),
+    Rule(5, "巨型定時炸彈", "魔女*1。輪迴結束時，若魔女的初期所在區域陰謀>1，腳本家勝利。", roles={"魔女": 1}, special_effect=lambda game_state: game_state.end_loop("腳本家勝利") if game_state.witch.initial_area.conspiracy_points > 1 else None)
 ]
 
 # 新增副規則
 additional_sub_rules = [
-    Rule(6, "友情小圈圈", "朋友*2，誤導者*1"),
-    Rule(7, "戀愛的模樣", "戀人*1，情人*1"),
-    Rule(8, "殺人魔潛伏", "朋友*1，殺人魔*1"),
-    Rule(9, "人心惶惶", "每輪迴一次，腳本家可以在能力階段使任意地區+1陰謀。"),
-    Rule(10, "惡性譫妄病毒", "誤導者*1。本遊戲中，普通人不安>2時，變成殺人魔。"),
-    Rule(11, "因果之線", "輪迴重啟後，前一輪迴友好>0的角色+2不安。"),
-    Rule(12, "不定因子", "因子*1")
+    Rule(6, "友情小圈圈", "朋友*2，誤導者*1", roles={"朋友": 2, "誤導者": 1}),
+    Rule(7, "戀愛的模樣", "戀人*1，情人*1", roles={"戀人": 1, "情人": 1}),
+    Rule(8, "殺人魔潛伏", "朋友*1，殺人魔*1", roles={"朋友": 1, "殺人魔": 1}),
+    Rule(9, "人心惶惶", "每輪迴一次，腳本家可以在能力階段使任意地區+1陰謀。", roles={}, special_effect=lambda game_state: game_state.add_conspiracy_points_to_any_area()),
+    Rule(10, "惡性譫妄病毒", "誤導者*1。本遊戲中，普通人不安>2時，變成殺人魔。", roles={"誤導者": 1}, special_effect=lambda game_state: game_state.transform_normal_to_murderer_if_anxiety_above(2)),
+    Rule(11, "因果之線", "輪迴重啟後，前一輪迴友好>0的角色+2不安。", roles={}, special_effect=lambda game_state: game_state.add_anxiety_to_characters_with_friendship_above(0, 2)),
+    Rule(12, "不定因子", "因子*1", roles={"因子": 1})
 ]
 
 # 將這些規則添加到 Basic Tragedy X 中
