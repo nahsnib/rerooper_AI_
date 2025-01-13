@@ -21,26 +21,26 @@ class AIGameSet:
     def initialize_script(self):
         # 步驟 1: 選擇主要規則表
         self.main_rule_table = self.select_main_rule_table()
-        
+
         # 步驟 2: 選擇角色
         self.characters = self.select_characters(7, 12)
-        
+
         # 步驟 3: 決定總日期數
         self.total_days = self.select_total_days(4, 7)
-        
+
         # 步驟 4: 決定事件及其發生日期
         self.scheduled_events = self.select_events()
-        
+
         # 步驟 5: 決定輪迴數
         self.total_cycles = self.select_total_cycles(4, 7)
-        
+
         # 步驟 6: 選定主規則和副規則
         self.secret_main_rule = self.select_main_rule()
         self.secret_sub_rules = self.select_sub_rules(2)
-        
+
         # 步驟 7: 秘密分配角色身分
         self.identities = self.assign_identities()
-        
+
         # 步驟 8: 設定事件的犯人
         self.event_criminals = self.assign_event_criminals()
 
@@ -79,20 +79,20 @@ class AIGameSet:
 
     def assign_identities(self):
         identities = {character: "普通人" for character in self.characters}
-        for role in self.secret_main_rule.roles:
-            count = role.get("count", 1)
+        for role, count in self.secret_main_rule.roles.items():
             for _ in range(count):
-                character = random.choice(list(identities.keys()))
-                identities[character] = role["name"]
-                self.characters.remove(character)
-        
-        for sub_rule in self.secret_sub_rules:
-            for role in sub_rule.roles:
-                count = role.get("count", 1)
-                for _ in range(count):
-                    character = random.choice(list(identities.keys()))
-                    identities[character] = role["name"]
+                if self.characters:
+                    character = random.choice(self.characters)
+                    identities[character] = role
                     self.characters.remove(character)
+
+        for sub_rule in self.secret_sub_rules:
+            for role, count in sub_rule.roles.items():
+                for _ in range(count):
+                    if self.characters:
+                        character = random.choice(self.characters)
+                        identities[character] = role
+                        self.characters.remove(character)
         return identities
 
     def assign_event_criminals(self):
@@ -100,8 +100,9 @@ class AIGameSet:
         random.shuffle(criminals)
         assigned_criminals = {}
         for day, event in self.scheduled_events.items():
-            criminal = criminals.pop()
-            assigned_criminals[day] = criminal
+            if criminals:
+                criminal = criminals.pop()
+                assigned_criminals[day] = criminal
         return assigned_criminals
 
     def get_public_info(self):
