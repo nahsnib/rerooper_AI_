@@ -206,6 +206,14 @@ class CharacterManager(tk.Frame):
             self.selected_ability = None
             self.character_listbox.bind("<<ListboxSelect>>", self.on_character_select)
 
+    def get_all_areas(self):
+        areas = {}
+        for character in self.characters:
+            if character.current_location not in areas:
+                areas[character.current_location] = []
+            areas[character.current_location].append(character)
+        return areas
+
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("角色管理")
