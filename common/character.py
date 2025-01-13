@@ -23,6 +23,7 @@ class Character:
         self.current_location = initial_location
         self.alive = True
         self.is_criminal = False
+        self.event_crimes = []  # 新增的事件犯人資訊
         self.secret_identity = None
         self.friendly_ability_usage = {ability['name']: False for ability in self.friendly_abilities}
         self.role_ability_usage = {ability['name']: False for ability in self.role_abilities}
@@ -34,6 +35,7 @@ class Character:
         self.current_location = self.initial_location
         self.alive = True
         self.is_criminal = False
+        self.event_crimes = []
         self.secret_identity = None
         self.reset_ability_usage()
 
@@ -49,6 +51,10 @@ class Character:
 
     def change_friendship(self, amount):
         self.friendship += amount
+
+    def add_event_crime(self, event_name):
+        self.is_criminal = True
+        self.event_crimes.append(event_name)
 
     def use_friendly_ability(self, ability_name, target=None):
         for ability in self.friendly_abilities:
@@ -111,7 +117,7 @@ class Character:
         print(f"{self.name} 的身份已公開")
 
     def __str__(self):
-        return f"Character({self.name}, Anxiety: {self.anxiety}, Conspiracy: {self.conspiracy}, Friendship: {self.friendship}, Location: {self.current_location}, Alive: {self.alive})"
+        return f"Character({self.name}, Anxiety: {self.anxiety}, Conspiracy: {self.conspiracy}, Friendship: {self.friendship}, Location: {self.current_location}, Alive: {self.alive}, Event Crimes: {self.event_crimes})"
 
 
 class CharacterManager(tk.Frame):
@@ -159,7 +165,8 @@ class CharacterManager(tk.Frame):
                        f"不安: {self.selected_character.anxiety}\n"
                        f"陰謀: {self.selected_character.conspiracy}\n"
                        f"友好: {self.selected_character.friendship}\n"
-                       f"死亡: {'是' if not self.selected_character.alive else '否'}")
+                       f"死亡: {'是' if not self.selected_character.alive else '否'}\n"
+                       f"事件犯人: {', '.join(self.selected_character.event_crimes)}")
             self.character_details.config(text=details)
 
             # 更新行動和能力
