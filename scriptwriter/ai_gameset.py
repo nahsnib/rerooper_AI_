@@ -1,6 +1,7 @@
 import random
 from database.RuleTable import RuleTable, get_rule_table_by_id
 from database.character_database import CharacterDatabase
+from common.secret_rule import SecretRule
 
 class AIGameSet:
     def __init__(self, character_manager):
@@ -42,7 +43,10 @@ class AIGameSet:
         self.identities = self.assign_identities()
 
         # 步驟 8: 設定事件的犯人
-        self.assign_event_criminals()
+        self.event_criminals = self.assign_event_criminals()
+
+        # 創建 SecretRule 實例
+        self.secret_rule = SecretRule(self.secret_main_rule, self.secret_sub_rules, self.identities, self.event_criminals)
 
     def select_main_rule_table(self):
         # 隨機選擇一個規則表
@@ -84,7 +88,6 @@ class AIGameSet:
                 if self.characters:
                     character = random.choice(self.characters)
                     identities[character] = role
-                    character.traits = self.get_role_traits(role)
                     self.characters.remove(character)
 
         for sub_rule in self.secret_sub_rules:
@@ -93,21 +96,18 @@ class AIGameSet:
                     if self.characters:
                         character = random.choice(self.characters)
                         identities[character] = role
-                        character.traits = self.get_role_traits(role)
                         self.characters.remove(character)
         return identities
-
-    def get_role_traits(self, role_name):
-        role = next(role for role in self.main_rule_table.roles if role.name == role_name)
-        return role.traits
 
     def assign_event_criminals(self):
         criminals = list(self.characters)
         random.shuffle(criminals)
+        assigned_criminals = {}
         for day, event in self.scheduled_events.items():
             if criminals:
                 criminal = criminals.pop()
-                criminal.add_event_crime(event.name)
+                assigned_criminals[day] = criminal
+        return assigned_criminals
 
     def get_public_info(self):
         return {
@@ -119,9 +119,4 @@ class AIGameSet:
         }
 
     def get_secret_info(self):
-        return {
-            "secret_main_rule": self.secret_main_rule.name,
-            "secret_sub_rules": [rule.name for rule in self.secret_sub_rules],
-            "identities": self.identities,
-            "event_criminals": {day: criminal.name for day, criminal in self.scheduled_events.items()}
-        }
+        return self.secret_rule.get_secret_info()
