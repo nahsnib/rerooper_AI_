@@ -26,7 +26,8 @@ class AiEventPhase:
 
     def check_today_event(self):
         # 檢查今天是否有事件
-        return self.game_set.get_today_event()
+        today = self.game.time_manager.current_day
+        return self.game_set.scheduled_events.get(today, None)
 
     def get_event_criminal(self, event):
         # 獲取事件犯人
