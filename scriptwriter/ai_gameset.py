@@ -42,7 +42,7 @@ class AIGameSet:
         self.identities = self.assign_identities()
 
         # 步驟 8: 設定事件的犯人
-        self.event_criminals = self.assign_event_criminals()
+        self.assign_event_criminals()
 
     def select_main_rule_table(self):
         # 隨機選擇一個規則表
@@ -104,12 +104,10 @@ class AIGameSet:
     def assign_event_criminals(self):
         criminals = list(self.characters)
         random.shuffle(criminals)
-        assigned_criminals = {}
         for day, event in self.scheduled_events.items():
             if criminals:
                 criminal = criminals.pop()
-                assigned_criminals[day] = criminal
-        return assigned_criminals
+                criminal.add_event_crime(event.name)
 
     def get_public_info(self):
         return {
@@ -125,5 +123,5 @@ class AIGameSet:
             "secret_main_rule": self.secret_main_rule.name,
             "secret_sub_rules": [rule.name for rule in self.secret_sub_rules],
             "identities": self.identities,
-            "event_criminals": {day: criminal.name for day, criminal in self.event_criminals.items()}
+            "event_criminals": {day: criminal.name for day, criminal in self.scheduled_events.items()}
         }
