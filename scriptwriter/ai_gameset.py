@@ -87,7 +87,11 @@ class AIGameSet:
     def assign_event_criminals(self):
         criminals = list(self.characters)
         random.shuffle(criminals)
-        return {day: criminals.pop() for day in self.scheduled_events}
+        assigned_criminals = {}
+        for day, event in self.scheduled_events.items():
+            criminal = criminals.pop()
+            assigned_criminals[day] = criminal
+        return assigned_criminals
 
     def get_public_info(self):
         return {
