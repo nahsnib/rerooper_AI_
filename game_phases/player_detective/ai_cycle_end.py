@@ -5,7 +5,15 @@ class AICycleEnd:
 
     def check_scriptwriter_victory_conditions(self):
         # 檢查劇本家的勝利條件是否達成
-        return self.rule_table.check_victory_conditions(self.game)
+        if self.rule_table.check_victory_conditions(self.game):
+            return True
+
+        # 檢查特殊效果
+        for rule in self.rule_table.main_rules + self.rule_table.sub_rules:
+            if rule.special_effect and rule.special_effect(self.game):
+                return True
+
+        return False
 
     def display_message(self, message):
         # 顯示訊息給玩家
@@ -38,11 +46,3 @@ class AICycleEnd:
         else:
             self.display_message("玩家以偵探身分取得遊戲勝利！")
             self.game.restart()
-
-if __name__ == "__main__":
-    # 測試用例
-    game = Game()  # 假設有一個 Game 物件
-    rule_table = RuleTable()
-
-    cycle_end = AICycleEnd(game, rule_table)
-    cycle_end.execute()
