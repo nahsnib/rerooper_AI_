@@ -156,7 +156,7 @@ murderer.add_ability(Ability(
     )
 ))
 murderer.add_ability(Ability(
-    "陰謀操控", "被動", "夜晚階段時，陰謀>3，腳本家勝利，輪迴結束",
+    "預謀殺害", "被動", "夜晚階段時，陰謀>3，腳本家勝利，輪迴結束",
     lambda character, game: (
         game.script_writer.win_cycle() if character.conspiracy_points > 3 else None
     )
@@ -174,7 +174,7 @@ mastermind.add_ability(Ability(
 cultist = Role(4, "邪教徒")
 cultist.add_trait("友好無效")
 cultist.add_ability(Ability(
-    "陰謀取消", "被動", "行動結算階段，取消此地區偵探設置的陰謀禁止卡片",
+    "無法遏止", "被動", "行動結算階段，取消此地區偵探設置的陰謀禁止卡片",
     lambda area, is_scriptwriter_view: (
         area.remove_conspiracy_ban(), 
         print(f"陰謀禁止卡片在地區 {area.name} 被取消") if is_scriptwriter_view else None
@@ -187,7 +187,7 @@ witch.add_trait("友好無效")
 time_traveler = Role(6, "時間旅行者")
 time_traveler.add_trait("無法被殺害")
 time_traveler.add_ability(Ability(
-    "友好檢查", "被動", "最後一天夜晚階段，若友好值<2，腳本家勝利，輪迴結束",
+    "拯救失敗", "被動", "最後一天夜晚階段，若友好值<2，腳本家勝利，輪迴結束",
     lambda character, game_state, is_scriptwriter_view: (
         game_state.end_loop("腳本家勝利")
         if game_state.current_day == game_state.final_day and character.friendship < 2 else None,
@@ -198,7 +198,7 @@ time_traveler.add_ability(Ability(
 # 添加次要角色
 friend = Role(7, "朋友")
 friend.add_ability(Ability(
-    "犧牲的代價", "被動", "輪迴結束死亡時，腳本家勝利並公開身分",
+    "友誼破碎", "被動", "輪迴結束死亡時，腳本家勝利並公開身分",
     lambda character, game: game.script_writer.win_cycle() if character.is_dead else None
 ))
 
@@ -213,7 +213,7 @@ misleader.add_ability(Ability(
 
 lover = Role(9, "戀人")
 lover.add_ability(Ability(
-    "不安增加", "被動", "死亡時使情人+6不安",
+    "生離死別", "被動", "死亡時使情人+6不安",
     lambda partner, is_scriptwriter_view: (
         partner.add_anxiety(6),
         print(f"情人增加 6 不安") if is_scriptwriter_view else None
@@ -222,14 +222,14 @@ lover.add_ability(Ability(
 
 loved_one = Role(10, "情人")
 loved_one.add_ability(Ability(
-    "不安增加", "被動", "死亡時使戀人+6不安",
+    "生離死別", "被動", "死亡時使戀人+6不安",
     lambda partner, is_scriptwriter_view: (
         partner.add_anxiety(6),
         print(f"戀人增加 6 不安") if is_scriptwriter_view else None
     )
 ))
 loved_one.add_ability(Ability(
-    "腳本家勝利", "被動", "夜晚階段若不安>3且陰謀值>0，腳本家勝利，輪迴結束",
+    "為愛痴狂", "被動", "夜晚階段若不安>3且陰謀值>0，腳本家勝利，輪迴結束",
     lambda character, game_state, is_scriptwriter_view: (
         game_state.end_loop("腳本家勝利")
         if character.anxiety > 3 and character.conspiracy > 0 else None,
@@ -252,8 +252,11 @@ basic_tragedy_x.add_role(loved_one)
 
 # 新增主要規則
 additional_main_rules = [
-    Rule(1, "未來改變作戰", "邪教徒*1，時間旅行者*1。蝴蝶效應事件發生後，該輪迴結束時腳本家勝利。"),
-    Rule(2, "巨型定時炸彈", "魔女*1。輪迴結束時，若魔女的初期所在區域陰謀>1，腳本家勝利。")
+    Rule(1, "殺人計畫", "關鍵人物*1、殺手*1、黑幕*1。"),
+    Rule(2, "被封印之物", "黑幕*1、邪教徒*1。輪迴結束時，如果神社陰謀>1，腳本家勝利"),
+    Rule(3, "和我簽下契約吧！", "關鍵人物*1。輪迴結束時，若關鍵人物陰謀>1，腳本家勝利。關鍵人物必須為少女"),
+    Rule(4, "未來改變作戰", "邪教徒*1，時間旅行者*1。蝴蝶效應事件發生後，該輪迴結束時腳本家勝利。"),
+    Rule(5, "巨型定時炸彈", "魔女*1。輪迴結束時，若魔女的初期所在區域陰謀>1，腳本家勝利。")
 ]
 
 # 新增副規則
