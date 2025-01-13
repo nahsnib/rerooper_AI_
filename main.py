@@ -15,9 +15,10 @@ def start_game():
     # 獲取公開信息
     public_info = gameset.get_public_info()
     total_days = public_info["total_days"]
+    total_cycles = public_info["total_cycles"]
     scheduled_events = public_info["scheduled_events"]
 
-    game = GameLoop(character_manager, total_days, scheduled_events)
+    game = GameLoop(character_manager, "偵探", total_days, total_cycles, scheduled_events)
     game_board = GameBoard(root, game)
 
     def update_game_board():
@@ -33,7 +34,3 @@ if __name__ == "__main__":
     root = tk.Tk()
     root.withdraw()  # 隱藏主窗口
     messagebox.showinfo("提示", "測試版遊戲僅提供玩家為偵探的模式")
-    root.destroy()  # 關閉主窗口
-
-    # 啟動遊戲
-    start_game()
