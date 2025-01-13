@@ -3,7 +3,7 @@ from tkinter import ttk
 from database.character_database import load_character_database
 
 class Character:
-    def __init__(self, id, name, anxiety_threshold, initial_location, forbidden_area, attribute, friendly_abilities=None, role_abilities=None, special_ability=None):
+    def __init__(self, id, name, anxiety_threshold, initial_location, forbidden_area, attribute, friendly_abilities=None, role_abilities=None, special_ability=None, traits=None):
         # 固定資訊
         self.id = id  # 角色編號
         self.name = name
@@ -14,6 +14,7 @@ class Character:
         self.special_ability = special_ability
         self.friendly_abilities = friendly_abilities or []
         self.role_abilities = role_abilities or []
+        self.traits = traits or []  # 添加的特性屬性
 
         # 浮動資訊
         self.anxiety = 0
@@ -205,14 +206,6 @@ class CharacterManager(tk.Frame):
             self.update_character_details()
             self.selected_ability = None
             self.character_listbox.bind("<<ListboxSelect>>", self.on_character_select)
-
-    def get_all_areas(self):
-        areas = {}
-        for character in self.characters:
-            if character.current_location not in areas:
-                areas[character.current_location] = []
-            areas[character.current_location].append(character)
-        return areas
 
 if __name__ == "__main__":
     root = tk.Tk()
