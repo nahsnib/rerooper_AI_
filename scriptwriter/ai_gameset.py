@@ -84,6 +84,7 @@ class AIGameSet:
                 if self.characters:
                     character = random.choice(self.characters)
                     identities[character] = role
+                    character.traits = self.get_role_traits(role)
                     self.characters.remove(character)
 
         for sub_rule in self.secret_sub_rules:
@@ -92,8 +93,13 @@ class AIGameSet:
                     if self.characters:
                         character = random.choice(self.characters)
                         identities[character] = role
+                        character.traits = self.get_role_traits(role)
                         self.characters.remove(character)
         return identities
+
+    def get_role_traits(self, role_name):
+        role = next(role for role in self.main_rule_table.roles if role.name == role_name)
+        return role.traits
 
     def assign_event_criminals(self):
         criminals = list(self.characters)
