@@ -51,9 +51,10 @@ def get_area_by_id(area_id):
     return areas.get(area_id, None)
 
 class GameBoard:
-    def __init__(self, root, game):
+    def __init__(self, root, game, character_manager):
         self.root = root
         self.game = game
+        self.character_manager = character_manager
         self.create_widgets()
 
     def create_widgets(self):
@@ -82,6 +83,11 @@ class GameBoard:
 
         self.update_events()
 
+        # 顯示地區和角色
+        self.areas_frame = tk.Frame(self.frame)
+        self.areas_frame.grid(row=5, column=0, columnspan=2, sticky="w")
+        self.update_areas()
+
     def update_events(self):
         for widget in self.events_frame.winfo_children():
             widget.destroy()
@@ -90,8 +96,29 @@ class GameBoard:
         for day, event_name in events.items():
             tk.Label(self.events_frame, text=f"{day}: {event_name}").pack(anchor="w")
 
+    def update_areas(self):
+        for widget in self.areas_frame.winfo_children():
+            widget.destroy()
+        
+        for area in self.character_manager.get_all_areas():
+            area_frame = tk.Frame(self.areas_frame)
+            area_frame.pack(fill="both", expand=True, padx=5, pady=5, anchor="w")
+            tk.Label(area_frame, text=f"{area.name} ({area.conspiracy_points} ☠)").pack(anchor="w")
+            for character in area.characters:
+                char_btn = tk.Button(
+                    area_frame, text=f"{character.name} (❤ {character.friendship}) (☹ {character.anxiety}) (☠ {character.conspiracy})",
+                    command=lambda c=character: self.on_character_click(c)
+                )
+                char_btn.pack(anchor="w")
+
+    def on_character_click(self, character):
+        # Handle character click
+        print(f"Clicked on {character.name}")
+        # Here you can add additional logic to handle character actions or abilities
+
     def update(self):
         self.remaining_cycles_label.config(text=str(self.game.remaining_cycles))
         self.total_days_label.config(text=str(self.game.total_days))
         self.current_day_label.config(text=str(self.game.day_counter))
         self.update_events()
+        self.update_areas()
