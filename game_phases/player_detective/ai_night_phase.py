@@ -49,12 +49,6 @@ class NightPhase:
         self.trigger_passive_abilities()
         self.execute_night_events()
         print("夜晚階段結束")
-        self.increment_day()
-
-    def increment_day(self):
-        # 增量日期計數器
-        self.game.day_counter += 1
-        print(f"進入第 {self.game.day_counter} 天")
 
 if __name__ == "__main__":
     # 測試用例
