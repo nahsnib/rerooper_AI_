@@ -24,11 +24,13 @@ class Player:
         print("劇本家行動：設置情節")
 
 class GameLoop:
-    def __init__(self, character_manager, role, total_days, total_cycles, scheduled_events):
+    def __init__(self, character_manager, role, total_days, scheduled_events):
         self.character_manager = character_manager
         self.role = role
+        self.day_counter = 1  # 初始化日期計數器
+        self.remaining_cycles = 5  # 初始化剩餘輪迴數
+        self.total_days = total_days
         self.scheduled_events = scheduled_events
-        self.time_manager = TimeManager(total_days, total_cycles)
         self.action_phase = None
         self.ability_phase = None
         self.event_phase = None
@@ -84,12 +86,11 @@ class GameLoop:
         return False
 
     def increment_day(self):
-        self.time_manager.increment_day()
-        print(f"進入第 {self.time_manager.current_day} 天")
+        self.day_counter += 1  # 增量日期計數器
+        print(f"進入第 {self.day_counter} 天")
 
     def decrement_cycles(self):
-        self.time_manager.remaining_cycles -= 1
-        print(f"剩餘輪迴數：{self.time_manager.remaining_cycles}")
+        self.remaining_cycles -= 1
 
     def get_scheduled_events(self):
-        return self.time_manager.get_scheduled_events(self.scheduled_events)
+        return self.scheduled_events
