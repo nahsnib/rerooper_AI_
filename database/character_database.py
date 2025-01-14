@@ -215,7 +215,7 @@ def load_character_database():
                     'trigger': lambda character: character.friendship >= 4,
                     'target_required': True,
                     'target_condition': lambda target, character: target.current_location == character.current_location,
-                    'effect': lambda target: target.die()
+                    'effect': lambda target, game: target.handle_death("友好能力 - 異世界人", game)
                 },
                 {
                     'id': 14,
