@@ -22,3 +22,8 @@ class Player:
     def use_abilities(self, board):
         # 使用能力的邏輯（根據角色的特殊能力）
         pass
+
+    def apply_special_effects(self, game):
+        # 檢查主規則和副規則的特殊效果
+        for rule in game.rule_table.main_rules + game.rule_table.sub_rules:
+            rule.apply_special_effect(game)
