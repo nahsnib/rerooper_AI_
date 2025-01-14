@@ -156,6 +156,19 @@ class Character:
 
     def __str__(self):
         return f"Character({self.name}, Anxiety: {self.anxiety}, Conspiracy: {self.conspiracy}, Friendship: {self.friendship}, Location: {self.current_location}, Alive: {self.alive}, Event Crimes: {self.event_crimes})"
+    
+    
+    def friendship_ignore(character):
+    """
+    判斷角色的友好能力是否會被無效或無視
+    :param character: 角色實例
+    :return: (bool, str) 第一個值表示友好能力是否被無效或可能被無視，第二個值是判定結果的描述
+    """
+    if '友好無效' in character.traits:
+        return (True, "友好能力無效")
+    elif '友好無視' in character.traits:
+        return (random.choice([True, False]), "友好能力可能被無視")
+    return (False, "友好能力有效")
 
 
 class CharacterManager(tk.Frame):
