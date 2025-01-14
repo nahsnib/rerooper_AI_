@@ -83,6 +83,11 @@ class Rule:
     def set_special_effect(self, effect):
         self.special_effect = effect
 
+    def apply_special_effect(self, game):
+        if self.special_effect:
+            return self.special_effect(game)
+        return False
+
 
 class Ability:
     def __init__(self, name, type, description, effect):
