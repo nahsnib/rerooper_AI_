@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from database.character_database import load_character_database
+import random
 
 class Character:
     def __init__(self, id, name, anxiety_threshold, initial_location, forbidden_area, attribute, friendly_abilities=None, role_abilities=None, special_ability=None, traits=None):
@@ -116,7 +117,6 @@ class Character:
         self.identity_revealed = True
         print(f"{self.name} 的身份已公開")
 
-    
     def handle_death(self, cause, game):
         """
         處理角色死亡的邏輯
@@ -132,14 +132,17 @@ class Character:
         # 觸發刑警的友好能力
         for character in game.character_manager.get_all_characters():
             if character.role == "刑警" and character.current_location == self.current_location:
-                if character.can_use_friendly_ability("阻止死亡"):
-                    # 詢問玩家是否要發動刑警的友好能力
-                    user_input = input(f"{character.name} 可以阻止 {self.name} 的死亡，是否發動能力？(y/n): ")
-                    if user_input.lower() == 'y':
-                        character.use_friendly_ability("阻止死亡", self)
-                        self.alive = True
-                        print(f"{character.name} 阻止了 {self.name} 的死亡")
-                        return
+                if character.can_use_ability("阻止死亡"):
+                    ignore, reason = friendship_ignore(character)
+                    print(reason)
+                    if not ignore:
+                        # 詢問玩家是否要發動刑警的友好能力
+                        user_input = input(f"{character.name} 可以阻止 {self.name} 的死亡，是否發動能力？(y/n): ")
+                        if user_input.lower() == 'y':
+                            character.use_friendly_ability("阻止死亡", self)
+                            self.alive = True
+                            print(f"{character.name} 阻止了 {self.name} 的死亡")
+                            return
 
         # 檢查是否為關鍵人物的死亡
         if self.is_key_person():
@@ -153,12 +156,10 @@ class Character:
         # 假設有一個方法來判定角色是否是關鍵人物
         return "關鍵人物" in self.traits
 
-
     def __str__(self):
         return f"Character({self.name}, Anxiety: {self.anxiety}, Conspiracy: {self.conspiracy}, Friendship: {self.friendship}, Location: {self.current_location}, Alive: {self.alive}, Event Crimes: {self.event_crimes})"
-    
-    
-    def friendship_ignore(character):
+
+def friendship_ignore(character):
     """
     判斷角色的友好能力是否會被無效或無視
     :param character: 角色實例
@@ -169,7 +170,6 @@ class Character:
     elif '友好無視' in character.traits:
         return (random.choice([True, False]), "友好能力可能被無視")
     return (False, "友好能力有效")
-
 
 class CharacterManager(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
@@ -265,7 +265,6 @@ class CharacterManager(tk.Frame):
             self.selected_ability = None
             self.character_listbox.bind("<<ListboxSelect>>", self.on_character_select)
 
-    
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("角色管理")
