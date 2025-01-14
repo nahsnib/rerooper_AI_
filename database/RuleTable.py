@@ -96,8 +96,9 @@ class Ability:
 basic_tragedy_x = RuleTable(1, "Basic Tragedy X")
 
 # 範例事件
-event1 = Event(1, "殺人事件", lambda culprit, area: [
-    character.die() for character in area.characters if character != culprit
+event1 = Event(1, "殺人事件", lambda culprit, area, game: [
+    target.handle_death("事件 - 殺人事件", game)
+    for target in [random.choice([char for char in area.characters if char != culprit])]
 ])
 event2 = Event(2, "流言蜚語", lambda culprit, area, script_writer: [
     targets[0].add_anxiety(2) and targets[1].add_conspiracy_points(1)
@@ -105,13 +106,13 @@ event2 = Event(2, "流言蜚語", lambda culprit, area, script_writer: [
 ])
 event3 = Event(3, "自殺", lambda culprit, game: culprit.handle_death("事件 - 自殺", game))
 event4 = Event(4, "醫院事件", lambda area, script_writer: [
-    character.die() if area.conspiracy_points > 0 else None
+    character.handle_death("事件 - 醫院事件", game) if area.conspiracy_points > 0 else None
     for character in area.characters
 ] + [
     script_writer.win_cycle() if area.conspiracy_points > 1 else None
 ])
-event5 = Event(5, "遠距殺人", lambda script_writer: [
-    target.die()
+event5 = Event(5, "遠距殺人", lambda script_writer, game: [
+    target.handle_death("事件 - 遠距殺人", game)
     for target in [script_writer.choose_character_with_condition(lambda char: char.conspiracy_points > 1)]
 ])
 event6 = Event(6, "失蹤", lambda culprit, area, script_writer: [
