@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
+from common.character import friendship_ignore  # 引入 friendship_ignore 函數
 
 class PlayerDetectiveAbilityPhase:
     def __init__(self, character_manager, game, scriptwriter):
@@ -41,22 +42,22 @@ class PlayerDetectiveAbilityPhase:
                 valid_targets = [target for target in self.character_manager.get_all_characters() if ability['target_condition'](target, character)]
                 if valid_targets:
                     target = self.choose_target(valid_targets)
-                    if self.ask_scriptwriter_for_approval(character, ability, target):
+                    if self.check_friendship_ignore(character):
                         ability['effect'](target)
                         character.friendly_ability_usage[ability['name']] = True
                         print(f"{character.name} 使用了能力：{ability['name']} 對 {target.name}")
                     else:
-                        print(f"劇本家否決了 {character.name} 的能力：{ability['name']}")
+                        print(f"友好能力被取消或無效：{character.name} 的能力 {ability['name']}")
                 else:
                     print("沒有有效的目標")
                     return
             else:
-                if self.ask_scriptwriter_for_approval(character, ability):
+                if self.check_friendship_ignore(character):
                     ability['effect'](self.game)
                     character.friendly_ability_usage[ability['name']] = True
                     print(f"{character.name} 使用了能力：{ability['name']}")
                 else:
-                    print(f"劇本家否決了 {character.name} 的能力：{ability['name']}")
+                    print(f"友好能力被取消或無效：{character.name} 的能力 {ability['name']}")
             self.check_abilities()
         else:
             print("該角色的能力無法啟用")
@@ -69,18 +70,11 @@ class PlayerDetectiveAbilityPhase:
         choice = int(input("選擇目標編號: ")) - 1
         return valid_targets[choice]
 
-    def ask_scriptwriter_for_approval(self, character, ability, target=None):
-        # AI 劇本家自動判定是否允許使用能力
-        if '友好無效' in character.traits:
-            print("必須拒絕此友好能力啟用")
-            return False
-        elif '友好無視' in character.traits:
-            print("是否要拒絕此友好能力的啟用？")
-            approval = random.choice([True, False])
-            return approval
-        else:
-            print("必須接受此友好能力啟用")
-            return True
+    def check_friendship_ignore(self, character):
+        # 檢查角色的友好能力是否會被無效或無視
+        ignore, reason = friendship_ignore(character)
+        print(reason)
+        return not ignore
 
     def start(self):
         self.check_abilities()
@@ -150,24 +144,4 @@ class DetectiveAbilityGUI:
 
     def update_ability_list(self, character):
         self.ability_listbox.delete(0, tk.END)
-        valid_abilities = [ability for ability in character.friendly_abilities if self.phase.can_use_ability(character, ability)]
-        for ability in valid_abilities:
-            self.ability_listbox.insert(tk.END, ability['name'])
-
-    def confirm_selection(self):
-        selected_character_index = self.character_listbox.curselection()
-        selected_ability_index = self.ability_listbox.curselection()
-        if selected_character_index and selected_ability_index:
-            character_name = self.character_listbox.get(selected_character_index)
-            ability_name = self.ability_listbox.get(selected_ability_index)
-            character = self.phase.get_character_by_name(character_name)
-            ability = next(ability for ability in character.friendly_abilities if ability['name'] == ability_name)
-            self.phase.execute_ability(character, ability)
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    phase = PlayerDetectiveAbilityPhase(character_manager, game, scriptwriter)
-    phase.check_abilities()
-
-    app = DetectiveAbilityGUI(root, phase)
-    root.mainloop()
+        valid_abilities = [ability for ability in character
