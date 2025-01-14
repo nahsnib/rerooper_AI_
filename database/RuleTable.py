@@ -103,7 +103,7 @@ event2 = Event(2, "流言蜚語", lambda culprit, area, script_writer: [
     targets[0].add_anxiety(2) and targets[1].add_conspiracy_points(1)
     for targets in [script_writer.choose_two_characters()]
 ])
-event3 = Event(3, "自殺", lambda culprit: culprit.die())
+event3 = Event(3, "自殺", lambda culprit, game: culprit.handle_death("事件 - 自殺", game))
 event4 = Event(4, "醫院事件", lambda area, script_writer: [
     character.die() if area.conspiracy_points > 0 else None
     for character in area.characters
@@ -236,7 +236,22 @@ loved_one.add_ability(Ability(
         print(f"因為 {character.name} 的條件滿足，腳本家勝利") if is_scriptwriter_view else None
     )
 ))
+murderer_role = Role(11, "殺人魔")
+murderer_role.add_ability(Ability(
+    "夜晚殺戮", "被動", "夜晚階段時，若與其他角色獨處，則殺害之",
+    lambda character, game: (
+        target.handle_death("身分能力 - 夜晚殺戮", game) if (target := character.current_area.get_random_character_except(character)) and character.current_area.is_night else None
+    )
+))
 
+factor_role = Role(12, "因子")
+factor_role.add_trait("友好無視")
+factor_role.add_ability(Ability(
+    "陰謀操控", "主動", "如果地區「都市」的陰謀數>1才能發動。同地區另外一個角色+1不安",
+    lambda character, game: [
+        target.change_anxiety(1) for target in character.current_area.characters if target != character
+    ]
+))
 # 添加角色到 Basic Tragedy X
 basic_tragedy_x.add_role(key_figure)
 basic_tragedy_x.add_role(murderer)
