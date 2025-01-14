@@ -125,9 +125,7 @@ class Character:
         """
         if not self.alive:
             return  # 角色已經死亡，無需重複處理
-        if '無法被殺害' in self.traits:
-        print(f"{self.name} 具有「無法被殺害」的特性，死亡無效")
-        return  # 死亡無效
+
         self.alive = False
         print(f"{self.name} 死亡，原因：{cause}")
 
@@ -135,12 +133,12 @@ class Character:
         for character in game.character_manager.get_all_characters():
             if character.role == "刑警" and character.current_location == self.current_location:
                 if character.can_use_ability("阻止死亡"):
-                    ignore, reason = friendship_ignore(character)
-                    print(reason)
-                    if not ignore:
-                        # 詢問玩家是否要發動刑警的友好能力
-                        user_input = input(f"{character.name} 可以阻止 {self.name} 的死亡，是否發動能力？(y/n): ")
-                        if user_input.lower() == 'y':
+                    # 詢問玩家是否要發動刑警的友好能力
+                    user_input = input(f"{character.name} 可以阻止 {self.name} 的死亡，是否發動能力？(y/n): ")
+                    if user_input.lower() == 'y':
+                        ignore, reason = friendship_ignore(character)
+                        print(reason)
+                        if not ignore:
                             character.use_friendly_ability("阻止死亡", self)
                             self.alive = True
                             print(f"{character.name} 阻止了 {self.name} 的死亡")
