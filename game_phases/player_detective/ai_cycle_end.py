@@ -8,9 +8,9 @@ class AICycleEnd:
         if self.rule_table.check_victory_conditions(self.game):
             return True
 
-        # 檢查特殊效果
+        # 檢查主規則和副規則的特殊效果
         for rule in self.rule_table.main_rules + self.rule_table.sub_rules:
-            if rule.special_effect and rule.special_effect(self.game):
+            if rule.apply_special_effect(self.game):
                 return True
 
         return False
