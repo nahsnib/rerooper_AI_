@@ -48,6 +48,10 @@ class NightPhase:
         self.reset_character_states()
         self.trigger_passive_abilities()
         self.execute_night_events()
+         for character in self.character_manager.get_all_characters():
+            if character.has_ability("拯救失敗"):
+                ability = character.get_ability("拯救失敗")
+                ability['effect'](character, self.game_state, self.game.is_scriptwriter_view)
         print("夜晚階段結束")
 
 if __name__ == "__main__":
