@@ -125,7 +125,9 @@ class Character:
         """
         if not self.alive:
             return  # 角色已經死亡，無需重複處理
-
+        if '無法被殺害' in self.traits:
+        print(f"{self.name} 具有「無法被殺害」的特性，死亡無效")
+        return  # 死亡無效
         self.alive = False
         print(f"{self.name} 死亡，原因：{cause}")
 
