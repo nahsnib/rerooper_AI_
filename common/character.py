@@ -116,6 +116,44 @@ class Character:
         self.identity_revealed = True
         print(f"{self.name} 的身份已公開")
 
+    
+    def handle_death(self, cause, game):
+        """
+        處理角色死亡的邏輯
+        :param cause: 死亡原因，可以是事件、身分能力、友好能力等
+        :param game: 遊戲實例，用於檢查和通知相關角色和玩家
+        """
+        if not self.alive:
+            return  # 角色已經死亡，無需重複處理
+
+        self.alive = False
+        print(f"{self.name} 死亡，原因：{cause}")
+
+        # 觸發刑警的友好能力
+        for character in game.character_manager.get_all_characters():
+            if character.role == "刑警" and character.current_location == self.current_location:
+                if character.can_use_friendly_ability("阻止死亡"):
+                    # 詢問玩家是否要發動刑警的友好能力
+                    user_input = input(f"{character.name} 可以阻止 {self.name} 的死亡，是否發動能力？(y/n): ")
+                    if user_input.lower() == 'y':
+                        character.use_friendly_ability("阻止死亡", self)
+                        self.alive = True
+                        print(f"{character.name} 阻止了 {self.name} 的死亡")
+                        return
+
+        # 檢查是否為關鍵人物的死亡
+        if self.is_key_person():
+            print(f"關鍵人物 {self.name} 死亡，輪迴立即結束")
+            game.end_cycle()
+
+        # 其他死亡處理邏輯
+        # ...
+
+    def is_key_person(self):
+        # 假設有一個方法來判定角色是否是關鍵人物
+        return "關鍵人物" in self.traits
+
+
     def __str__(self):
         return f"Character({self.name}, Anxiety: {self.anxiety}, Conspiracy: {self.conspiracy}, Friendship: {self.friendship}, Location: {self.current_location}, Alive: {self.alive}, Event Crimes: {self.event_crimes})"
 
@@ -215,42 +253,6 @@ class CharacterManager(tk.Frame):
             self.character_listbox.bind("<<ListboxSelect>>", self.on_character_select)
 
     
-    def handle_death(self, cause, game):
-        """
-        處理角色死亡的邏輯
-        :param cause: 死亡原因，可以是事件、身分能力、友好能力等
-        :param game: 遊戲實例，用於檢查和通知相關角色和玩家
-        """
-        if not self.alive:
-            return  # 角色已經死亡，無需重複處理
-
-        self.alive = False
-        print(f"{self.name} 死亡，原因：{cause}")
-
-        # 觸發刑警的友好能力
-        for character in game.character_manager.get_all_characters():
-            if character.role == "刑警" and character.current_location == self.current_location:
-                if character.can_use_friendly_ability("阻止死亡"):
-                    # 詢問玩家是否要發動刑警的友好能力
-                    user_input = input(f"{character.name} 可以阻止 {self.name} 的死亡，是否發動能力？(y/n): ")
-                    if user_input.lower() == 'y':
-                        character.use_friendly_ability("阻止死亡", self)
-                        self.alive = True
-                        print(f"{character.name} 阻止了 {self.name} 的死亡")
-                        return
-
-        # 檢查是否為關鍵人物的死亡
-        if self.is_key_person():
-            print(f"關鍵人物 {self.name} 死亡，輪迴立即結束")
-            game.end_cycle()
-
-        # 其他死亡處理邏輯
-        # ...
-
-    def is_key_person(self):
-        # 假設有一個方法來判定角色是否是關鍵人物
-        return "關鍵人物" in self.traits
-
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("角色管理")
