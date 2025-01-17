@@ -3,6 +3,7 @@ from game_phases.player_detective.player_detective_ability_phase import PlayerDe
 from game_phases.player_detective.player_event_phase import PlayerEventPhase
 from game_phases.player_detective.player_night_phase import PlayerNightPhase
 from game_phases.player_detective.player_cycle_end import PlayerCycleEnd
+from game_phases.player_detective.ai_cycle_end import AICycleEnd  # 引入 AICycleEnd 類
 from scriptwriter.ai_gameset import AIGameSet
 from common.character import CharacterManager
 from common.board import GameBoard, TimeManager
@@ -36,6 +37,7 @@ class GameLoop:
         self.event_phase = None
         self.night_phase = None
         self.cycle_end_phase = None
+        self.ai_cycle_end = None  # 新增 AICycleEnd 實例
         self.setup_phases()
 
     def setup_phases(self):
@@ -45,6 +47,7 @@ class GameLoop:
             self.event_phase = PlayerEventPhase(self.character_manager)
             self.night_phase = PlayerNightPhase(self.character_manager, self)
             self.cycle_end_phase = PlayerCycleEnd(self.character_manager, self)
+            self.ai_cycle_end = AICycleEnd(self, self.cycle_end_phase.rule_table)  # 初始化 AICycleEnd 實例
         elif self.role == "劇本家":
             # 將來可以在這裡添加 AI 劇本家的相應階段
             pass
@@ -64,7 +67,7 @@ class GameLoop:
                 self.increment_day()
 
     def cycle_end(self):
-        result = self.cycle_end_phase.execute()
+        result = self.ai_cycle_end.execute()  # 使用 AICycleEnd 的 execute 方法
         
         if result == "detective_win":
             self.end_game("偵探勝利！")
