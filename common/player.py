@@ -1,8 +1,15 @@
 class Player:
     def __init__(self, role, actions):
         self.role = role
+        self.defeat_flags = set()  # 用於存儲敗北旗標
         self.actions = actions
 
+    def set_defeat_flag(self, flag):
+        self.defeat_flags.add(flag)
+
+    def check_defeat_flags(self):
+        return len(self.defeat_flags) > 0
+    
     def choose_actions(self, board):
         # 選擇行動的邏輯（這裡可以使用玩家輸入或AI來選擇）
         chosen_actions = []
