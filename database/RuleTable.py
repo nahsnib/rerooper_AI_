@@ -182,8 +182,7 @@ cultist.add_trait("友好無效")
 cultist.add_ability(Ability(
     "無法遏止", "被動", "行動結算階段，取消此地區偵探設置的陰謀禁止卡片",
     lambda area, is_scriptwriter_view: (
-        area.remove_conspiracy_ban(), 
-        print(f"陰謀禁止卡片在地區 {area.name} 被取消") if is_scriptwriter_view else None
+        area.remove_conspiracy_ban()
     )
 ))
 
@@ -196,8 +195,7 @@ time_traveler.add_ability(Ability(
     "拯救失敗", "被動", "最後一天夜晚階段，若友好值<2，腳本家勝利，輪迴結束",
     lambda character, game_state, is_scriptwriter_view: (
         game_state.end_loop("腳本家勝利")
-        if game_state.current_day == game_state.final_day and character.friendship < 2 else None,
-        print(f"{character.name} 的友好值不足，腳本家勝利") if is_scriptwriter_view else None
+        if game_state.current_day == game_state.final_day and character.friendship < 2 else None
     )
 ))
 
@@ -212,8 +210,7 @@ misleader = Role(8, "誤導者")
 misleader.add_ability(Ability(
     "不安增加", "主動", "能力階段對同地區角色+1不安",
     lambda target, is_scriptwriter_view: (
-        target.add_anxiety(1),
-        print(f"{target.name} +1 不安") if is_scriptwriter_view else None
+        target.add_anxiety(1)
     )
 ))
 
@@ -221,8 +218,7 @@ lover = Role(9, "戀人")
 lover.add_ability(Ability(
     "生離死別", "被動", "死亡時使情人+6不安",
     lambda partner, is_scriptwriter_view: (
-        partner.add_anxiety(6),
-        print(f"情人增加 6 不安") if is_scriptwriter_view else None
+        partner.add_anxiety(6)
     )
 ))
 
@@ -230,16 +226,14 @@ loved_one = Role(10, "情人")
 loved_one.add_ability(Ability(
     "生離死別", "被動", "死亡時使戀人+6不安",
     lambda partner, is_scriptwriter_view: (
-        partner.add_anxiety(6),
-        print(f"戀人增加 6 不安") if is_scriptwriter_view else None
+        partner.add_anxiety(6)
     )
 ))
 loved_one.add_ability(Ability(
     "為愛痴狂", "被動", "夜晚階段若不安>3且陰謀值>0，腳本家勝利，輪迴結束",
     lambda character, game_state, is_scriptwriter_view: (
         game_state.end_loop("腳本家勝利")
-        if character.anxiety > 3 and character.conspiracy > 0 else None,
-        print(f"因為 {character.name} 的條件滿足，腳本家勝利") if is_scriptwriter_view else None
+        if character.anxiety > 3 and character.conspiracy > 0 else None       
     )
 ))
 murderer_role = Role(11, "殺人魔")
@@ -253,9 +247,14 @@ murderer_role.add_ability(Ability(
 factor_role = Role(12, "因子")
 factor_role.add_trait("友好無視")
 factor_role.add_ability(Ability(
-    "陰謀操控", "主動", "如果地區「都市」的陰謀數>1才能發動。同地區另外一個角色+1不安",
-    lambda character, game: [
-        target.change_anxiety(1) for target in character.current_area.characters if target != character
+    "不安增加·仿", "主動", "如果地區「都市」的陰謀數>1才能發動。能力階段對同地區角色+1不安",
+    lambda target, is_scriptwriter_view: (
+        target.add_anxiety(1),
+        ]
+))
+factor_role.add_ability(Ability(
+    "犧牲的代價·仿", "被動", "此角色死亡時，如果地區「學校」的陰謀數>1，輪迴直接結束，腳本家勝利",
+    lambda character, game: game.script_writer.win_cycle() if character.is_dead else None
     ]
 ))
 # 添加角色到 Basic Tragedy X
