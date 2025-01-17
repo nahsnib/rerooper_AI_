@@ -36,6 +36,12 @@ class AICycleEnd:
                 # 如果關鍵人物死亡，觸發其能力
                 character.use_ability("犧牲的代價", self.game)
         
+        # 檢查敗北旗標
+        if self.game.player.check_defeat_flags():
+            self.display_message("劇本家的勝利！")
+            return "scriptwriter_win"
+        
+        # 動態檢查其他敗北條件
         if self.check_scriptwriter_victory_conditions():
             self.display_message("劇本家的勝利！")
             if self.game.get_remaining_cycles() == 0:
