@@ -30,15 +30,21 @@ class AICycleEnd:
         self.game.reset_to_gameset()
 
     def execute(self):
+        # 檢查所有角色的死亡狀況
+        for character in self.game.character_manager.get_all_characters():
+            if character.name == "關鍵人物" and not character.alive:
+                # 如果關鍵人物死亡，觸發其能力
+                character.use_ability("犧牲的代價", self.game)
+        
         if self.check_scriptwriter_victory_conditions():
             self.display_message("劇本家的勝利！")
             if self.game.get_remaining_cycles() == 0:
                 self.display_message("結束輪迴，進入最終決戰")
-                return
+                return "scriptwriter_win"
             else:
                 if self.prompt_final_battle():
                     self.display_message("結束輪迴，進入最終決戰")
-                    return
+                    return "scriptwriter_win"
                 else:
                     self.game.decrement_cycles()
                     self.reset_game_board()
@@ -46,3 +52,4 @@ class AICycleEnd:
         else:
             self.display_message("玩家以偵探身分取得遊戲勝利！")
             self.game.restart()
+            return "detective_win"
