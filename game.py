@@ -1,9 +1,8 @@
 from game_phases.player_detective.player_detective_action_phase import PlayerDetectiveActionPhase
 from game_phases.player_detective.player_detective_ability_phase import PlayerDetectiveAbilityPhase
-from game_phases.player_detective.player_event_phase import PlayerEventPhase
-from game_phases.player_detective.player_night_phase import PlayerNightPhase
-from game_phases.player_detective.player_cycle_end import PlayerCycleEnd
-from game_phases.player_detective.ai_cycle_end import AICycleEnd  # 引入 AICycleEnd 類
+from game_phases.player_detective.player_event_phase import EventPhase
+from game_phases.player_detective.player_night_phase import NightPhase
+from game_phases.player_detective.player_cycle_end import CycleEnd  # 引入 AICycleEnd 類
 from scriptwriter.ai_gameset import AIGameSet
 from common.character import CharacterManager
 from common.board import GameBoard, TimeManager
@@ -44,10 +43,10 @@ class GameLoop:
         if self.role == "偵探":
             self.action_phase = PlayerDetectiveActionPhase(self.character_manager)
             self.ability_phase = PlayerDetectiveAbilityPhase(self.character_manager, self)
-            self.event_phase = PlayerEventPhase(self.character_manager)
-            self.night_phase = PlayerNightPhase(self.character_manager, self)
-            self.cycle_end_phase = PlayerCycleEnd(self.character_manager, self)
-            self.ai_cycle_end = AICycleEnd(self, self.cycle_end_phase.rule_table)  # 初始化 AICycleEnd 實例
+            self.event_phase = EventPhase(self.character_manager)
+            self.night_phase = NightPhase(self.character_manager, self)
+            self.cycle_end_phase = CycleEnd(self.character_manager, self)
+            self.ai_cycle_end = CycleEnd(self, self.cycle_end_phase.rule_table)  # 初始化 AICycleEnd 實例
         elif self.role == "劇本家":
             # 將來可以在這裡添加 AI 劇本家的相應階段
             pass

@@ -1,3 +1,4 @@
+import random
 class RuleTable:
     def __init__(self, id, name):
         self.id = id  # 新增的編號屬性
@@ -109,9 +110,9 @@ event2 = Event(2, "流言蜚語", lambda culprit, area, script_writer: [
     targets[0].add_anxiety(2) and targets[1].add_conspiracy_points(1)
     for targets in [script_writer.choose_two_characters()]
 ])
-event3 = Event(3, "自殺", lambda culprit, game: culprit.handle_death("事件 - 自殺", game))
+event3 = Event(3, "自殺", lambda culprit, character: culprit.handle_death("事件 - 自殺", character))
 event4 = Event(4, "醫院事件", lambda area, script_writer: [
-    character.handle_death("事件 - 醫院事件", game) if area.conspiracy_points > 0 else None
+    character.handle_death("事件 - 醫院事件", character) if area.conspiracy_points > 0 else None
     for character in area.characters
 ] + [
     script_writer.win_cycle() if area.conspiracy_points > 1 else None
@@ -173,7 +174,7 @@ mastermind.add_trait("友好無視")
 mastermind.add_ability(Ability(
     "陰謀操控", "主動", "同地區其他角色或地區+1陰謀",
     lambda character, script_writer: (
-        target.add_conspiracy_points(1) if isinstance(target := script_writer.choose_target_or_area(character.current_area), Character) else target.add_conspiracy_points(1)
+        target.add_conspiracy_points(1) if isinstance(target := script_writer.choose_target_or_area(character.current_area)) else target.add_conspiracy_points(1)
     )
 ))
 
@@ -250,12 +251,14 @@ factor_role.add_ability(Ability(
     "不安增加·仿", "主動", "如果地區「都市」的陰謀數>1才能發動。能力階段對同地區角色+1不安",
     lambda target, is_scriptwriter_view: (
         target.add_anxiety(1),
-        ]
+        
+        )
 ))
 factor_role.add_ability(Ability(
     "犧牲的代價·仿", "被動", "此角色死亡時，如果地區「學校」的陰謀數>1，輪迴直接結束，腳本家勝利",
     lambda character, game: game.script_writer.win_cycle() if character.is_dead else None
-    ]
+    
+    
 ))
 # 添加角色到 Basic Tragedy X
 basic_tragedy_x.add_role(key_figure)
