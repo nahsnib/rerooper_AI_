@@ -30,17 +30,17 @@ class Area:
             print(f"  - {character.name}")
 
 # 定義地區
-school = Area(1, "學校")
+hospital = Area(1, "醫院")
 shrine = Area(2, "神社")
-city = Area(3, "都市")
-hospital = Area(4, "醫院")
+city = Area(3, "鬧區")
+school = Area(4, "學校")
 
 # 添加地區到地圖
 areas = {
-    school.id: school,
+    hospital.id: hospital,
     shrine.id: shrine,
     city.id: city,
-    hospital.id: hospital,
+    school.id: school,
 }
 
 def display_all_areas():
@@ -98,6 +98,12 @@ class GameBoard:
 
         self.update_events()
 
+        # 地區顯示
+        self.areas_frame = tk.Frame(self.root)
+        self.areas_frame.pack(padx=10, pady=10)
+
+        self.create_area_widgets()
+
     def update_events(self):
         for widget in self.events_frame.winfo_children():
             widget.destroy()
@@ -106,8 +112,48 @@ class GameBoard:
         for day, event_name in events.items():
             tk.Label(self.events_frame, text=f"{day}: {event_name}").pack(anchor="w")
 
+    def create_area_widgets(self):
+        # 創建地區顯示區域
+        self.hospital_frame = tk.LabelFrame(self.areas_frame, text="醫院", padx=10, pady=10)
+        self.hospital_frame.grid(row=0, column=0, padx=10, pady=10)
+
+        self.shrine_frame = tk.LabelFrame(self.areas_frame, text="神社", padx=10, pady=10)
+        self.shrine_frame.grid(row=0, column=1, padx=10, pady=10)
+
+        self.city_frame = tk.LabelFrame(self.areas_frame, text="鬧區", padx=10, pady=10)
+        self.city_frame.grid(row=1, column=0, padx=10, pady=10)
+
+        self.school_frame = tk.LabelFrame(self.areas_frame, text="學校", padx=10, pady=10)
+        self.school_frame.grid(row=1, column=1, padx=10, pady=10)
+
+        self.update_area_widgets()
+
+    def update_area_widgets(self):
+        # 清除現有的地區顯示
+        for widget in self.hospital_frame.winfo_children():
+            widget.destroy()
+        for widget in self.shrine_frame.winfo_children():
+            widget.destroy()
+        for widget in self.city_frame.winfo_children():
+            widget.destroy()
+        for widget in self.school_frame.winfo_children():
+            widget.destroy()
+
+        # 更新地區顯示
+        self.update_area_info(self.hospital_frame, hospital)
+        self.update_area_info(self.shrine_frame, shrine)
+        self.update_area_info(self.city_frame, city)
+        self.update_area_info(self.school_frame, school)
+
+    def update_area_info(self, frame, area):
+        tk.Label(frame, text=f"陰謀值: {area.conspiracy_points}").pack(anchor="w")
+        tk.Label(frame, text="角色:").pack(anchor="w")
+        for character in area.characters:
+            tk.Label(frame, text=f"  - {character.name}").pack(anchor="w")
+
     def update(self):
         self.remaining_cycles_label.config(text=str(self.game.time_manager.remaining_cycles))
         self.total_days_label.config(text=str(self.game.time_manager.total_days))
         self.current_day_label.config(text=str(self.game.time_manager.current_day))
         self.update_events()
+        self.update_area_widgets()

@@ -1,11 +1,10 @@
+# game.py
 from game_phases.player_detective.player_detective_action_phase import PlayerDetectiveActionPhase
 from game_phases.player_detective.player_detective_ability_phase import PlayerDetectiveAbilityPhase
 from game_phases.player_detective.player_event_phase import EventPhase
 from game_phases.player_detective.player_night_phase import NightPhase
-from game_phases.player_detective.player_cycle_end import CycleEnd  # 引入 AICycleEnd 類
-from scriptwriter.ai_gameset import AIGameSet
+from game_phases.player_detective.player_cycle_end import CycleEnd
 from common.character import CharacterManager
-from common.board import GameBoard, TimeManager
 
 class Player:
     def __init__(self, role):
@@ -24,11 +23,11 @@ class Player:
         print("劇本家行動：設置情節")
 
 class GameLoop:
-    def __init__(self, character_manager, role, total_days, scheduled_events):
+    def __init__(self, character_manager, role, total_days, total_cycles, scheduled_events):
         self.character_manager = character_manager
         self.role = role
         self.day_counter = 1  # 初始化日期計數器
-        self.remaining_cycles = 5  # 初始化剩餘輪迴數
+        self.remaining_cycles = total_cycles  # 初始化剩餘輪迴數
         self.total_days = total_days
         self.scheduled_events = scheduled_events
         self.action_phase = None

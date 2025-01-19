@@ -144,4 +144,4 @@ class DetectiveAbilityGUI:
 
     def update_ability_list(self, character):
         self.ability_listbox.delete(0, tk.END)
-        valid_abilities = [ability for ability in character
+        valid_abilities = [ability for ability in character]

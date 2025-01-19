@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import ttk, messagebox
 import random
 
 class Action:
@@ -46,11 +46,11 @@ scriptwriter_actions = [
 detective_actions = [
     Action(11, "橫向移動", lambda character: character.move_horizontal()),
     Action(12, "縱向移動", lambda character: character.move_vertical()),
-    Action(13, "禁止移動", lambda character: character.prevent_movement(), usage_limit=1),
+    Action(13, "禁止移動", lambda character: character.prevent_movement(), usage_limit=3),
     Action(14, "不安+1", lambda character: character.change_anxiety(1)),
-    Action(15, "不安-1", lambda character: character.change_anxiety(-1), usage_limit=1),
+    Action(15, "不安-1", lambda character: character.change_anxiety(-1), usage_limit=3),
     Action(16, "友好+1", lambda character: character.change_friendship(1)),
-    Action(17, "友好+2", lambda character: character.change_friendship(2), usage_limit=1),
+    Action(17, "友好+2", lambda character: character.change_friendship(2), usage_limit=3),
     Action(18, "禁止陰謀", lambda target: target.prevent_conspiracy_increase(), is_daily_limited=True)
 ]
 
@@ -70,8 +70,10 @@ def choose_targets_and_actions(role, num_targets=3):
     actions = scriptwriter_actions if role == 'scriptwriter' else detective_actions
     chosen_targets = []
 
+    available_targets = ["角色A", "角色B", "角色C", "地區1", "地區2", "地區3", "地區4"]
     for _ in range(num_targets):
-        target = random.choice(["角色A", "角色B", "角色C", "地區1", "地區2", "地區3"])
+        target = random.choice(available_targets)
+        available_targets.remove(target)
         action = random.choice(actions)
         while action in [a["action"] for a in chosen_targets]:
             action = random.choice(actions)
@@ -134,57 +136,91 @@ def resolve_other_actions(actions):
                 # 取消同目標的16與17效果
                 pass
 
-class DetectiveActionGUI:
-    def __init__(self, root):
+class ActionSelectionGUI:
+    def __init__(self, root, role, targets, actions, previous_selections=[]):
         self.root = root
+        self.role = role
+        self.targets = targets
+        self.actions = actions
         self.selected_targets = []
+        self.previous_selections = previous_selections
         self.create_widgets()
 
     def create_widgets(self):
-        self.label = tk.Label(self.root, text="選擇三個目標並設置行動")
+        self.label = tk.Label(self.root, text="選擇目標和行動")
         self.label.pack()
 
-        self.target_entries = []
-        self.action_entries = []
+        self.target_combobox = ttk.Combobox(self.root, values=self.targets)
+        self.target_combobox.pack()
 
-        for i in range(3):
-            target_label = tk.Label(self.root, text=f"目標 {i+1}")
-            target_label.pack()
-            target_entry = tk.Entry(self.root)
-            target_entry.pack()
-            self.target_entries.append(target_entry)
-
-            action_label = tk.Label(self.root, text=f"行動 {i+1}")
-            action_label.pack()
-            action_entry = tk.Entry(self.root)
-            action_entry.pack()
-            self.action_entries.append(action_entry)
+        self.action_combobox = ttk.Combobox(self.root, values=[action.name for action in self.actions])
+        self.action_combobox.pack()
 
         self.confirm_button = tk.Button(self.root, text="確認", command=self.confirm_selection)
         self.confirm_button.pack()
 
     def confirm_selection(self):
-        self.selected_targets = []
-        for i in range(3):
-            target = self.target_entries[i].get()
-            action_id = int(self.action_entries[i].get())
-            action = get_action_by_id(action_id, 'detective')
-            if action:
-                self.selected_targets.append({"target": target, "action": action})
+        target = self.target_combobox.get()
+        action_name = self.action_combobox.get()
+        action = next((a for a in self.actions if a.name == action_name), None)
 
-        if len(self.selected_targets) == 3:
-            if messagebox.askyesno("確認", "是否確認您的行動選擇？"):
+        if target and action:
+            self.selected_targets.append({"target": target, "action": action})
+            if len(self.selected_targets) < 3:
+                self.targets.remove(target)
+                self.target_combobox.set('')
+                self.action_combobox.set('')
+            else:
+                self.show_confirmation_dialog()
+        else:
+            messagebox.showerror("錯誤", "請選擇有效的目標和行動")
+
+    def show_confirmation_dialog(self):
+        confirmation_text = "\n".join([f"{item['target']}: {item['action'].name}" for item in self.selected_targets])
+        if self.check_validity():
+            if messagebox.askyesno("確認", f"以下是您的選擇：\n{confirmation_text}\n是否確認？"):
                 self.root.quit()
             else:
-                self.selected_targets = []
+                self.reset_selection()
+        else:
+            messagebox.showerror("錯誤", "選擇不符合規則，請重新選擇")
+            self.reset_selection()
+
+    def check_validity(self):
+        targets = [item["target"] for item in self.selected_targets]
+        actions = [item["action"].name for item in self.selected_targets]
+        if len(set(targets)) != len(targets):
+            return False
+        if self.role == 'scriptwriter' and len(set(actions)) != len(actions):
+            return False
+        if self.role == 'detective' and actions.count("禁止陰謀") > 1:
+            return False
+        return True
+
+    def reset_selection(self):
+        self.selected_targets = []
+        self.target_combobox.set('')
+        self.action_combobox.set('')
+        self.targets = ["角色A", "角色B", "角色C", "地區1", "地區2", "地區3", "地區4"]
+        for prev in self.previous_selections:
+            if prev["target"] in self.targets:
+                self.targets.remove(prev["target"])
 
 if __name__ == "__main__":
     # 劇本家選擇目標和行動
     scriptwriter_action_choices = choose_targets_and_actions('scriptwriter')
 
-    # 建立偵探的行動選擇GUI
+    # 建立偵探的行動選擇GUI，並顯示劇本家選擇的目標
     root = tk.Tk()
-    gui = DetectiveActionGUI(root)
+    targets = ["角色A", "角色B", "角色C", "地區1", "地區2", "地區3", "地區4"]
+    actions = detective_actions
+
+    # 顯示劇本家選擇的目標
+    print("劇本家選擇的目標：")
+    for choice in scriptwriter_action_choices:
+        print(choice["target"])
+
+    gui = ActionSelectionGUI(root, 'detective', targets, actions, previous_selections=[item["target"] for item in scriptwriter_action_choices])
     root.mainloop()
 
     detective_action_choices = gui.selected_targets

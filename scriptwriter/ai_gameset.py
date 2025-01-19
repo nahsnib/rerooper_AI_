@@ -1,5 +1,5 @@
 import random
-from database.RuleTable import RuleTable, get_rule_table_by_id
+from database.RuleTable import all_rule_tables, get_rule_table_by_id
 from database.character_database import CharacterDatabase
 from common.secret_rule import SecretRule
 
@@ -11,13 +11,8 @@ class AIGameSet:
         self.initialize_script()
 
     def load_rule_tables(self):
-        # 假設這裡讀取並返回所有規則表
-        return {
-            1: RuleTable(1, "Basic Tragedy X"),
-            2: RuleTable(2, "Basic Tragedy Y"),
-            3: RuleTable(3, "Basic Tragedy Z"),
-            4: RuleTable(4, "Basic Tragedy W")
-        }
+        # 動態讀取並返回所有規則表
+        return all_rule_tables
 
     def initialize_script(self):
         # 步驟 1: 選擇主要規則表
