@@ -1,52 +1,44 @@
 import datetime
+import copy
 
 class GameHistory:
     def __init__(self):
         self.history = []
 
-    def add_record(self, start_time, end_time, actions, visibility=None):
-        record = {
-            'start_time': start_time,
-            'end_time': end_time,
-            'actions': actions,
-            'visibility': visibility or []
+    def add_snapshot(self, timestamp, gameboard_state):
+        snapshot = {
+            'timestamp': timestamp,
+            'gameboard_state': copy.deepcopy(gameboard_state)
         }
-        self.history.append(record)
+        self.history.append(snapshot)
 
-    def get_history(self):
-        return self.history
+    def get_snapshot(self, timestamp):
+        for snapshot in self.history:
+            if snapshot['timestamp'] == timestamp:
+                return snapshot['gameboard_state']
+        return None
 
-    def get_history_for_role(self, role):
-        filtered_history = []
-        for record in self.history:
-            if role in record['visibility'] or not record['visibility']:
-                filtered_history.append(record)
-        return filtered_history
-
-    def display_history(self, role=None):
-        if role:
-            history = self.get_history_for_role(role)
-        else:
-            history = self.history
-        
-        for record in history:
-            print(f"Start Time: {record['start_time']}")
-            print(f"End Time: {record['end_time']}")
-            print("Actions:")
-            for action in record['actions']:
-                print(f"  - {action}")
-            print("\n")
+    def display_snapshots(self):
+        for snapshot in self.history:
+            print(f"Timestamp: {snapshot['timestamp']}")
+            # 可以在此處添加更多顯示快照狀態的邏輯
+            print(snapshot['gameboard_state'])
 
 # 測試遊戲履歷功能
 if __name__ == "__main__":
     game_history = GameHistory()
 
-    # 添加測試記錄
-    start_time = datetime.datetime.now()
-    end_time = start_time + datetime.timedelta(hours=1)
-    actions = ["角色A 移動到 地區1", "角色B 執行了 行動X"]
-    visibility = ["detective"]  # 僅偵探可見
+    # 假設這是某個時間點的遊戲狀態
+    gameboard_state = {
+        'areas': {
+            'hospital': {'conspiracy_points': 1, 'characters': ['男學生']},
+            'shrine': {'conspiracy_points': 2, 'characters': ['女學生']},
+            'city': {'conspiracy_points': 0, 'characters': ['刑警']},
+            'school': {'conspiracy_points': 3, 'characters': ['老師']}
+        },
+        'time_manager': {'current_day': 4, 'remaining_cycles': 2}
+    }
+    timestamp = datetime.datetime.now()
 
-    game_history.add_record(start_time, end_time, actions, visibility)
-    game_history.display_history("detective")  # 偵探視角
-    game_history.display_history("other_role")  # 其他角色視角
+    game_history.add_snapshot(timestamp, gameboard_state)
+    game_history.display_snapshots()
