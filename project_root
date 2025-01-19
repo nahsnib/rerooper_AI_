@@ -2,6 +2,7 @@ project_root/
 │
 ├── game.py
 ├── main.py
+├──__init__.py
 ├── database/
 │   ├── RuleTable.py
 │   └── character_database.py

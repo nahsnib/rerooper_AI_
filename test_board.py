@@ -1,5 +1,5 @@
 import tkinter as tk
-from common.board import GameBoard, TimeManager, hospital, shrine, city, school
+from common.board import GameBoard, TimeManager, hospital, shrine, city, school, Character
 
 # 模擬遊戲對象
 class MockGame:
@@ -20,10 +20,10 @@ def main():
     game_board = GameBoard(root, game)
 
     # 更新測試角色數據
-    hospital.add_character("男學生")
-    shrine.add_character("女學生")
-    city.add_character("刑警")
-    school.add_character("老師")
+    shrine.add_character(Character("女學生"))
+    shrine.add_character(Character("男學生"))  # 將男學生移動至神社
+    city.add_character(Character("刑警"))
+    school.add_character(Character("老師"))
 
     # 更新顯示
     game_board.update()

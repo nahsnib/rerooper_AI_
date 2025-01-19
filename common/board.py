@@ -1,9 +1,13 @@
 import tkinter as tk
 from tkinter import ttk
 
+class Character:
+    def __init__(self, name):
+        self.name = name
+
 class Area:
     def __init__(self, id, name):
-        self.id = id  # 新增的編號屬性
+        self.id = id
         self.name = name
         self.characters = []  # 該地區內的角色列表
         self.conspiracy_points = 0  # 該地區的陰謀值
@@ -113,18 +117,22 @@ class GameBoard:
             tk.Label(self.events_frame, text=f"{day}: {event_name}").pack(anchor="w")
 
     def create_area_widgets(self):
-        # 創建地區顯示區域
-        self.hospital_frame = tk.LabelFrame(self.areas_frame, text="醫院", padx=10, pady=10)
-        self.hospital_frame.grid(row=0, column=0, padx=10, pady=10)
+        # 創建地區顯示區域，設置寬度和高度
+        self.hospital_frame = tk.LabelFrame(self.areas_frame, text="醫院", padx=10, pady=10, width=1400, height=1000)
+        self.hospital_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+        self.hospital_frame.grid_propagate(False)  # 防止自動調整大小
 
-        self.shrine_frame = tk.LabelFrame(self.areas_frame, text="神社", padx=10, pady=10)
-        self.shrine_frame.grid(row=0, column=1, padx=10, pady=10)
+        self.shrine_frame = tk.LabelFrame(self.areas_frame, text="神社", padx=10, pady=10, width=1400, height=1000)
+        self.shrine_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+        self.shrine_frame.grid_propagate(False)  # 防止自動調整大小
 
-        self.city_frame = tk.LabelFrame(self.areas_frame, text="鬧區", padx=10, pady=10)
-        self.city_frame.grid(row=1, column=0, padx=10, pady=10)
+        self.city_frame = tk.LabelFrame(self.areas_frame, text="鬧區", padx=10, pady=10, width=1400, height=1000)
+        self.city_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
+        self.city_frame.grid_propagate(False)  # 防止自動調整大小
 
-        self.school_frame = tk.LabelFrame(self.areas_frame, text="學校", padx=10, pady=10)
-        self.school_frame.grid(row=1, column=1, padx=10, pady=10)
+        self.school_frame = tk.LabelFrame(self.areas_frame, text="學校", padx=10, pady=10, width=1400, height=1000)
+        self.school_frame.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
+        self.school_frame.grid_propagate(False)  # 防止自動調整大小
 
         self.update_area_widgets()
 
