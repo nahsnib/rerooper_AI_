@@ -2,6 +2,7 @@ project_root/
 │
 ├── game.py
 ├── main.py
+├── game_history.py
 ├──__init__.py
 ├── database/
 │   ├── RuleTable.py
@@ -31,8 +32,6 @@ project_root/
 │   ├── scriptwriter_ai.py
 │   ├── detective_ai.py
 │   └── ai_tools.py
-├── history/
-│   ├── game_history.py
 └── common/
     ├── character.py
     ├── action.py

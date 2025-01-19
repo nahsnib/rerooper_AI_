@@ -1,5 +1,9 @@
 import tkinter as tk
 from tkinter import ttk
+from datetime import datetime
+
+# 假設 game_history.py 中的 GameHistory 類已定義
+from game_history import GameHistory
 
 class Character:
     def __init__(self, name):
@@ -47,13 +51,6 @@ areas = {
     school.id: school,
 }
 
-def display_all_areas():
-    for area in areas.values():
-        area.display_area_info()
-
-def get_area_by_id(area_id):
-    return areas.get(area_id, None)
-
 class TimeManager:
     def __init__(self, total_days, total_cycles):
         self.total_days = total_days
@@ -74,6 +71,7 @@ class GameBoard:
     def __init__(self, root, game):
         self.root = root
         self.game = game
+        self.game_history = GameHistory()
         self.create_widgets()
 
     def create_widgets(self):
@@ -108,6 +106,10 @@ class GameBoard:
 
         self.create_area_widgets()
 
+        # 添加顯示遊戲履歷按鈕
+        self.history_button = tk.Button(self.frame, text="顯示遊戲履歷", command=self.show_history)
+        self.history_button.grid(row=5, column=0, columnspan=2, pady=10)
+
     def update_events(self):
         for widget in self.events_frame.winfo_children():
             widget.destroy()
@@ -117,20 +119,20 @@ class GameBoard:
             tk.Label(self.events_frame, text=f"{day}: {event_name}").pack(anchor="w")
 
     def create_area_widgets(self):
-        # 創建地區顯示區域，設置寬度和高度
-        self.hospital_frame = tk.LabelFrame(self.areas_frame, text="醫院", padx=10, pady=10, width=1400, height=1000)
+        # 創建地區顯示區域，設置寬度和高度（假設每個中文字寬度為20像素，高度為20像素）
+        self.hospital_frame = tk.LabelFrame(self.areas_frame, text="醫院", padx=10, pady=10, width=7*20, height=5*20)
         self.hospital_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         self.hospital_frame.grid_propagate(False)  # 防止自動調整大小
 
-        self.shrine_frame = tk.LabelFrame(self.areas_frame, text="神社", padx=10, pady=10, width=1400, height=1000)
+        self.shrine_frame = tk.LabelFrame(self.areas_frame, text="神社", padx=10, pady=10, width=7*20, height=5*20)
         self.shrine_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
         self.shrine_frame.grid_propagate(False)  # 防止自動調整大小
 
-        self.city_frame = tk.LabelFrame(self.areas_frame, text="鬧區", padx=10, pady=10, width=1400, height=1000)
+        self.city_frame = tk.LabelFrame(self.areas_frame, text="鬧區", padx=10, pady=10, width=7*20, height=5*20)
         self.city_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
         self.city_frame.grid_propagate(False)  # 防止自動調整大小
 
-        self.school_frame = tk.LabelFrame(self.areas_frame, text="學校", padx=10, pady=10, width=1400, height=1000)
+        self.school_frame = tk.LabelFrame(self.areas_frame, text="學校", padx=10, pady=10, width=7*20, height=5*20)
         self.school_frame.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
         self.school_frame.grid_propagate(False)  # 防止自動調整大小
 
@@ -165,3 +167,22 @@ class GameBoard:
         self.current_day_label.config(text=str(self.game.time_manager.current_day))
         self.update_events()
         self.update_area_widgets()
+
+    def show_history(self):
+        # 創建一個新窗口來顯示遊戲履歷
+        history_window = tk.Toplevel(self.root)
+        history_window.title("遊戲履歷")
+
+        # 顯示遊戲履歷
+        history_text = tk.Text(history_window, wrap="word", width=80, height=20)
+        history_text.pack(padx=10, pady=10)
+
+        # 獲取遊戲歷史記錄並顯示
+        history = self.game_history.get_history()
+        for record in history:
+            history_text.insert(tk.END, f"Start Time: {record['start_time']}\n")
+            history_text.insert(tk.END, f"End Time: {record['end_time']}\n")
+            history_text.insert(tk.END, "Actions:\n")
+            for action in record['actions']:
+                history_text.insert(tk.END, f"  - {action}\n")
+            history_text.insert(tk.END, "\n")
