@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from datetime import datetime
+import copy
 
 # 假設 game_history.py 中的 GameHistory 類已定義
 from game_history import GameHistory
@@ -167,6 +168,16 @@ class GameBoard:
         self.current_day_label.config(text=str(self.game.time_manager.current_day))
         self.update_events()
         self.update_area_widgets()
+        self.record_snapshot()
+
+    def record_snapshot(self):
+        # 記錄當前 GameBoard 狀態的快照
+        gameboard_state = {
+            'areas': {area_id: {'conspiracy_points': area.conspiracy_points, 'characters': [c.name for c in area.characters]} for area_id, area in areas.items()},
+            'time_manager': {'current_day': self.game.time_manager.current_day, 'remaining_cycles': self.game.time_manager.remaining_cycles}
+        }
+        timestamp = datetime.now()
+        self.game_history.add_snapshot(timestamp, gameboard_state)
 
     def show_history(self):
         # 創建一個新窗口來顯示遊戲履歷
@@ -179,10 +190,11 @@ class GameBoard:
 
         # 獲取遊戲歷史記錄並顯示
         history = self.game_history.get_history()
-        for record in history:
-            history_text.insert(tk.END, f"Start Time: {record['start_time']}\n")
-            history_text.insert(tk.END, f"End Time: {record['end_time']}\n")
-            history_text.insert(tk.END, "Actions:\n")
-            for action in record['actions']:
-                history_text.insert(tk.END, f"  - {action}\n")
+        for snapshot in history:
+            history_text.insert(tk.END, f"Timestamp: {snapshot['timestamp']}\n")
+            history_text.insert(tk.END, "GameBoard State:\n")
+            gameboard_state = snapshot['gameboard_state']
+            for area, state in gameboard_state['areas'].items():
+                history_text.insert(tk.END, f"  - {area}: Conspiracy Points: {state['conspiracy_points']}, Characters: {', '.join(state['characters'])}\n")
+            history_text.insert(tk.END, f"Time Manager: Day {gameboard_state['time_manager']['current_day']}, Remaining Cycles: {gameboard_state['time_manager']['remaining_cycles']}\n")
             history_text.insert(tk.END, "\n")
