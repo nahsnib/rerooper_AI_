@@ -1,14 +1,14 @@
-import datetime
-
 class GameHistory:
     def __init__(self):
         self.history = []
 
-    def add_record(self, start_time, end_time, actions):
+    def add_record(self, start_time, end_time, actions, participants=None, score=None):
         record = {
             'start_time': start_time,
             'end_time': end_time,
-            'actions': actions
+            'actions': actions,
+            'participants': participants or [],
+            'score': score
         }
         self.history.append(record)
 
@@ -22,6 +22,12 @@ class GameHistory:
             print("Actions:")
             for action in record['actions']:
                 print(f"  - {action}")
+            if record['participants']:
+                print("Participants:")
+                for participant in record['participants']:
+                    print(f"  - {participant}")
+            if record['score'] is not None:
+                print(f"Score: {record['score']}")
             print("\n")
 
 # 測試遊戲履歷功能
@@ -32,6 +38,8 @@ if __name__ == "__main__":
     start_time = datetime.datetime.now()
     end_time = start_time + datetime.timedelta(hours=1)
     actions = ["角色A 移動到 地區1", "角色B 執行了 行動X"]
+    participants = ["角色A", "角色B"]
+    score = 100
 
-    game_history.add_record(start_time, end_time, actions)
+    game_history.add_record(start_time, end_time, actions, participants, score)
     game_history.display_history()
