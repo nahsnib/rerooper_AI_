@@ -8,8 +8,8 @@ project_root/
 │   ├── RuleTable.py
 │   └── character_database.py
 ├── scriptwriter/
+│   ├──__init__.py
 │   ├── ai_gameset.py
-│   ├── Player_gameset.py
 ├── game_phases/
 │   ├──  player_detective/
 │   │   ├──__init__.py

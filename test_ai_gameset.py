@@ -1,5 +1,12 @@
+import tkinter as tk
+from scriptwriter.ai_gameset import AIGameSet
+from common.character import CharacterManager
+class DummyParent:
+    pass
+
 def test_ai_gameset():
-    character_manager = CharacterManager()
+    root = tk.Tk()  # 創建一個 tkinter 根窗口
+    character_manager = CharacterManager(root)  # 傳遞 parent 參數
     gameset = AIGameSet(character_manager)
 
     public_info = gameset.get_public_info()

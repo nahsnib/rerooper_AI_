@@ -317,7 +317,7 @@ copy_rule_table(basic_tragedy_x, basic_tragedy_z)
 copy_rule_table(basic_tragedy_x, basic_tragedy_w)
 
 # 添加規則表到遊戲系統
-rule_tables = {
+all_rule_tables = {
     basic_tragedy_x.id: basic_tragedy_x,
     basic_tragedy_y.id: basic_tragedy_y,
     basic_tragedy_z.id: basic_tragedy_z,
@@ -325,8 +325,8 @@ rule_tables = {
 }
 
 def display_all_rule_tables():
-    for rule_table in rule_tables.values():
+    for rule_table in all_rule_tables.values():
         print(f"{rule_table.id}. {rule_table.name}")
 
 def get_rule_table_by_id(rule_table_id):
-    return rule_tables.get(rule_table_id, None)
+    return all_rule_tables.get(rule_table_id, None)

@@ -1,13 +1,12 @@
 import random
 from database.RuleTable import all_rule_tables, get_rule_table_by_id
-from database.character_database import CharacterDatabase
-from common.secret_rule import SecretRule
+from database.character_database import load_character_database
 
 class AIGameSet:
     def __init__(self, character_manager):
         self.character_manager = character_manager
         self.rule_tables = self.load_rule_tables()
-        self.character_db = CharacterDatabase()
+        self.character_db = load_character_database()
         self.initialize_script()
 
     def load_rule_tables(self):
@@ -40,9 +39,6 @@ class AIGameSet:
         # 步驟 8: 設定事件的犯人
         self.event_criminals = self.assign_event_criminals()
 
-        # 創建 SecretRule 實例
-        self.secret_rule = SecretRule(self.secret_main_rule, self.secret_sub_rules, self.identities, self.event_criminals)
-
     def select_main_rule_table(self):
         # 隨機選擇一個規則表
         rule_table_id = random.choice(list(self.rule_tables.keys()))
@@ -51,7 +47,7 @@ class AIGameSet:
     def select_characters(self, min_characters, max_characters):
         # 隨機選擇角色數量並從角色資料庫中選擇角色
         num_characters = random.randint(min_characters, max_characters)
-        return self.character_db.select_characters(num_characters)
+        return random.sample(self.character_db, num_characters)
 
     def select_total_days(self, min_days, max_days):
         return random.randint(min_days, max_days)
@@ -114,4 +110,10 @@ class AIGameSet:
         }
 
     def get_secret_info(self):
-        return self.secret_rule.get_secret_info()
+        secret_info = {
+            "main_rule": self.secret_main_rule.name,
+            "sub_rules": [rule.name for rule in self.secret_sub_rules],
+            "identities": {character.name: role for character, role in self.identities.items()},
+            "event_criminals": {day: criminal.name for day, criminal in self.event_criminals.items()}
+        }
+        return secret_info
