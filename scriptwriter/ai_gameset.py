@@ -27,8 +27,11 @@ class AIGameSet:
         # 步驟 3: 決定總日期數
         self.total_days = self.select_total_days(4, 7)
 
+        # 確保事件數量不超過角色數量
+        max_events = min(len(self.characters), self.total_days)
+
         # 步驟 4: 決定事件及其發生日期
-        self.scheduled_events = self.select_events()
+        self.scheduled_events = self.select_events(max_events)
 
         # 步驟 5: 決定輪迴數
         self.total_cycles = self.select_total_cycles(4, 7)
@@ -62,12 +65,12 @@ class AIGameSet:
     def select_total_cycles(self, min_cycles, max_cycles):
         return random.randint(min_cycles, max_cycles)
 
-    def select_events(self):
+    def select_events(self, max_events):
         if not self.main_rule_table.events:
             raise ValueError("The main rule table has no events to select from.")
 
         # 隨機選擇一些天作為犯案日並安排事件
-        num_events = random.randint(1, self.total_days)  # 隨機選擇事件數量
+        num_events = random.randint(1, max_events)  # 隨機選擇事件數量
         event_days = random.sample(range(1, self.total_days + 1), num_events)  # 隨機選擇事件發生的天數
 
         # 在事件數量不足時允許重複選擇事件
@@ -90,7 +93,7 @@ class AIGameSet:
     def assign_identities(self):
         identities = {character: "普通人" for character in self.characters}
         
-        # 確保 self.secret_main_rule.roles 和 sub_rule.roles 返回 Role 對象
+        # 確保 self.secret_main_rule.roles 和 sub_rule.roles 返回角色名稱
         for role_name, count in self.secret_main_rule.roles.items():
             role = next((r for r in self.main_rule_table.roles if r.name == role_name), None)
             if role:
@@ -118,7 +121,13 @@ class AIGameSet:
         return identities
 
     def assign_event_criminals(self):
-        criminals = random.sample(self.characters, k=len(self.scheduled_events))  # 隨機選擇不同的角色作為每個事件的犯人
+        num_events = len(self.scheduled_events)
+        num_characters = len(self.characters)
+
+        if num_events > num_characters:
+            raise ValueError("Number of events exceeds number of characters available to assign as criminals.")
+
+        criminals = random.sample(self.characters, k=num_events)  # 隨機選擇不同的角色作為每個事件的犯人
         assigned_criminals = {}
         for day, criminal in zip(self.scheduled_events.keys(), criminals):
             assigned_criminals[day] = criminal
@@ -130,7 +139,7 @@ class AIGameSet:
             if role:
                 character.role_abilities = role.abilities
             for sub_rule in self.secret_sub_rules:
-                sub_role = next((role for role in sub_rule.roles if role.name == role_name), None)
+                sub_role = next((role for role in self.main_rule_table.roles if role.name == role_name), None)
                 if sub_role:
                     character.role_abilities.extend(sub_role.abilities)
 
