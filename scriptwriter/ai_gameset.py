@@ -13,34 +13,38 @@ class AIGameSet:
         # 動態讀取並返回所有規則表
         return all_rule_tables
 
-    def initialize_script(self):
-        # 步驟 1: 選擇主要規則表
-        self.main_rule_table = self.select_main_rule_table()
+def initialize_script(self):
+    # 步驟 1: 選擇主要規則表
+    self.main_rule_table = self.select_main_rule_table()
 
-        # 步驟 2: 選擇角色
-        self.characters = self.select_characters(7, 12)
+    # 確保規則表中包含事件
+    if not self.main_rule_table.events:
+        raise ValueError("The main rule table has no events to select from.")
 
-        # 步驟 3: 決定總日期數
-        self.total_days = self.select_total_days(4, 7)
+    # 步驟 2: 選擇角色
+    self.characters = self.select_characters(7, 12)
 
-        # 步驟 4: 決定事件及其發生日期
-        self.scheduled_events = self.select_events()
+    # 步驟 3: 決定總日期數
+    self.total_days = self.select_total_days(4, 7)
 
-        # 步驟 5: 決定輪迴數
-        self.total_cycles = self.select_total_cycles(4, 7)
+    # 步驟 4: 決定事件及其發生日期
+    self.scheduled_events = self.select_events()
 
-        # 步驟 6: 選定主規則和副規則
-        self.secret_main_rule = self.select_main_rule()
-        self.secret_sub_rules = self.select_sub_rules(2)
+    # 步驟 5: 決定輪迴數
+    self.total_cycles = self.select_total_cycles(4, 7)
 
-        # 步驟 7: 秘密分配角色身分
-        self.identities = self.assign_identities()
+    # 步驟 6: 選定主規則和副規則
+    self.secret_main_rule = self.select_main_rule()
+    self.secret_sub_rules = self.select_sub_rules(2)
 
-        # 步驟 8: 設定事件的犯人
-        self.event_criminals = self.assign_event_criminals()
+    # 步驟 7: 秘密分配角色身分
+    self.identities = self.assign_identities()
 
-        # 步驟 9: 為角色分配身分能力
-        self.assign_role_abilities()
+    # 步驟 8: 設定事件的犯人
+    self.event_criminals = self.assign_event_criminals()
+
+    # 步驟 9: 為角色分配身分能力
+    self.assign_role_abilities()
 
     def select_main_rule_table(self):
         # 隨機選擇一個規則表
@@ -59,14 +63,22 @@ class AIGameSet:
         return random.randint(min_cycles, max_cycles)
 
     def select_events(self):
-        events = random.sample(self.main_rule_table.events, k=self.total_days)
+        if not self.main_rule_table.events:
+            raise ValueError("The main rule table has no events to select from.")
+
+        # 隨機選擇一些天作為犯案日並安排事件
+        num_events = random.randint(1, self.total_days)  # 隨機選擇事件數量
+        event_days = random.sample(range(1, self.total_days + 1), num_events)  # 隨機選擇事件發生的天數
+
+        # 在事件數量不足時允許重複選擇事件
+        if len(self.main_rule_table.events) >= num_events:
+            events = random.sample(self.main_rule_table.events, k=num_events)  # 隨機選擇事件
+        else:
+            events = random.choices(self.main_rule_table.events, k=num_events)  # 允許重複選擇事件
+
         scheduled_events = {}
-        available_days = list(range(1, self.total_days + 1))
-        random.shuffle(available_days)
-        for event in events:
-            if available_days:
-                day = available_days.pop()
-                scheduled_events[day] = event
+        for day, event in zip(event_days, events):
+            scheduled_events[day] = event
         return scheduled_events
 
     def select_main_rule(self):
@@ -77,30 +89,39 @@ class AIGameSet:
 
     def assign_identities(self):
         identities = {character: "普通人" for character in self.characters}
-        for role, count in self.secret_main_rule.roles.items():
-            for _ in range(count):
-                if self.characters:
-                    character = random.choice(self.characters)
-                    identities[character] = role
-                    self.characters.remove(character)
-
-        for sub_rule in self.secret_sub_rules:
-            for role, count in sub_rule.roles.items():
+        
+        # 確保 self.secret_main_rule.roles 和 sub_rule.roles 返回 Role 對象
+        for role_name, count in self.secret_main_rule.roles.items():
+            role = next((r for r in self.main_rule_table.roles if r.name == role_name), None)
+            if role:
                 for _ in range(count):
                     if self.characters:
                         character = random.choice(self.characters)
-                        identities[character] = role
+                        identities[character] = role.name
+                        character.role_name = role.name  # 更新角色的身分名稱
+                        character.traits = role.traits  # 更新角色的特性
+                        character.role_abilities = role.abilities  # 更新角色的身份能力
                         self.characters.remove(character)
+
+        for sub_rule in self.secret_sub_rules:
+            for role_name, count in sub_rule.roles.items():
+                role = next((r for r in self.main_rule_table.roles if r.name == role_name), None)
+                if role:
+                    for _ in range(count):
+                        if self.characters:
+                            character = random.choice(self.characters)
+                            identities[character] = role.name
+                            character.role_name = role.name  # 更新角色的身分名稱
+                            character.traits = role.traits  # 更新角色的特性
+                            character.role_abilities = role.abilities  # 更新角色的身份能力
+                            self.characters.remove(character)
         return identities
 
     def assign_event_criminals(self):
-        criminals = list(self.characters)
-        random.shuffle(criminals)
+        criminals = random.sample(self.characters, k=len(self.scheduled_events))  # 隨機選擇不同的角色作為每個事件的犯人
         assigned_criminals = {}
-        for day, event in self.scheduled_events.items():
-            if criminals:
-                criminal = criminals.pop()
-                assigned_criminals[day] = criminal
+        for day, criminal in zip(self.scheduled_events.keys(), criminals):
+            assigned_criminals[day] = criminal
         return assigned_criminals
 
     def assign_role_abilities(self):
