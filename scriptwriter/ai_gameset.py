@@ -39,6 +39,9 @@ class AIGameSet:
         # 步驟 8: 設定事件的犯人
         self.event_criminals = self.assign_event_criminals()
 
+        # 步驟 9: 為角色分配身分能力
+        self.assign_role_abilities()
+
     def select_main_rule_table(self):
         # 隨機選擇一個規則表
         rule_table_id = random.choice(list(self.rule_tables.keys()))
@@ -99,6 +102,16 @@ class AIGameSet:
                 criminal = criminals.pop()
                 assigned_criminals[day] = criminal
         return assigned_criminals
+
+    def assign_role_abilities(self):
+        for character, role_name in self.identities.items():
+            role = next((role for role in self.main_rule_table.roles if role.name == role_name), None)
+            if role:
+                character.role_abilities = role.abilities
+            for sub_rule in self.secret_sub_rules:
+                sub_role = next((role for role in sub_rule.roles if role.name == role_name), None)
+                if sub_role:
+                    character.role_abilities.extend(sub_role.abilities)
 
     def get_public_info(self):
         return {

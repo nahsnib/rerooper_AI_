@@ -1,12 +1,10 @@
 import tkinter as tk
 from scriptwriter.ai_gameset import AIGameSet
 from common.character import CharacterManager
-class DummyParent:
-    pass
 
 def test_ai_gameset():
     root = tk.Tk()  # 創建一個 tkinter 根窗口
-    character_manager = CharacterManager(root)  # 傳遞 parent 參數
+    character_manager = CharacterManager(root)  # 傳遞根窗口作為 parent
     gameset = AIGameSet(character_manager)
 
     public_info = gameset.get_public_info()
@@ -19,6 +17,8 @@ def test_ai_gameset():
     print("\n秘密信息:")
     for key, value in secret_info.items():
         print(f"{key}: {value}")
+
+    root.destroy()  # 測試完成後銷毀根窗口
 
 if __name__ == "__main__":
     test_ai_gameset()

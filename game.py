@@ -1,10 +1,11 @@
-# game.py
 from game_phases.player_detective.player_detective_action_phase import PlayerDetectiveActionPhase
 from game_phases.player_detective.player_detective_ability_phase import PlayerDetectiveAbilityPhase
 from game_phases.player_detective.player_event_phase import EventPhase
 from game_phases.player_detective.player_night_phase import NightPhase
 from game_phases.player_detective.player_cycle_end import CycleEnd
 from common.character import CharacterManager
+# 如果有其他模組導入 detective_actions，請更新為：
+# from common.actions import detective_actions
 
 class Player:
     def __init__(self, role):

@@ -4,31 +4,28 @@ from database.character_database import load_character_database
 import random
 
 class Character:
-    def __init__(self, id, name, anxiety_threshold, initial_location, forbidden_area, attribute, friendly_abilities=None, role_abilities=None, special_ability=None, traits=None):
-        # 固定資訊
+    def __init__(self, id, name, anxiety_threshold, initial_location, forbidden_area, attributes, friendly_abilities, special_ability=None, role_abilities=None):
         self.id = id  # 角色編號
         self.name = name
         self.anxiety_threshold = anxiety_threshold
         self.initial_location = initial_location
         self.forbidden_area = forbidden_area
-        self.attribute = attribute
-        self.special_ability = special_ability
+        self.attributes = attributes
         self.friendly_abilities = friendly_abilities or []
-        self.role_abilities = role_abilities or []
-        self.traits = traits or []  # 添加的特性屬性
+        self.role_abilities = role_abilities or []  # 確保初始化 role_abilities
+        self.special_ability = special_ability
 
-        # 浮動資訊
         self.anxiety = 0
         self.conspiracy = 0
         self.friendship = 0
         self.current_location = initial_location
         self.alive = True
         self.is_criminal = False
-        self.event_crimes = []  # 新增的事件犯人資訊
+        self.event_crimes = []
         self.secret_identity = None
         self.friendly_ability_usage = {ability['name']: False for ability in self.friendly_abilities}
         self.role_ability_usage = {ability['name']: False for ability in self.role_abilities}
-
+        
     def reset(self):
         self.anxiety = 0
         self.conspiracy = 0
@@ -194,7 +191,17 @@ class CharacterManager(tk.Frame):
     def load_characters(self):
         characters_data = load_character_database()
         for char_data in characters_data:
-            character = Character(**char_data.__dict__)  # 使用角色的字典來初始化
+            character = Character(
+                id=char_data.id,
+                name=char_data.name,
+                anxiety_threshold=char_data.anxiety_threshold,
+                initial_location=char_data.initial_location,
+                forbidden_area=char_data.forbidden_area,
+                attributes=char_data.attributes,  # 使用 attribute 而不是 attributes
+                friendly_abilities=char_data.friendly_abilities,
+                role_abilities=[],  # 初始為空
+                special_ability=char_data.special_ability,
+            )
             self.characters.append(character)
 
     def update_listbox(self):
@@ -220,7 +227,6 @@ class CharacterManager(tk.Frame):
                        f"事件犯人: {', '.join(self.selected_character.event_crimes)}")
             self.character_details.config(text=details)
 
-            # 更新行動和能力
             self.update_actions_and_abilities()
 
     def update_actions_and_abilities(self):
@@ -230,7 +236,6 @@ class CharacterManager(tk.Frame):
         actions_label = tk.Label(self.actions_frame, text="可用行動與能力")
         actions_label.pack()
 
-        # 顯示角色的友好能力和身分能力
         for ability in self.selected_character.friendly_abilities + self.selected_character.role_abilities:
             ability_name = ability['name']
             if self.selected_character.can_use_ability(ability_name):
@@ -243,7 +248,6 @@ class CharacterManager(tk.Frame):
     def select_ability(self, ability_name):
         self.selected_ability = ability_name
         self.character_details.config(text=f"選擇的能力: {ability_name}")
-        # 檢查是否需要選擇目標角色
         selected_ability = next((a for a in self.selected_character.friendly_abilities + self.selected_character.role_abilities if a['name'] == ability_name), None)
         if selected_ability and selected_ability['target_required']:
             self.character_details.config(text=f"選擇的能力: {ability_name}\n請選擇目標角色")
