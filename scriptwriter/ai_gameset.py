@@ -13,38 +13,38 @@ class AIGameSet:
         # 動態讀取並返回所有規則表
         return all_rule_tables
 
-def initialize_script(self):
-    # 步驟 1: 選擇主要規則表
-    self.main_rule_table = self.select_main_rule_table()
+    def initialize_script(self):
+        # 步驟 1: 選擇主要規則表
+        self.main_rule_table = self.select_main_rule_table()
 
-    # 確保規則表中包含事件
-    if not self.main_rule_table.events:
-        raise ValueError("The main rule table has no events to select from.")
+        # 確保規則表中包含事件
+        if not self.main_rule_table.events:
+            raise ValueError("The main rule table has no events to select from.")
 
-    # 步驟 2: 選擇角色
-    self.characters = self.select_characters(7, 12)
+        # 步驟 2: 選擇角色
+        self.characters = self.select_characters(7, 12)
 
-    # 步驟 3: 決定總日期數
-    self.total_days = self.select_total_days(4, 7)
+        # 步驟 3: 決定總日期數
+        self.total_days = self.select_total_days(4, 7)
 
-    # 步驟 4: 決定事件及其發生日期
-    self.scheduled_events = self.select_events()
+        # 步驟 4: 決定事件及其發生日期
+        self.scheduled_events = self.select_events()
 
-    # 步驟 5: 決定輪迴數
-    self.total_cycles = self.select_total_cycles(4, 7)
+        # 步驟 5: 決定輪迴數
+        self.total_cycles = self.select_total_cycles(4, 7)
 
-    # 步驟 6: 選定主規則和副規則
-    self.secret_main_rule = self.select_main_rule()
-    self.secret_sub_rules = self.select_sub_rules(2)
+        # 步驟 6: 選定主規則和副規則
+        self.secret_main_rule = self.select_main_rule()
+        self.secret_sub_rules = self.select_sub_rules(2)
 
-    # 步驟 7: 秘密分配角色身分
-    self.identities = self.assign_identities()
+        # 步驟 7: 秘密分配角色身分
+        self.identities = self.assign_identities()
 
-    # 步驟 8: 設定事件的犯人
-    self.event_criminals = self.assign_event_criminals()
+        # 步驟 8: 設定事件的犯人
+        self.event_criminals = self.assign_event_criminals()
 
-    # 步驟 9: 為角色分配身分能力
-    self.assign_role_abilities()
+        # 步驟 9: 為角色分配身分能力
+        self.assign_role_abilities()
 
     def select_main_rule_table(self):
         # 隨機選擇一個規則表

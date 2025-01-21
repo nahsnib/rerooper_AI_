@@ -98,6 +98,52 @@ class Ability:
 # 定義主要規則表 Basic Tragedy X
 basic_tragedy_x = RuleTable(1, "Basic Tragedy X")
 
+# 範例事件
+event1 = Event(1, "殺人事件", lambda culprit, area, game: [
+    target.handle_death("事件 - 殺人事件", game)
+    for target in [random.choice([char for char in area.characters if char != culprit])]
+])
+event2 = Event(2, "流言蜚語", lambda culprit, area, script_writer: [
+    targets[0].add_anxiety(2) and targets[1].add_conspiracy_points(1)
+    for targets in [script_writer.choose_two_characters()]
+])
+event3 = Event(3, "自殺", lambda culprit, character: culprit.handle_death("事件 - 自殺", character))
+event4 = Event(4, "醫院事件", lambda area, script_writer: [
+    character.handle_death("事件 - 醫院事件", character) if area.conspiracy_points > 0 else None
+    for character in area.characters
+] + [
+    script_writer.win_cycle() if area.conspiracy_points > 1 else None
+])
+event5 = Event(5, "遠距殺人", lambda script_writer, game: [
+    target.handle_death("事件 - 遠距殺人", game)
+    for target in [script_writer.choose_character_with_condition(lambda char: char.conspiracy_points > 1)]
+])
+event6 = Event(6, "失蹤", lambda culprit, area, script_writer: [
+    culprit.move_to(new_area) and new_area.add_conspiracy_points(1)
+    for new_area in [script_writer.choose_area_except(area)]
+])
+event7 = Event(7, "流傳", lambda culprit, script_writer: [
+    target1.add_friendliness(-2) and target2.add_friendliness(2)
+    for target1, target2 in [script_writer.choose_two_characters()]
+])
+event8 = Event(8, "蝴蝶效應", lambda culprit, area, script_writer: [
+    setattr(target, stat, getattr(target, stat) + 1)
+    for target in [script_writer.choose_character_in_area(area)]
+    for stat in [script_writer.choose_stat(["anxiety", "friendliness", "conspiracy_points"])]
+])
+event9 = Event(9, "褻瀆", lambda shrine: shrine.add_conspiracy_points(2))
+
+# 添加事件到 Basic Tragedy X
+basic_tragedy_x.add_event(event1)
+basic_tragedy_x.add_event(event2)
+basic_tragedy_x.add_event(event3)
+basic_tragedy_x.add_event(event4)
+basic_tragedy_x.add_event(event5)
+basic_tragedy_x.add_event(event6)
+basic_tragedy_x.add_event(event7)
+basic_tragedy_x.add_event(event8)
+basic_tragedy_x.add_event(event9)
+
 # 建立範例身分與能力
 key_figure = Role(1, "關鍵人物")
 key_figure.add_ability(Ability(

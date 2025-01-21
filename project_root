@@ -5,6 +5,7 @@ project_root/
 ├── game_history.py
 ├──__init__.py
 ├── database/
+|   ├──__init__.py
 │   ├── RuleTable.py
 │   └── character_database.py
 ├── scriptwriter/
@@ -33,6 +34,7 @@ project_root/
 │   ├── detective_ai.py
 │   └── ai_tools.py
 └── common/
+    ├──__init__.py
     ├── character.py
     ├── action.py
     ├── player.py
