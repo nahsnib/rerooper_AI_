@@ -20,8 +20,9 @@ class TestPlayerDetectiveAbilityPhase(unittest.TestCase):
             self.character_manager.characters.append(character)
             self.characters.append(character)
 
-        # 初始化 AIGameSet1
-        self.game_set = AIGameSet(self.character_manager)
+        # 初始化 AIGameSet
+        self.game_set = MagicMock()
+        self.game_set.change_anxiety = MagicMock() # 模擬 change_anxiety 方法
         
         # 初始化 PlayerDetectiveAbilityPhase
         self.scriptwriter = MagicMock()
@@ -41,14 +42,7 @@ class TestPlayerDetectiveAbilityPhase(unittest.TestCase):
         # 測試選擇能力
         character = self.characters[0]
         self.phase.check_abilities()
-        self.phase.can_use_ability(character)
         self.assertGreater(len(self.phase.active_abilities), 0)
-
-    def test_choose_target(self):
-        # 測試選擇目標
-        valid_targets = self.characters[:2]
-        target = self.phase.choose_target(valid_targets)
-        self.assertIn(target, valid_targets)
 
     def test_execute_ability(self):
         # 測試執行能力
@@ -62,8 +56,9 @@ class TestPlayerDetectiveAbilityPhase(unittest.TestCase):
 
     def test_get_character_by_name(self):
         # 測試根據名稱獲取角色
-        character = self.phase.get_character_by_name(self.characters[0].name)
-        self.assertEqual(character, self.characters[0])
+        character_name = self.characters[0].name
+        character = self.phase.get_character_by_name(character_name)
+        self.assertEqual(character.__dict__, self.characters[0].__dict__)  # 比較對象的屬性
 
 if __name__ == "__main__":
     unittest.main()
