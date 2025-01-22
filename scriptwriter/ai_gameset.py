@@ -24,6 +24,10 @@ class AIGameSet:
         # 步驟 2: 選擇角色
         self.characters = self.select_characters(7, 12)
 
+        # 確保角色數量在 7 到 12 之間
+        if len(self.characters) < 7 or len(self.characters) > 12:
+            raise ValueError("Number of characters selected is outside the allowed range (7-12).")
+
         # 步驟 3: 決定總日期數
         self.total_days = self.select_total_days(4, 7)
 
@@ -94,30 +98,31 @@ class AIGameSet:
         identities = {character: "普通人" for character in self.characters}
         
         # 確保 self.secret_main_rule.roles 和 sub_rule.roles 返回角色名稱
+        characters_copy = self.characters.copy()
         for role_name, count in self.secret_main_rule.roles.items():
             role = next((r for r in self.main_rule_table.roles if r.name == role_name), None)
             if role:
                 for _ in range(count):
-                    if self.characters:
-                        character = random.choice(self.characters)
+                    if characters_copy:
+                        character = random.choice(characters_copy)
                         identities[character] = role.name
                         character.role_name = role.name  # 更新角色的身分名稱
                         character.traits = role.traits  # 更新角色的特性
                         character.role_abilities = role.abilities  # 更新角色的身份能力
-                        self.characters.remove(character)
+                        characters_copy.remove(character)
 
         for sub_rule in self.secret_sub_rules:
             for role_name, count in sub_rule.roles.items():
                 role = next((r for r in self.main_rule_table.roles if r.name == role_name), None)
                 if role:
                     for _ in range(count):
-                        if self.characters:
-                            character = random.choice(self.characters)
+                        if characters_copy:
+                            character = random.choice(characters_copy)
                             identities[character] = role.name
                             character.role_name = role.name  # 更新角色的身分名稱
                             character.traits = role.traits  # 更新角色的特性
                             character.role_abilities = role.abilities  # 更新角色的身份能力
-                            self.characters.remove(character)
+                            characters_copy.remove(character)
         return identities
 
     def assign_event_criminals(self):

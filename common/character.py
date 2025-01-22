@@ -193,9 +193,11 @@ class CharacterManager(tk.Frame):
 
     def load_characters(self):
         characters_data = load_character_database()
+        self.characters = []
         for char_data in characters_data:
             character = Character(**char_data.__dict__)  # 使用角色的字典來初始化
             self.characters.append(character)
+        return self.characters
 
     def update_listbox(self):
         self.character_listbox.delete(0, tk.END)

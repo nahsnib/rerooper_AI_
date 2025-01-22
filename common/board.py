@@ -7,8 +7,12 @@ import copy
 from game_history import GameHistory
 
 class Character:
-    def __init__(self, name):
+    def __init__(self, name, friendship=0, anxiety=0, anxiety_threshold=0, conspiracy=0):
         self.name = name
+        self.friendship = friendship
+        self.anxiety = anxiety
+        self.anxiety_threshold = anxiety_threshold
+        self.conspiracy = conspiracy
 
 class Area:
     def __init__(self, id, name):
@@ -51,6 +55,13 @@ areas = {
     city.id: city,
     school.id: school,
 }
+
+def get_area_by_id(area_id):
+    return areas.get(area_id, None)
+
+def display_all_areas():
+    for area in areas.values():
+        area.display_area_info()
 
 class TimeManager:
     def __init__(self, total_days, total_cycles):
@@ -160,7 +171,10 @@ class GameBoard:
         tk.Label(frame, text=f"陰謀值: {area.conspiracy_points}").pack(anchor="w")
         tk.Label(frame, text="角色:").pack(anchor="w")
         for character in area.characters:
-            tk.Label(frame, text=f"  - {character.name}").pack(anchor="w")
+            character_info = (f"{character.name} - ❤{character.friendship} "
+                            f"☹{character.anxiety}/{character.anxiety_threshold} "
+                            f"☠{character.conspiracy}")
+            tk.Label(frame, text=character_info).pack(anchor="w")
 
     def update(self):
         self.remaining_cycles_label.config(text=str(self.game.time_manager.remaining_cycles))

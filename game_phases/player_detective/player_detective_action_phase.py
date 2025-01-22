@@ -10,20 +10,36 @@ class PlayerDetectiveActionPhase:
     def __init__(self, character_manager):
         self.character_manager = character_manager
         self.selected_targets = []
+        self.scriptwriter_selections = []  # 劇本家的選擇
 
     def execute(self):
+        self.scriptwriter_choose_targets_and_actions()
         root = tk.Tk()
         targets = self.get_available_targets()
         actions = detective_actions
-        gui = ActionSelectionGUI(root, 'detective', targets, actions)
+        gui = ActionSelectionGUI(root, 'detective', targets, actions, self.scriptwriter_selections)
         root.mainloop()
 
         self.selected_targets = gui.selected_targets
         self.resolve_actions()
 
+    def scriptwriter_choose_targets_and_actions(self):
+        characters = self.character_manager.load_characters()
+        if characters is None:
+            raise ValueError("Characters could not be loaded.")
+
+        available_targets = [character.name for character in characters] + [area.name for area in areas.values()]
+        chosen_targets = random.sample(available_targets, 3)
+
+        for target in chosen_targets:
+            action = random.choice(scriptwriter_actions)
+            self.scriptwriter_selections.append({"target": target, "action": action})
+
     def get_available_targets(self):
         targets = []
-        characters = self.character_manager.get_all_characters()
+        characters = self.character_manager.load_characters()
+        if characters is None:
+            raise ValueError("Characters could not be loaded.")
         for character in characters:
             targets.append(character.name)
         for area_id, area in areas.items():
@@ -39,7 +55,10 @@ class PlayerDetectiveActionPhase:
 
     def get_target_by_name(self, name):
         # 從角色或地區中查找目標
-        for character in self.character_manager.get_all_characters():
+        characters = self.character_manager.load_characters()
+        if characters is None:
+            raise ValueError("Characters could not be loaded.")
+        for character in characters:
             if character.name == name:
                 return character
         for area in areas.values():
@@ -61,38 +80,49 @@ class ActionSelectionGUI:
         self.label = tk.Label(self.root, text="選擇目標和行動")
         self.label.pack()
 
-        self.target_combobox = ttk.Combobox(self.root, values=self.targets)
-        self.target_combobox.pack()
+        if self.role == 'detective' and self.previous_selections:
+            self.previous_selections_label = tk.Label(self.root, text="劇本家已選定的目標：")
+            self.previous_selections_label.pack()
+            self.previous_selections_text = tk.Text(self.root, height=5, width=50)
+            self.previous_selections_text.pack()
+            for selection in self.previous_selections:
+                self.previous_selections_text.insert(tk.END, f"{selection['target']}\n")
+            self.previous_selections_text.config(state=tk.DISABLED)
 
-        self.action_combobox = ttk.Combobox(self.root, values=[action.name for action in self.actions])
-        self.action_combobox.pack()
+        self.target_comboboxes = []
+        self.action_comboboxes = []
+
+        for i in range(3):
+            target_label = tk.Label(self.root, text=f"第{i + 1}選擇 角色")
+            target_label.pack()
+            target_combobox = ttk.Combobox(self.root, values=self.targets)
+            target_combobox.pack()
+            self.target_comboboxes.append(target_combobox)
+
+            action_label = tk.Label(self.root, text=f"第{i + 1}選擇 行動")
+            action_label.pack()
+            action_combobox = ttk.Combobox(self.root, values=[action.name for action in self.actions])
+            action_combobox.pack()
+            self.action_comboboxes.append(action_combobox)
 
         self.confirm_button = tk.Button(self.root, text="確認", command=self.confirm_selection)
         self.confirm_button.pack()
 
     def confirm_selection(self):
-        target = self.target_combobox.get()
-        action_name = self.action_combobox.get()
-        action = next((a for a in self.actions if a.name == action_name), None)
+        self.selected_targets = []
+        for i in range(3):
+            target = self.target_comboboxes[i].get()
+            action_name = self.action_comboboxes[i].get()
+            action = next((a for a in self.actions if a.name == action_name), None)
 
-        if target and action:
-            self.selected_targets.append({"target": target, "action": action})
-            if len(self.selected_targets) < 3:
-                self.targets.remove(target)
-                self.target_combobox.set('')
-                self.action_combobox.set('')
+            if target and action:
+                self.selected_targets.append({"target": target, "action": action})
             else:
-                self.show_confirmation_dialog()
-        else:
-            messagebox.showerror("錯誤", "請選擇有效的目標和行動")
+                messagebox.showerror("錯誤", "請選擇有效的目標和行動")
+                return
 
-    def show_confirmation_dialog(self):
-        confirmation_text = "\n".join([f"{item['target']}: {item['action'].name}" for item in self.selected_targets])
         if self.check_validity():
-            if messagebox.askyesno("確認", f"以下是您的選擇：\n{confirmation_text}\n是否確認？"):
-                self.root.quit()
-            else:
-                self.reset_selection()
+            self.root.quit()
         else:
             messagebox.showerror("錯誤", "選擇不符合規則，請重新選擇")
             self.reset_selection()
@@ -110,12 +140,10 @@ class ActionSelectionGUI:
 
     def reset_selection(self):
         self.selected_targets = []
-        self.target_combobox.set('')
-        self.action_combobox.set('')
-        self.targets = ["角色A", "角色B", "地區1", "地區2", "地區3", "地區4"]
-        for prev in self.previous_selections:
-            if prev["target"] in self.targets:
-                self.targets.remove(prev["target"])
+        for target_combobox in self.target_comboboxes:
+            target_combobox.set('')
+        for action_combobox in self.action_comboboxes:
+            action_combobox.set('')
 
 def choose_targets_and_actions(role, num_targets=3):
     actions = scriptwriter_actions if role == 'scriptwriter' else detective_actions

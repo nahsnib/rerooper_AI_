@@ -27,32 +27,18 @@ class PlayerDetectiveAbilityPhase:
             else:
                 return True
         return False
+
     
     def check_friendship_ignore(self, character):
-        # 檢查角色的友好能力是否會被無效或無視
-        ignore, reason = friendship_ignore(character)
-        print(reason)
-        return not ignore
-
-    def execute_ability(self, character, ability, target=None):
-        # 執行角色的能力
-        if (character, ability) in self.active_abilities:
-            if ability.get('target_required', False) and target:
-                ability['effect'](target)
-                character.friendly_ability_usage[ability['name']] = True
-                return f"{character.name} 使用了能力：{ability['name']} 對 {target.name}"
-            else:
-                ability['effect'](self.game)
-                character.friendly_ability_usage[ability['name']] = True
-                return f"{character.name} 使用了能力：{ability['name']}"
-        else:
-            return "該角色的能力無法啟用"
+        # 使用通用函數來檢查友好能力是否會被無效或無視
+        return check_friendship_ignore(character)
 
     def get_character_by_name(self, name):
         for character in self.character_manager.characters:
             if character.name == name:
                 return character
         return None
+
 
 class DetectiveAbilityGUI:
     def __init__(self, root, phase):
@@ -139,6 +125,20 @@ class DetectiveAbilityGUI:
         self.message_box.config(state='normal')
         self.message_box.insert(tk.END, message + '\n')
         self.message_box.config(state='disabled')
+
+def check_friendship_ignore(character):
+    """
+    檢查角色的友好能力是否會被無效或無視。
+    
+    參數:
+        character: 需要檢查的角色對象。
+        
+    返回:
+        (bool, str): (是否無效或無視, 原因描述)
+    """
+    ignore, reason = friendship_ignore(character)
+    print(reason)
+    return not ignore
 
 if __name__ == "__main__":
     root = tk.Tk()

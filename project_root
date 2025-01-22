@@ -5,7 +5,7 @@ project_root/
 ├── game_history.py
 ├──__init__.py
 ├── database/
-|   ├──__init__.py
+│   ├──__init__.py
 │   ├── RuleTable.py
 │   └── character_database.py
 ├── scriptwriter/
