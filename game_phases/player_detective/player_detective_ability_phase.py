@@ -12,7 +12,7 @@ class PlayerDetectiveAbilityPhase:
     def check_abilities(self):
         # 檢查哪些角色的能力可以啟用
         self.active_abilities = []
-        for character in self.character_manager.get_all_characters():
+        for character in self.character_manager.load_characters():
             for ability in character.friendly_abilities:
                 if self.can_use_ability(character, ability):
                     self.active_abilities.append((character, ability))
@@ -22,7 +22,7 @@ class PlayerDetectiveAbilityPhase:
         # 判斷角色的能力是否可以啟用
         if ability['trigger'](character) and not character.friendly_ability_usage[ability['name']]:
             if ability.get('target_required', False):
-                for target in self.character_manager.get_all_characters():
+                for target in self.character_manager.load_characters():
                     if ability['target_condition'](target, character):
                         return True
             else:
@@ -39,7 +39,7 @@ class PlayerDetectiveAbilityPhase:
         # 執行角色的能力
         if (character, ability) in self.active_abilities:
             if ability.get('target_required', False):
-                valid_targets = [target for target in self.character_manager.get_all_characters() if ability['target_condition'](target, character)]
+                valid_targets = [target for target in self.character_manager.load_characters() if ability['target_condition'](target, character)]
                 if valid_targets:
                     target = self.choose_target(valid_targets)
                     if self.check_friendship_ignore(character):
@@ -90,7 +90,7 @@ class PlayerDetectiveAbilityPhase:
                     print("無效的選擇")
 
     def get_character_by_name(self, name):
-        for character in self.character_manager.get_all_characters():
+        for character in self.character_manager.load_characters():
             if character.name == name:
                 return character
         return None
