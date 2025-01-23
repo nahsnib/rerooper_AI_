@@ -1,9 +1,42 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import messagebox
 from database.character_database import load_character_database
+from database.character_database import BaseCharacter
 import random
+import logging
 
-class Character:
+def friendship_ignore(character):
+    """
+    判斷角色的友好能力是否會被無效或無視
+    :param character: 角色實例
+    :return: (bool, str) 第一個值表示友好能力是否被無效或可能被無視，第二個值是判定結果的描述
+    """
+    if '友好無效' in character.traits:
+        logging.info("友好能力無效")
+        return (True, "友好能力無效")
+    elif '友好無視' in character.traits:
+        result = random.choice([True, False])
+        if result:
+            logging.info("友好能力無效")
+            return (True, "友好能力無效")
+        else:
+            logging.info("友好能力有效")
+            return (False, "友好能力有效")
+    logging.info("友好能力有效")
+    return (False, "友好能力有效")
+
+def show_friendship_ignore(character):
+    ignore, reason = friendship_ignore(character)
+    message = f"角色: {character.name}\n結果: {reason}"
+    show_message(message)
+
+def show_message(message):
+    root = tk.Tk()
+    root.withdraw()  # 隱藏主窗口
+    messagebox.showinfo("友好能力檢查結果", message)
+    root.destroy()
+
+class Character(BaseCharacter):
     def __init__(self, id, name, anxiety_threshold, initial_location, forbidden_area, attributes, friendly_abilities, special_ability=None, role_abilities=None, traits=None, role_name=None):
         self.id = id  # 角色編號
         self.name = name
@@ -159,17 +192,7 @@ class Character:
     def __str__(self):
         return f"Character({self.name}, Anxiety: {self.anxiety}, Conspiracy: {self.conspiracy}, Friendship: {self.friendship}, Location: {self.current_location}, Alive: {self.alive}, Event Crimes: {self.event_crimes})"
 
-def friendship_ignore(character):
-    """
-    判斷角色的友好能力是否會被無效或無視
-    :param character: 角色實例
-    :return: (bool, str) 第一個值表示友好能力是否被無效或可能被無視，第二個值是判定結果的描述
-    """
-    if '友好無效' in character.traits:
-        return (True, "友好能力無效")
-    elif '友好無視' in character.traits:
-        return (random.choice([True, False]), "友好能力可能被無視")
-    return (False, "友好能力有效")
+
 
 class CharacterManager(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
@@ -242,30 +265,9 @@ class CharacterManager(tk.Frame):
                 ability_button = tk.Button(self.actions_frame, text=ability_name, state=tk.DISABLED)
                 ability_button.pack()
 
-    def select_ability(self, ability_name):
-        self.selected_ability = ability_name
-        self.character_details.config(text=f"選擇的能力: {ability_name}")
-        # 檢查是否需要選擇目標角色
-        selected_ability = next((a for a in self.selected_character.friendly_abilities + self.selected_character.role_abilities if a['name'] == ability_name), None)
-        if selected_ability and selected_ability['target_required']:
-            self.character_details.config(text=f"選擇的能力: {ability_name}\n請選擇目標角色")
-            self.character_listbox.bind("<<ListboxSelect>>", self.on_target_select)
-        else:
-            self.execute_ability()
 
-    def on_target_select(self, event):
-        selection = self.character_listbox.curselection()
-        if selection:
-            index = selection[0]
-            target_character = self.characters[index]
-            self.execute_ability(target_character)
 
-    def execute_ability(self, target=None):
-        if self.selected_character and self.selected_ability:
-            self.selected_character.use_friendly_ability(self.selected_ability, target)
-            self.update_character_details()
-            self.selected_ability = None
-            self.character_listbox.bind("<<ListboxSelect>>", self.on_character_select)
+
 
 if __name__ == "__main__":
     root = tk.Tk()

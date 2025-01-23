@@ -14,6 +14,13 @@ class NightPhase:
                 if action.is_daily_limited:
                     action.reset()
                     print(f"重置 {character.name} 的每日限制行動：{action.name}")
+    
+    def reset_ability_usage(self):
+        # 每天夜晚階段重置能力使用狀態，但不重置限用能力
+        for character in self.character_manager.characters:
+            for ability_name in character.friendly_ability_usage:
+                if not self.get_ability_by_name(ability_name).get('limit_use', False):
+                    character.friendly_ability_usage[ability_name] = False
 
     def reset_character_states(self):
         # 重置角色的每日狀態

@@ -29,6 +29,12 @@ class CycleEnd:
         # 重置遊戲版面
         self.game.reset_to_gameset()
 
+    def reset_limited_abilities(self):
+        # 輪迴結束階段重置限用能力
+        for character in self.character_manager.characters:
+            for ability_name in character.friendly_ability_usage:
+                character.friendly_ability_usage[ability_name] = False
+
     def execute(self):
         # 檢查所有角色的死亡狀況
         for character in self.game.character_manager.get_all_characters():
