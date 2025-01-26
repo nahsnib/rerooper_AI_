@@ -56,6 +56,9 @@ class Event:
         self.name = name  # 事件名稱
         self.effect = effect  # 事件效果函數
 
+    def __str__(self):
+        return self.name  # 返回事件名稱
+
 class Role:
     def __init__(self, id, name, traits=None, abilities=None):
         self.id = id  # 新增的編號屬性

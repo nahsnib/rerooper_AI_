@@ -1,12 +1,12 @@
 import random
 from database.RuleTable import all_rule_tables, get_rule_table_by_id
-from database.character_database import load_character_database
-
+from database.Basecharacter import load_character_database
 class AIGameSet:
     def __init__(self, character_manager):
         self.character_manager = character_manager
         self.rule_tables = self.load_rule_tables()
         self.character_db = load_character_database()
+        self.characters = []  # 初始化選擇的角色列表
         self.initialize_script()
 
     def load_rule_tables(self):
@@ -59,9 +59,11 @@ class AIGameSet:
         return get_rule_table_by_id(rule_table_id)
 
     def select_characters(self, min_characters, max_characters):
-        # 隨機選擇角色數量並從角色資料庫中選擇角色
+        # 確保隨機選擇的角色數量在範圍內
         num_characters = random.randint(min_characters, max_characters)
-        return random.sample(self.character_db, num_characters)
+        selected_characters = random.sample(self.character_db, num_characters)
+
+        return selected_characters
 
     def select_total_days(self, min_days, max_days):
         return random.randint(min_days, max_days)

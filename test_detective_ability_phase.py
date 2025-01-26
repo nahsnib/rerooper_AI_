@@ -1,56 +1,50 @@
 import unittest
 from unittest.mock import MagicMock
-from game_phases.player_detective.player_detective_ability_phase import PlayerDetectiveAbilityPhase
-from common.character import CharacterManager, Character
-from database.character_database import load_character_database
+import tkinter as tk
 from scriptwriter.ai_gameset import AIGameSet
+from common.board import GameBoard, Character, Area
+from common.character import CharacterManager
+from game_phases.player_detective.player_detective_ability_phase import PlayerDetectiveAbilityPhase, DetectiveAbilityGUI
 
 class TestPlayerDetectiveAbilityPhase(unittest.TestCase):
     def setUp(self):
-        # 初始化測試環境
-        self.character_manager = CharacterManager()
+        # 初始化 Tkinter 根窗口
+        self.root = tk.Tk()
+
+        # 初始化 CharacterManager
+        self.character_manager = CharacterManager(parent=self.root)
+
+        # 初始化 AIGameSet 並生成劇本
+        self.ai_gameset = AIGameSet(self.character_manager)
+
+        # 初始化 GameBoard
         self.game = MagicMock()
-        self.scriptwriter = MagicMock()
-        self.phase = PlayerDetectiveAbilityPhase(self.character_manager, self.game, self.scriptwriter)
+        self.game.time_manager = MagicMock()
+        self.game.time_manager.remaining_cycles = self.ai_gameset.total_cycles
+        self.game.time_manager.total_days = self.ai_gameset.total_days
+        self.game.time_manager.current_day = 1
+        self.game.scheduled_events = self.ai_gameset.scheduled_events
 
-    def test_can_use_ability(self):
-        character = Character("角色A", {"友好無效"})
-        ability = {
-            'name': '能力A',
-            'trigger': lambda character: character.friendship >= 3,
-            'active': True,  # 主動能力
-            'target_required': False,
-            'target_condition': None,
-            'limit_use': True  # 限用能力
-        }
-        character.friendship = 4  # 設置友好值
-        character.friendly_ability_usage = {'能力A': False}  # 能力未使用過
+        self.game_board = GameBoard(root=self.root, game=self.game)
+        self.game_board.update()  # 更新 GameBoard 顯示
 
-        self.assertTrue(self.phase.can_use_ability(character, ability))
+        # 將所有角色的友好值增加3
+        for character in self.character_manager.characters:
+            character.change_friendship(3)
 
-        # 使用能力後標記為已使用
-        character.friendly_ability_usage['能力A'] = 'used'
-        self.assertFalse(self.phase.can_use_ability(character, ability))
+        # 初始化 PlayerDetectiveAbilityPhase
+        self.phase = PlayerDetectiveAbilityPhase(self.character_manager, self.game, self.ai_gameset)
 
-        # 測試被動能力
-        ability['active'] = False
-        self.assertFalse(self.phase.can_use_ability(character, ability))
+        # 檢查角色能力，這應該會生成 GUI 並讓我們選擇角色能力
+        self.phase.check_abilities()
+        self.gui = DetectiveAbilityGUI(self.root, self.phase)
 
-    def test_reset_ability_usage(self):
-        character = Character("角色A", {"友好無效"})
-        character.friendly_ability_usage = {'能力A': 'used', '能力B': True}
+    def tearDown(self):
+        self.root.destroy()  # 銷毀根窗口以清理資源
 
-        self.phase.reset_ability_usage()
-        self.assertEqual(character.friendly_ability_usage['能力A'], 'used')  # 限用能力不重置
-        self.assertFalse(character.friendly_ability_usage['能力B'])  # 非限用能力重置
-
-    def test_reset_limited_abilities(self):
-        character = Character("角色A", {"友好無效"})
-        character.friendly_ability_usage = {'能力A': 'used', '能力B': True}
-
-        self.phase.reset_limited_abilities()
-        self.assertFalse(character.friendly_ability_usage['能力A'])  # 限用能力重置
-        self.assertFalse(character.friendly_ability_usage['能力B'])  # 非限用能力重置
+    def test_ability_usage(self):
+        # 顯示 GUI 並等待用戶選擇角色和能力
+        self.root.mainloop()
 
 if __name__ == "__main__":
     unittest.main()

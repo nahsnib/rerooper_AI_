@@ -1,29 +1,37 @@
 import tkinter as tk
-from common.board import GameBoard, TimeManager, hospital, shrine, city, school, Character
+from common.board import GameBoard, TimeManager, hospital, shrine, city, school
+from scriptwriter.ai_gameset import AIGameSet
+from common.character import CharacterManager, Character
 
 # 模擬遊戲對象
 class MockGame:
-    def __init__(self):
-        self.time_manager = TimeManager(total_days=30, total_cycles=3)
-        self.scheduled_events = {
-            1: "事件A",
-            5: "事件B",
-            10: "事件C"
-        }
+    def __init__(self, time_manager, scheduled_events):
+        self.time_manager = time_manager
+        self.scheduled_events = scheduled_events
 
 # 創建測試窗口
 def main():
     root = tk.Tk()
     root.title("測試遊戲版圖")
 
-    game = MockGame()
-    game_board = GameBoard(root, game)
+    # 初始化 CharacterManager
+    character_manager = CharacterManager(parent=root)
 
-    # 更新測試角色數據
-    hospital.add_character(Character("男學生"))
-    shrine.add_character(Character("女學生"))
-    city.add_character(Character("刑警"))
-    school.add_character(Character("老師"))
+    # 初始化 AIGameSet 並生成劇本
+    ai_gameset = AIGameSet(character_manager)
+
+    # 初始化 TimeManager 和 MockGame
+    time_manager = TimeManager(total_days=ai_gameset.total_days, total_cycles=ai_gameset.total_cycles)
+    game = MockGame(time_manager, ai_gameset.scheduled_events)
+
+    # 初始化 GameBoard
+    game_board = GameBoard(root, game, ai_gameset.characters)  # 傳遞選擇的角色
+
+    # 將生成的角色分配到地區
+    areas = [hospital, shrine, city, school]
+    for i, character in enumerate(ai_gameset.characters):
+        area = areas[i % len(areas)]
+        area.add_character(character)
 
     # 更新顯示
     game_board.update()

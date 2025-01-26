@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
-from database.character_database import load_character_database
-from database.character_database import BaseCharacter
+from database.Basecharacter import load_character_database, BaseCharacter
 import random
 import logging
 
@@ -86,6 +85,70 @@ class Character(BaseCharacter):
     def change_friendship(self, amount):
         self.friendship += amount
 
+    def move_anywhere(self):
+        new_location = self.current_location
+        if self.current_location == "醫院":
+            new_location = "鬧區"
+        elif self.current_location == "鬧區":
+            new_location = "醫院"
+        elif self.current_location == "學校":
+            new_location = "神社"
+        elif self.current_location == "神社":
+            new_location = "學校"
+        
+        if new_location != self.forbidden_area:
+           self.current_location = new_location
+        #暫時先用垂直移動取代
+        #if is_player:
+        #    self.show_move_anywhere_dialog()
+        #else:
+        #    # AI 隨機選擇新地區
+        #    new_area = random.choice(list(areas.values()))
+        #    self.perform_move(new_area)
+
+    def move_vertical(self):
+        new_location = self.current_location
+        if self.current_location == "醫院":
+            new_location = "鬧區"
+        elif self.current_location == "鬧區":
+            new_location = "醫院"
+        elif self.current_location == "學校":
+            new_location = "神社"
+        elif self.current_location == "神社":
+            new_location = "學校"
+        
+        if new_location != self.forbidden_area:
+           self.current_location = new_location
+
+    def move_horizontal(self):
+        new_location = self.current_location
+        if self.current_location == "醫院":
+            new_location = "神社"
+        elif self.current_location == "鬧區":
+            new_location = "學校"
+        elif self.current_location == "學校":
+            new_location = "鬧區"
+        elif self.current_location == "神社":
+            new_location = "醫院"
+        
+        if new_location != self.forbidden_area:
+            self.current_location = new_location
+
+    def move_diagonal(self):
+        new_location = self.current_location
+        if self.current_location == "醫院":
+            new_location = "學校"
+        elif self.current_location == "鬧區":
+            new_location = "神社"
+        elif self.current_location == "學校":
+            new_location = "醫院"
+        elif self.current_location == "神社":
+            new_location = "鬧區"
+        
+        if new_location != self.forbidden_area:
+            self.current_location = new_location
+            
+            
     def add_event_crime(self, event_name):
         self.is_criminal = True
         self.event_crimes.append(event_name)

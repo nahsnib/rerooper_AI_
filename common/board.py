@@ -1,18 +1,11 @@
 import tkinter as tk
 from tkinter import ttk
 from datetime import datetime
+from common.character import Character
 import copy
 
 # 假設 game_history.py 中的 GameHistory 類已定義
 from game_history import GameHistory
-
-class Character:
-    def __init__(self, name, friendship=0, anxiety=0, anxiety_threshold=0, conspiracy=0):
-        self.name = name
-        self.friendship = friendship
-        self.anxiety = anxiety
-        self.anxiety_threshold = anxiety_threshold
-        self.conspiracy = conspiracy
 
 class Area:
     def __init__(self, id, name):
@@ -27,20 +20,30 @@ class Area:
     def remove_character(self, character):
         self.characters.remove(character)
 
-    def add_conspiracy_points(self, points):
-        self.conspiracy_points += points
+    def change_conspiracy(self, amount):
+        self.conspiracy_points += amount
 
-    def remove_conspiracy_ban(self):
-        # 移除陰謀禁止卡片的邏輯
+    def move_horizontal(self):
         pass
 
-    def display_area_info(self):
-        print(f"地區編號: {self.id}")
-        print(f"名稱: {self.name}")
-        print(f"陰謀值: {self.conspiracy_points}")
-        print("角色:")
-        for character in self.characters:
-            print(f"  - {character.name}")
+    def move_vertical(self):
+        pass
+
+    def move_diagonal(self):
+        pass
+
+    def move_anywhere(self):
+        pass
+
+    def prevent_movement(self):
+        pass
+
+    def change_anxiety(self, amount):
+        pass
+
+    def change_friendship(self, amount):
+        pass
+
 
 # 定義地區
 hospital = Area(1, "醫院")
@@ -80,9 +83,10 @@ class TimeManager:
         return scheduled_events
 
 class GameBoard:
-    def __init__(self, root, game):
+    def __init__(self, root, game, characters):
         self.root = root
         self.game = game
+        self.characters = characters  # 只顯示選擇的角色
         self.game_history = GameHistory()
         self.create_widgets()
 
@@ -127,8 +131,10 @@ class GameBoard:
             widget.destroy()
 
         events = self.game.time_manager.get_scheduled_events(self.game.scheduled_events)
-        for day, event_name in events.items():
-            tk.Label(self.events_frame, text=f"{day}: {event_name}").pack(anchor="w")
+        sorted_events = sorted(events.items())  # 按照日期排序事件
+
+        for day, event in sorted_events:
+            tk.Label(self.events_frame, text=f"{day}: {event.name}").pack(anchor="w")
 
     def create_area_widgets(self):
         # 創建地區顯示區域，設置寬度和高度（假設每個中文字寬度為20像素，高度為20像素）
@@ -170,11 +176,12 @@ class GameBoard:
     def update_area_info(self, frame, area):
         tk.Label(frame, text=f"陰謀值: {area.conspiracy_points}").pack(anchor="w")
         tk.Label(frame, text="角色:").pack(anchor="w")
-        for character in area.characters:
-            character_info = (f"{character.name} - ❤{character.friendship} "
-                            f"☹{character.anxiety}/{character.anxiety_threshold} "
-                            f"☠{character.conspiracy}")
-            tk.Label(frame, text=character_info).pack(anchor="w")
+        for character in self.characters:
+            if character.current_location == area.id:  # 只顯示在當前地區的角色
+                character_info = (f"{character.name} - ❤{character.friendship} "
+                                f"☹{character.anxiety}/{character.anxiety_threshold} "
+                                f"☠{character.conspiracy}")
+                tk.Label(frame, text=character_info).pack(anchor="w")
 
     def update(self):
         self.remaining_cycles_label.config(text=str(self.game.time_manager.remaining_cycles))
@@ -187,7 +194,7 @@ class GameBoard:
     def record_snapshot(self):
         # 記錄當前 GameBoard 狀態的快照
         gameboard_state = {
-            'areas': {area_id: {'conspiracy_points': area.conspiracy_points, 'characters': [c.name for c in area.characters]} for area_id, area in areas.items()},
+            'areas': {area_id: {'conspiracy_points': area.conspiracy_points, 'characters': [c.name for c in self.characters if c.current_location == area_id]} for area_id, area in areas.items()},
             'time_manager': {'current_day': self.game.time_manager.current_day, 'remaining_cycles': self.game.time_manager.remaining_cycles}
         }
         timestamp = datetime.now()

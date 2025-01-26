@@ -49,11 +49,12 @@ class PlayerDetectiveAbilityPhase:
             if ability.get('target_required', False):
                 for target in self.character_manager.characters:
                     if target.alive or ability['name'] == '復活同地區的一具屍體':
-                        if ability['target_condition'](target, character):
+                        if 'target_condition' in ability and ability['target_condition'](target, character):
                             return True
             else:
                 return True
         return False
+    
     def use_classleader_ability(self, character, ability, target):
         # 處理特殊能力的使用邏輯
         if ability['name'] == '友好2：偵探回收1張【1輪迴只能使用1次】的行動卡（1輪迴限用1次）':
@@ -97,7 +98,6 @@ class PlayerDetectiveAbilityPhase:
     def check_friendship_ignore(self, character):
         # 使用通用函數來檢查友好能力是否會被無效或無視
         return check_friendship_ignore(character)
-
 
 class DetectiveAbilityGUI:
     def __init__(self, root, phase):
@@ -153,30 +153,11 @@ class DetectiveAbilityGUI:
 
     def on_ability_select(self, event):
         ability_name = self.ability_combobox.get()
-        self.select_ability(ability_name)
-
-    def select_ability(self, ability_name):
-        self.selected_ability = ability_name
-        selected_ability = next((a for a in self.selected_character.friendly_abilities if a['name'] == ability_name), None)
-        if selected_ability and selected_ability['target_required']:
-            self.character_details.config(text=f"選擇的能力: {ability_name}\n請選擇目標角色")
-            self.character_listbox.bind("<<ListboxSelect>>", self.on_target_select)
-        else:
-            self.execute_ability()
-
-    def on_target_select(self, event):
-        selection = self.character_listbox.curselection()
-        if selection:
-            index = selection[0]
-            target_character = self.characters[index]
-            self.execute_ability(target_character)
-
-    def execute_ability(self, target=None):
-        if self.selected_character and self.selected_ability:
-            self.selected_character.use_friendly_ability(self.selected_ability, target)
-            self.update_character_details()
-            self.selected_ability = None
-            self.character_listbox.bind("<<ListboxSelect>>", self.on_character_select)
+        self.selected_ability = next((a for a in self.selected_character.friendly_abilities if a['name'] == ability_name), None)
+        if self.selected_ability and self.selected_ability['target_required']:
+            target_names = [character.name for character in self.characters if character.alive]
+            self.target_combobox.config(values=target_names)
+            self.target_combobox.set('')
 
     def confirm_selection(self):
         character_name = self.character_combobox.get()
@@ -203,7 +184,7 @@ class DetectiveAbilityGUI:
     def update_character_details(self):
         # 更新角色詳情的方法
         pass
-
+    
 if __name__ == "__main__":
     root = tk.Tk()
     character_manager = CharacterManager()

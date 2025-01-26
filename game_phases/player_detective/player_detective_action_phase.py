@@ -46,13 +46,6 @@ class PlayerDetectiveActionPhase:
             targets.append(area.name)
         return targets
 
-    def resolve_actions(self):
-        for selection in self.selected_targets:
-            target_name = selection["target"]
-            action = selection["action"]
-            target = self.get_target_by_name(target_name)
-            action.effect(target)
-
     def get_target_by_name(self, name):
         # 從角色或地區中查找目標
         characters = self.character_manager.load_characters()
@@ -65,6 +58,24 @@ class PlayerDetectiveActionPhase:
             if area.name == name:
                 return area
         return None
+
+    def resolve_actions(self):
+        # 先檢查是否有禁止行動的效果
+        forbidden_actions = [13, 14, 15, 9, 10, 18]  # 禁止移動 ABC, 不安禁止, 友好禁止, 禁止陰謀
+        forbidden_targets = set()
+        
+        for selection in self.selected_targets:
+            action = selection["action"]
+            if action.id in forbidden_actions:
+                forbidden_targets.add(selection["target"])
+
+        # 執行其他行動，排除被禁止的行動
+        for selection in self.selected_targets:
+            target_name = selection["target"]
+            action = selection["action"]
+            if target_name not in forbidden_targets:
+                target = self.get_target_by_name(target_name)
+                action.effect(target)
 
 class ActionSelectionGUI:
     def __init__(self, root, role, targets, actions, previous_selections=[]):
@@ -93,7 +104,7 @@ class ActionSelectionGUI:
         self.action_comboboxes = []
 
         for i in range(3):
-            target_label = tk.Label(self.root, text=f"第{i + 1}選擇 角色")
+            target_label = tk.Label(self.root, text=f"第{i + 1}選擇 目標")
             target_label.pack()
             target_combobox = ttk.Combobox(self.root, values=self.targets)
             target_combobox.pack()
@@ -116,7 +127,11 @@ class ActionSelectionGUI:
             action = next((a for a in self.actions if a.name == action_name), None)
 
             if target and action:
-                self.selected_targets.append({"target": target, "action": action})
+                if action.can_use():
+                    self.selected_targets.append({"target": target, "action": action})
+                else:
+                    messagebox.showerror("錯誤", f"【{action_name}】使用機會不足！")
+                    return
             else:
                 messagebox.showerror("錯誤", "請選擇有效的目標和行動")
                 return
@@ -160,12 +175,9 @@ def choose_targets_and_actions(role, num_targets=3):
 
     return chosen_targets
 
-def resolve_actions(scriptwriter_actions, detective_actions):
+def process_all_actions(scriptwriter_actions, detective_actions):
     combined_actions = scriptwriter_actions + detective_actions
     combined_actions.sort(key=lambda x: x["action"].id)
-
-    for action in combined_actions:
-        print(f"{action['target']} - 行動ID: {action['action'].id}")
 
     resolve_movement_actions(combined_actions)
     resolve_anxiety_friendship_actions(combined_actions)
@@ -173,32 +185,97 @@ def resolve_actions(scriptwriter_actions, detective_actions):
     resolve_other_actions(combined_actions)
 
 def resolve_movement_actions(actions):
+    move_actions = {}
+    forbidden_targets = set()
+    
+    # 首先找出被禁止移動的目標
     for action in actions:
-        if action["action"].id in [1, 2, 3, 11, 12, 13]:
-            if "角色" in action["target"]:
-                pass  # 解決移動行動邏輯
+        if action["action"].id == 13:  # 禁止移動
+            forbidden_targets.add(action["target"])
+
+    # 收集所有移動行動
+    for action in actions:
+        if action["action"].id in [1, 2, 3, 11, 12]:
+            target = action["target"]
+            if target not in move_actions:
+                move_actions[target] = []
+            move_actions[target].append(action["action"].id)
+
+    # 執行合併後的移動行動
+    for target, move_ids in move_actions.items():
+        if target in forbidden_targets:
+            continue  # 如果有禁止移動行動，什麼都不做
+
+        # 根據規則決定最終的移動行動
+        if 1 in move_ids and 11 in move_ids:
+            target.move_horizontal()
+        elif 3 in move_ids and 12 in move_ids:
+            target.move_horizontal()
+        elif 2 in move_ids and 12 in move_ids:
+            target.move_vertical()
+        elif 3 in move_ids and 11 in move_ids:
+            target.move_vertical()
+        elif 1 in move_ids and 12 in move_ids:
+            target.move_diagonal()
+        elif 2 in move_ids and 11 in move_ids:
+            target.move_diagonal()
+        else:
+            # 如果沒有合併規則，執行單一移動行動
+            for move_id in move_ids:
+                if move_id == 1:
+                    target.move_horizontal()
+                elif move_id == 2:
+                    target.move_vertical()
+                elif move_id == 3:
+                    target.move_diagonal()
+                elif move_id == 11:
+                    target.move_horizontal()
+                elif move_id == 12:
+                    target.move_vertical()
 
 def resolve_anxiety_friendship_actions(actions):
+    forbidden_anxiety_targets = set()
+    forbidden_friendship_targets = set()
+    
+    # 找出被禁止不安和友好的目標
     for action in actions:
-        if action["action"].id in [4, 5, 8, 9, 14, 15]:
-            if "地區" in action["target"]:
-                continue
-            if action["action"].id == 9:
-                pass  # 取消同目標的14效果
+        if action["action"].id == 9:  # 不安禁止
+            forbidden_anxiety_targets.add(action["target"])
+        if action["action"].id == 10:  # 友好禁止
+            forbidden_friendship_targets.add(action["target"])
+
+    # 執行不安和友好行動
+    for action in actions:
+        if action["action"].id in [4, 5, 8, 14, 15]:  # 不安相關行動
+            if action["target"] not in forbidden_anxiety_targets:
+                target = action["target"]
+                action["action"].effect(target)
+        if action["action"].id in [16, 17]:  # 友好相關行動
+            if action["target"] not in forbidden_friendship_targets:
+                target = action["target"]
+                action["action"].effect(target)
 
 def resolve_conspiracy_actions(actions):
+    forbidden_conspiracy_targets = set()
+    
+    # 找出被禁止陰謀的目標
     for action in actions:
-        if action["action"].id in [6, 7, 18]:
-            if action["action"].id == 18:
-                pass  # 取消同目標的6與7效果
+        if action["action"].id == 18:  # 禁止陰謀
+            forbidden_conspiracy_targets.add(action["target"])
+
+    # 執行陰謀行動
+    for action in actions:
+        if action["action"].id in [6, 7]:
+            if action["target"] not in forbidden_conspiracy_targets:
+                target = action["target"]
+                action["action"].effect(target)
 
 def resolve_other_actions(actions):
+    # 假設還有其他行動需要處理，可以在這裡添加處理邏輯
     for action in actions:
-        if action["action"].id in [10, 16, 17]:
-            if "地區" in action["target"]:
-                continue
-            if action["action"].id == 10:
-                pass  # 取消同目標的16與17效果
+        if action["action"].id not in [4, 5, 8, 9, 10, 14, 15, 16, 17, 18]:  # 排除已處理的行動
+            target = action["target"]
+            action["action"].effect(target)
 
 if __name__ == "__main__":
     scriptwriter_action_choices = choose_targets_and_actions('scriptwriter')
@@ -214,4 +291,4 @@ if __name__ == "__main__":
     root.mainloop()
 
     detective_action_choices = gui.selected_targets
-    resolve_actions(scriptwriter_action_choices, detective_action_choices)
+    process_all_actions(scriptwriter_action_choices, detective_action_choices)
