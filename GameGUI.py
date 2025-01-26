@@ -1,11 +1,17 @@
 import tkinter as tk
-from common.area_and_date import Area, hospital, shrine, city, school, TimeManager
+from tkinter import ttk, messagebox
+from common.area_and_date import hospital, shrine, city, school, TimeManager, areas
+from common.character import CharacterManager
+from common.action import Action, detective_actions
+from game_phases.player_detective.player_detective_action_phase import PlayerDetectiveActionPhase
 
 class GameGUI:
-    def __init__(self, root, game, characters):
+    def __init__(self, root, game, characters, action_phase):
         self.root = root
         self.game = game
         self.characters = characters  # 只顯示選擇的角色
+        self.action_phase = action_phase
+        self.selected_targets = []
         self.create_widgets()
 
     def create_widgets(self):
@@ -44,6 +50,11 @@ class GameGUI:
         self.history_button = tk.Button(self.frame, text="顯示遊戲履歷", command=self.show_history)
         self.history_button.grid(row=5, column=0, columnspan=2, pady=10)
 
+        # 添加行動階段的 GUI
+        self.action_phase_frame = tk.Frame(self.root)
+        self.action_phase_frame.pack(padx=10, pady=10)
+        self.create_action_phase_widgets()
+
     def update_events(self):
         for widget in self.events_frame.winfo_children():
             widget.destroy()
@@ -52,7 +63,7 @@ class GameGUI:
         sorted_events = sorted(events.items())  # 按照日期排序事件
 
         for day, event in sorted_events:
-            tk.Label(self.events_frame, text=f"{day}: {event.name}").pack(anchor="w")
+            tk.Label(self.events_frame, text=f"{day}: {event}").pack(anchor="w")  # 直接使用 event 作為字符串
 
     def create_area_widgets(self):
         # 創建地區顯示區域，設置寬度和高度（假設每個中文字寬度為20像素，高度為20像素）
@@ -120,3 +131,74 @@ class GameGUI:
                 history_text.insert(tk.END, f"  - {area}: Conspiracy Points: {state['conspiracy_points']}, Characters: {', '.join([c.name for c in state['characters']])}\n")
             history_text.insert(tk.END, f"Time Manager: Day {gameboard_state['time_manager']['current_day']}, Remaining Cycles: {gameboard_state['time_manager']['remaining_cycles']}\n")
             history_text.insert(tk.END, "\n")
+
+    def create_action_phase_widgets(self):
+        # 創建行動階段的 GUI 元件
+        self.action_phase_label = tk.Label(self.action_phase_frame, text="行動階段：選擇目標和行動")
+        self.action_phase_label.pack()
+
+        self.target_vars = []
+        self.action_vars = []
+
+        for i in range(3):
+            target_label = tk.Label(self.action_phase_frame, text=f"第{i + 1}選擇 目標")
+            target_label.pack()
+            target_var = tk.StringVar()
+            target_combobox = ttk.Combobox(self.action_phase_frame, textvariable=target_var, values=self.get_available_targets())
+            target_combobox.pack()
+            self.target_vars.append(target_var)
+
+            action_label = tk.Label(self.action_phase_frame, text=f"第{i + 1}選擇 行動")
+            action_label.pack()
+            action_var = tk.StringVar()
+            action_combobox = ttk.Combobox(self.action_phase_frame, textvariable=action_var, values=[action.name for action in detective_actions])
+            action_combobox.pack()
+            self.action_vars.append(action_var)
+
+        self.confirm_button = tk.Button(self.action_phase_frame, text="確認", command=self.confirm_selection)
+        self.confirm_button.pack()
+
+    def get_available_targets(self):
+        targets = []
+        characters = self.characters
+        if characters is None:
+            raise ValueError("Characters could not be loaded.")
+        for character in characters:
+            targets.append(character.name)
+        for area_id, area in areas.items():
+            targets.append(area.name)
+        return targets
+
+    def confirm_selection(self):
+        self.selected_targets = []
+        for i in range(3):
+            target = self.target_vars[i].get()
+            action_name = self.action_vars[i].get()
+            action = next((a for a in detective_actions if a.name == action_name), None)
+
+            if target and action:
+                self.selected_targets.append({"target": target, "action": action})
+            else:
+                messagebox.showerror("錯誤", "請選擇有效的目標和行動")
+                return
+
+        if self.action_phase.receive_detective_selection(self.selected_targets):
+            # 執行完操作後更新GUI
+            self.update()
+        else:
+            messagebox.showerror("錯誤", "選擇不符合規則，請重新選擇")
+            self.reset_selection()
+
+    def reset_selection(self):
+        self.selected_targets = []
+        for target_var in self.target_vars:
+            target_var.set('')
+        for action_var in self.action_vars:
+            action_var.set('')
+
+    def update(self):
+        self.remaining_cycles_label.config(text=str(self.game.time_manager.remaining_cycles))
+        self.total_days_label.config(text=str(self.game.time_manager.total_days))
+        self.current_day_label.config(text=str(self.game.time_manager.current_day))
+        self.update_events()
+        self.update_area_widgets()
