@@ -2,6 +2,7 @@ project_root/
 │
 ├── game.py
 ├── main.py
+├── GameGUI.py
 ├── game_history.py
 ├──__init__.py
 ├── database/

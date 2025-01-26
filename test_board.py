@@ -1,40 +1,38 @@
 import tkinter as tk
-from common.board import GameBoard, TimeManager, hospital, shrine, city, school
-from scriptwriter.ai_gameset import AIGameSet
-from common.character import CharacterManager, Character
+from common.area_and_date import Area, hospital, shrine, city, school, Character, TimeManager
+from GameGUI import GameGUI
+from common.character import CharacterManager
 
 # 模擬遊戲對象
 class MockGame:
-    def __init__(self, time_manager, scheduled_events):
-        self.time_manager = time_manager
-        self.scheduled_events = scheduled_events
+    def __init__(self):
+        self.time_manager = TimeManager(total_days=30, total_cycles=3)
+        self.scheduled_events = {
+            1: "事件A",
+            5: "事件B",
+            10: "事件C"
+        }
 
 # 創建測試窗口
 def main():
     root = tk.Tk()
     root.title("測試遊戲版圖")
 
-    # 初始化 CharacterManager
+    game = MockGame()
     character_manager = CharacterManager(parent=root)
 
-    # 初始化 AIGameSet 並生成劇本
-    ai_gameset = AIGameSet(character_manager)
+    characters = [
+        Character(1, "男學生", anxiety_threshold=5, initial_location=hospital.id, forbidden_area=None, attributes={}, friendly_abilities=[]),
+        Character(2, "女學生", anxiety_threshold=5, initial_location=shrine.id, forbidden_area=None, attributes={}, friendly_abilities=[]),
+        Character(3, "刑警", anxiety_threshold=5, initial_location=city.id, forbidden_area=None, attributes={}, friendly_abilities=[]),
+        Character(4, "老師", anxiety_threshold=5, initial_location=school.id, forbidden_area=None, attributes={}, friendly_abilities=[]),
+    ]
 
-    # 初始化 TimeManager 和 MockGame
-    time_manager = TimeManager(total_days=ai_gameset.total_days, total_cycles=ai_gameset.total_cycles)
-    game = MockGame(time_manager, ai_gameset.scheduled_events)
-
-    # 初始化 GameBoard
-    game_board = GameBoard(root, game, ai_gameset.characters)  # 傳遞選擇的角色
-
-    # 將生成的角色分配到地區
-    areas = [hospital, shrine, city, school]
-    for i, character in enumerate(ai_gameset.characters):
-        area = areas[i % len(areas)]
-        area.add_character(character)
+    area_and_time = Area(game, characters)
+    game_gui = GameGUI(root, game, characters)
 
     # 更新顯示
-    game_board.update()
+    game_gui.update()
 
     root.mainloop()
 

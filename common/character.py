@@ -35,9 +35,9 @@ def show_message(message):
     messagebox.showinfo("友好能力檢查結果", message)
     root.destroy()
 
-class Character(BaseCharacter):
+class Character:
     def __init__(self, id, name, anxiety_threshold, initial_location, forbidden_area, attributes, friendly_abilities, special_ability=None, role_abilities=None, traits=None, role_name=None):
-        self.id = id  # 角色編號
+        self.id = id
         self.name = name
         self.anxiety_threshold = anxiety_threshold
         self.initial_location = initial_location
@@ -53,10 +53,10 @@ class Character(BaseCharacter):
         self.anxiety = 0
         self.conspiracy = 0
         self.friendship = 0
-        self.current_location = initial_location
         self.alive = True
         self.is_criminal = False
         self.event_crimes = []
+        self.current_location = initial_location  # 設置當前地區
         self.secret_identity = None
         self.friendly_ability_usage = {ability['name']: False for ability in self.friendly_abilities}
         self.role_ability_usage = {ability['name']: False for ability in self.role_abilities}

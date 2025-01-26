@@ -1,6 +1,8 @@
 import random
 from database.RuleTable import all_rule_tables, get_rule_table_by_id
-from database.Basecharacter import load_character_database
+from database.Basecharacter import load_character_database, BaseCharacter
+from common.character import Character
+
 class AIGameSet:
     def __init__(self, character_manager):
         self.character_manager = character_manager
@@ -22,7 +24,8 @@ class AIGameSet:
             raise ValueError("The main rule table has no events to select from.")
 
         # 步驟 2: 選擇角色
-        self.characters = self.select_characters(7, 12)
+        base_characters = self.select_characters(7, 12)
+        self.characters = [self.create_character_from_base(base_char) for base_char in base_characters]
 
         # 確保角色數量在 7 到 12 之間
         if len(self.characters) < 7 or len(self.characters) > 12:
@@ -64,6 +67,18 @@ class AIGameSet:
         selected_characters = random.sample(self.character_db, num_characters)
 
         return selected_characters
+
+    def create_character_from_base(self, base_char):
+        # 根據 BaseCharacter 創建 Character
+        return Character(
+            id=base_char.id,
+            name=base_char.name,
+            anxiety_threshold=base_char.anxiety_threshold,
+            initial_location=base_char.initial_location,
+            forbidden_area=base_char.forbidden_area,
+            attributes=base_char.attributes,
+            friendly_abilities=base_char.friendly_abilities
+        )
 
     def select_total_days(self, min_days, max_days):
         return random.randint(min_days, max_days)
