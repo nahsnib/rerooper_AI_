@@ -2,58 +2,71 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from common.area_and_date import hospital, shrine, city, school, TimeManager, areas
 from common.character import CharacterManager
-from common.action import Action, detective_actions
+from common.action import detective_actions
 from game_phases.player_detective.player_detective_action_phase import PlayerDetectiveActionPhase
+from game_phases.player_detective.player_detective_ability_phase import PlayerDetectiveAbilityPhase
 
 class GameGUI:
-    def __init__(self, root, game, characters, action_phase):
+    def __init__(self, root, game, characters, phase):
         self.root = root
         self.game = game
-        self.characters = characters  # 只顯示選擇的角色
-        self.action_phase = action_phase
+        self.characters = characters
+        self.phase = phase
         self.selected_targets = []
         self.create_widgets()
 
     def create_widgets(self):
-        self.frame = tk.Frame(self.root)
-        self.frame.pack(padx=10, pady=10)
+        self.main_frame = tk.Frame(self.root)
+        self.main_frame.pack(padx=10, pady=10)
+
+        # 添加時間信息和地區顯示區域在頂部
+        self.create_time_and_area_widgets()
+
+        # 根據 phase 類型創建相應的 GUI
+        if isinstance(self.phase, PlayerDetectiveActionPhase):
+            self.action_phase_frame = tk.Frame(self.main_frame)
+            self.action_phase_frame.pack(padx=10, pady=10, fill=tk.X)
+            self.create_action_phase_widgets()
+        elif isinstance(self.phase, PlayerDetectiveAbilityPhase):
+            self.ability_phase_frame = tk.Frame(self.main_frame)
+            self.ability_phase_frame.pack(padx=10, pady=10, fill=tk.X)
+            self.create_ability_phase_widgets()
+
+    def create_time_and_area_widgets(self):
+        self.time_area_frame = tk.Frame(self.main_frame)
+        self.time_area_frame.pack(padx=10, pady=10, fill=tk.X)
 
         # 剩餘輪迴數量
-        tk.Label(self.frame, text="剩餘輪迴數量:").grid(row=0, column=0, sticky="w")
-        self.remaining_cycles_label = tk.Label(self.frame, text=str(self.game.time_manager.remaining_cycles))
+        tk.Label(self.time_area_frame, text="剩餘輪迴數量:").grid(row=0, column=0, sticky="w")
+        self.remaining_cycles_label = tk.Label(self.time_area_frame, text=str(self.game.time_manager.remaining_cycles))
         self.remaining_cycles_label.grid(row=0, column=1, sticky="w")
 
         # 預定的總日期
-        tk.Label(self.frame, text="預定的總日期:").grid(row=1, column=0, sticky="w")
-        self.total_days_label = tk.Label(self.frame, text=str(self.game.time_manager.total_days))
+        tk.Label(self.time_area_frame, text="預定的總日期:").grid(row=1, column=0, sticky="w")
+        self.total_days_label = tk.Label(self.time_area_frame, text=str(self.game.time_manager.total_days))
         self.total_days_label.grid(row=1, column=1, sticky="w")
 
         # 今天的日期
-        tk.Label(self.frame, text="今天的日期:").grid(row=2, column=0, sticky="w")
-        self.current_day_label = tk.Label(self.frame, text=str(self.game.time_manager.current_day))
+        tk.Label(self.time_area_frame, text="今天的日期:").grid(row=2, column=0, sticky="w")
+        self.current_day_label = tk.Label(self.time_area_frame, text=str(self.game.time_manager.current_day))
         self.current_day_label.grid(row=2, column=1, sticky="w")
 
         # 安排事件的日期和名稱
-        tk.Label(self.frame, text="安排事件的日期和名稱:").grid(row=3, column=0, sticky="w")
-        self.events_frame = tk.Frame(self.frame)
+        tk.Label(self.time_area_frame, text="安排事件的日期和名稱:").grid(row=3, column=0, sticky="w")
+        self.events_frame = tk.Frame(self.time_area_frame)
         self.events_frame.grid(row=4, column=0, columnspan=2, sticky="w")
 
         self.update_events()
 
         # 地區顯示
-        self.areas_frame = tk.Frame(self.root)
-        self.areas_frame.pack(padx=10, pady=10)
+        self.areas_frame = tk.Frame(self.time_area_frame)
+        self.areas_frame.grid(row=5, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
 
         self.create_area_widgets()
 
         # 添加顯示遊戲履歷按鈕
-        self.history_button = tk.Button(self.frame, text="顯示遊戲履歷", command=self.show_history)
-        self.history_button.grid(row=5, column=0, columnspan=2, pady=10)
-
-        # 添加行動階段的 GUI
-        self.action_phase_frame = tk.Frame(self.root)
-        self.action_phase_frame.pack(padx=10, pady=10)
-        self.create_action_phase_widgets()
+        self.history_button = tk.Button(self.time_area_frame, text="顯示遊戲履歷", command=self.show_history)
+        self.history_button.grid(row=6, column=0, columnspan=2, pady=10)
 
     def update_events(self):
         for widget in self.events_frame.winfo_children():
@@ -122,7 +135,7 @@ class GameGUI:
         history_text.pack(padx=10, pady=10)
 
         # 獲取遊戲歷史記錄並顯示
-        history = self.area_and_time.get_game_history()
+        history = self.game.time_manager.get_game_history()
         for snapshot in history:
             history_text.insert(tk.END, f"Timestamp: {snapshot['timestamp']}\n")
             history_text.insert(tk.END, "GameBoard State:\n")
@@ -155,21 +168,10 @@ class GameGUI:
             action_combobox.pack()
             self.action_vars.append(action_var)
 
-        self.confirm_button = tk.Button(self.action_phase_frame, text="確認", command=self.confirm_selection)
+        self.confirm_button = tk.Button(self.action_phase_frame, text="確認", command=self.confirm_action_selection)
         self.confirm_button.pack()
 
-    def get_available_targets(self):
-        targets = []
-        characters = self.characters
-        if characters is None:
-            raise ValueError("Characters could not be loaded.")
-        for character in characters:
-            targets.append(character.name)
-        for area_id, area in areas.items():
-            targets.append(area.name)
-        return targets
-
-    def confirm_selection(self):
+    def confirm_action_selection(self):
         self.selected_targets = []
         for i in range(3):
             target = self.target_vars[i].get()
@@ -177,24 +179,100 @@ class GameGUI:
             action = next((a for a in detective_actions if a.name == action_name), None)
 
             if target and action:
-                self.selected_targets.append({"target": target, "action": action})
+                if action.can_use():
+                    self.selected_targets.append({"target": target, "action": action})
+                else:
+                    messagebox.showerror("錯誤", f"【{action_name}】使用機會不足！")
+                    return
             else:
                 messagebox.showerror("錯誤", "請選擇有效的目標和行動")
                 return
 
-        if self.action_phase.receive_detective_selection(self.selected_targets):
-            # 執行完操作後更新GUI
-            self.update()
+        if self.check_action_validity():
+            self.root.quit()
         else:
             messagebox.showerror("錯誤", "選擇不符合規則，請重新選擇")
-            self.reset_selection()
+            self.reset_action_selection()
 
-    def reset_selection(self):
+    def check_action_validity(self):
+        targets = [item["target"] for item in self.selected_targets]
+        actions = [item["action"].name for item in self.selected_targets]
+        if len(set(targets)) != len(targets):
+            return False
+        if actions.count("禁止陰謀") > 1:
+            return False
+        return True
+
+    def reset_action_selection(self):
         self.selected_targets = []
         for target_var in self.target_vars:
             target_var.set('')
         for action_var in self.action_vars:
             action_var.set('')
+
+    def create_ability_phase_widgets(self):
+        # 創建友好能力階段的 GUI 元件
+        self.ability_phase_label = tk.Label(self.ability_phase_frame, text="友好能力階段：選擇角色和能力")
+        self.ability_phase_label.pack()
+
+        self.character_combobox = ttk.Combobox(self.ability_phase_frame)
+        self.character_combobox.pack(pady=5)
+        self.character_combobox.bind("<<ComboboxSelected>>", self.on_character_select)
+
+        self.ability_combobox = ttk.Combobox(self.ability_phase_frame)
+        self.ability_combobox.pack(pady=5)
+        self.ability_combobox.bind("<<ComboboxSelected>>", self.on_ability_select)
+
+        self.target_combobox = ttk.Combobox(self.ability_phase_frame)
+        self.target_combobox.pack(pady=5)
+
+        self.confirm_button = tk.Button(self.ability_phase_frame, text="確定", command=self.confirm_ability_selection)
+        self.confirm_button.pack(pady=20)
+
+        self.exit_button = tk.Button(self.ability_phase_frame, text="離開", command=self.exit_phase)
+        self.exit_button.pack(pady=20)
+
+        self.message_box = tk.Text(self.ability_phase_frame, height=10, state='disabled')
+        self.message_box.pack(pady=5)
+
+    def on_character_select(self, event):
+        character_name = self.character_combobox.get()
+        self.selected_character = self.ability_phase.get_character_by_name(character_name)
+        if self.selected_character:
+            abilities = [ability['name'] for ability in self.selected_character.friendly_abilities]
+            self.ability_combobox.config(values=abilities)
+            self.ability_combobox.set('')
+            self.target_combobox.config(values=[''])
+
+    def on_ability_select(self, event):
+        ability_name = self.ability_combobox.get()
+        self.selected_ability = next((a for a in self.selected_character.friendly_abilities if a['name'] == ability_name), None)
+        if self.selected_ability and self.selected_ability['target_required']:
+            target_names = [character.name for character in self.characters if character.alive]
+            self.target_combobox.config(values=target_names)
+            self.target_combobox.set('')
+
+    def confirm_ability_selection(self):
+        character_name = self.character_combobox.get()
+        character = self.ability_phase.get_character_by_name(character_name)
+        ability_name = self.ability_combobox.get()
+        target_name = self.target_combobox.get()
+
+        ability = next((a for a in character.friendly_abilities if a['name'] == ability_name), None)
+        target = self.ability_phase.get_character_by_name(target_name) if target_name else None
+
+        if ability:
+            result = self.ability_phase.execute_ability(character, ability, target)
+            self.show_message(result)
+
+    def show_message(self, message):
+        self.message_box.config(state='normal')
+        self.message_box.insert(tk.END, message + '\n')
+        self.message_box.config(state='disabled')
+
+    def exit_phase(self):
+        if messagebox.askyesno("確認", "是否要結束友好能力階段？"):
+            self.root.quit()
 
     def update(self):
         self.remaining_cycles_label.config(text=str(self.game.time_manager.remaining_cycles))

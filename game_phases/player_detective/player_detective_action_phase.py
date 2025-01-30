@@ -1,107 +1,46 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
-import random
-from common.action import Action, scriptwriter_actions, detective_actions
-from common.character import Character
-from common.area_and_date import Area, hospital, shrine, city, school, areas
-from common.area_and_date import get_area_by_id, display_all_areas
+from common.area_and_date import Area, hospital, shrine, city, school, TimeManager
+from GameGUI import GameGUI
+from common.character import Character, CharacterManager
+from game_phases.player_detective.player_detective_action_phase import PlayerDetectiveActionPhase
+from common.action import detective_actions 
 
-class PlayerDetectiveActionPhase:
-    def __init__(self, character_manager, role, targets, actions):
-        self.character_manager = character_manager
-        self.role = role
-        self.targets = targets
-        self.actions = actions
-        self.selected_targets = []
-        self.scriptwriter_selections = []  # 劇本家的選擇
-        self.detective_selections = []  # 偵探的選擇
+# 模擬遊戲對象
+class MockGame:
+    def __init__(self):
+        self.time_manager = TimeManager(total_days=30, total_cycles=3)
+        self.scheduled_events = {
+            1: "事件A",
+            5: "事件B",
+            10: "事件C"
+        }
 
-    def execute(self):
-        # 劇本家選擇行動
-        self.scriptwriter_choose_targets_and_actions()
-        
-        # 偵探選擇行動
-        # 偵探選擇行動現在由 GUI 控制，這裡不再創建新窗口
-        # self.detective_choose_targets_and_actions()
+# 創建測試窗口
+def main():
+    root = tk.Tk()
+    root.title("測試遊戲版圖")
 
-        # 結算所有行動
-        self.resolve_actions()
+    game = MockGame()
+    character_manager = CharacterManager(parent=root)
+    role = 'detective'
+    targets = ["角色A", "角色B", "醫院", "神社", "鬧區", "學校"]
+    actions = detective_actions
 
-    def scriptwriter_choose_targets_and_actions(self):
-        characters = self.character_manager.load_characters()
-        if characters is None:
-            raise ValueError("Characters could not be loaded.")
+    action_phase = PlayerDetectiveActionPhase(character_manager, role, targets, actions)
 
-        available_targets = [character.name for character in characters] + [area.name for area in areas.values()]
-        chosen_targets = random.sample(available_targets, 3)
+    characters = [
+        Character(1, "男學生", anxiety_threshold=5, initial_location=hospital.id, forbidden_area=None, attributes={}, friendly_abilities=[]),
+        Character(2, "女學生", anxiety_threshold=5, initial_location=shrine.id, forbidden_area=None, attributes={}, friendly_abilities=[]),
+        Character(3, "刑警", anxiety_threshold=5, initial_location=city.id, forbidden_area=None, attributes={}, friendly_abilities=[]),
+        Character(4, "老師", anxiety_threshold=5, initial_location=school.id, forbidden_area=None, attributes={}, friendly_abilities=[]),
+    ]
 
-        for target in chosen_targets:
-            action = random.choice(scriptwriter_actions)
-            self.scriptwriter_selections.append({"target": target, "action": action})
+    game_gui = GameGUI(root, game, characters, action_phase)
 
-    def get_scriptwriter_targets(self):
-        return [selection["target"] for selection in self.scriptwriter_selections]
+    # 更新顯示
+    game_gui.update()
 
-    def receive_detective_selection(self, selected_targets):
-        self.detective_selections = selected_targets
-        if self.check_validity():
-            self.execute_actions()
-            return True
-        return False
+    root.mainloop()
 
-    def confirm_selection(self, selected_targets):
-        self.selected_targets = selected_targets
-        if self.check_validity():
-            self.detective_selections = self.selected_targets
-            self.execute_actions()
-            return True
-        return False    
-    
-    def get_target_by_name(self, name):
-        characters = self.character_manager.load_characters()
-        if characters is None:
-            raise ValueError("Characters could not be loaded.")
-        for character in characters:
-            if character.name == name:
-                return character
-        for area in areas.values():
-            if area.name == name:
-                return area
-        return None
-        
-
-    def execute_actions(self):
-        all_actions = self.scriptwriter_selections + self.detective_selections
-        for selection in all_actions:
-            target_name = selection["target"]
-            action = selection["action"]
-            target = self.get_target_by_name(target_name)
-            if target and action:
-                action.effect(target)
-        
-
-    def resolve_actions(self):
-        all_actions = self.scriptwriter_selections + self.detective_selections
-        forbidden_actions = [13, 14, 15, 9, 10, 18]  # 禁止移動 ABC, 不安禁止, 友好禁止, 禁止陰謀
-        forbidden_targets = set()
-
-        for selection in all_actions:
-            action = selection["action"]
-            if action.id in forbidden_actions:
-                forbidden_targets.add(selection["target"])
-
-        for selection in all_actions:
-            target_name = selection["target"]
-            action = selection["action"]
-            if target_name not in forbidden_targets:
-                target = self.get_target_by_name(target_name)
-                action.effect(target)
-
-    def check_validity(self):
-        targets = [item["target"] for item in self.detective_selections]
-        actions = [item["action"].name for item in self.detective_selections]
-        if len(set(targets)) != len(targets):
-            return False
-        if actions.count("禁止陰謀") > 1:
-            return False
-        return True
+if __name__ == "__main__":
+    main()

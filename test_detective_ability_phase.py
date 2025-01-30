@@ -1,50 +1,77 @@
-import unittest
-from unittest.mock import MagicMock
 import tkinter as tk
-from scriptwriter.ai_gameset import AIGameSet
-from common.board import GameBoard, Character, Area
 from common.character import CharacterManager
-from game_phases.player_detective.player_detective_ability_phase import PlayerDetectiveAbilityPhase, DetectiveAbilityGUI
+from common.area_and_date import Area, hospital, shrine, city, school, TimeManager
+from common.character import Character, CharacterManager
+from game_phases.player_detective.player_detective_ability_phase import PlayerDetectiveAbilityPhase
+from GameGUI import DetectiveAbilityGUI
+import tkinter as tk
+from database.Basecharacter import load_character_database, BaseCharacter
+from database.RuleTable import Role, Ability, get_rule_table_by_id
 
-class TestPlayerDetectiveAbilityPhase(unittest.TestCase):
-    def setUp(self):
-        # 初始化 Tkinter 根窗口
-        self.root = tk.Tk()
 
-        # 初始化 CharacterManager
-        self.character_manager = CharacterManager(parent=self.root)
 
-        # 初始化 AIGameSet 並生成劇本
-        self.ai_gameset = AIGameSet(self.character_manager)
+def create_character_manager(root):
+    character_manager = CharacterManager(root)
+    characters = load_character_database()
+    character_manager.characters = [Character(**char.__dict__) for char in characters]
+    return character_manager
 
-        # 初始化 GameBoard
-        self.game = MagicMock()
-        self.game.time_manager = MagicMock()
-        self.game.time_manager.remaining_cycles = self.ai_gameset.total_cycles
-        self.game.time_manager.total_days = self.ai_gameset.total_days
-        self.game.time_manager.current_day = 1
-        self.game.scheduled_events = self.ai_gameset.scheduled_events
+# 從角色列表中引用男學生和女學生
+def get_characters(character_manager):
+    male_student = next(character for character in character_manager.characters if character.name == '男學生')
+    female_student = next(character for character in character_manager.characters if character.name == '女學生')
+    return male_student, female_student
 
-        self.game_board = GameBoard(root=self.root, game=self.game)
-        self.game_board.update()  # 更新 GameBoard 顯示
+# 從 RuleTable 中引用黑幕身分
+def create_black_mastermind_role():
+    black_mastermind = Role(3, "黑幕")
+    black_mastermind.add_trait("友好無視")
+    black_mastermind.add_ability(Ability(
+        "陰謀操控", "主動", "同地區其他角色或地區+1陰謀",
+        lambda character, script_writer: (
+            target.add_conspiracy(1) if isinstance(target := script_writer.choose_target_or_area(character.current_location)) else target.add_conspiracy(1)
+        )
+    ))
+    return black_mastermind
 
-        # 將所有角色的友好值增加3
-        for character in self.character_manager.characters:
-            character.change_friendship(3)
+# 設定角色的身分
+def assign_role_to_character(character, role):
+    character.role_name = role.name
+    character.traits = role.traits
+    character.role_abilities = role.abilities
 
-        # 初始化 PlayerDetectiveAbilityPhase
-        self.phase = PlayerDetectiveAbilityPhase(self.character_manager, self.game, self.ai_gameset)
-
-        # 檢查角色能力，這應該會生成 GUI 並讓我們選擇角色能力
-        self.phase.check_abilities()
-        self.gui = DetectiveAbilityGUI(self.root, self.phase)
-
-    def tearDown(self):
-        self.root.destroy()  # 銷毀根窗口以清理資源
-
-    def test_ability_usage(self):
-        # 顯示 GUI 並等待用戶選擇角色和能力
-        self.root.mainloop()
+# 初始化遊戲對象和腳本家對象
+class MockGame:
+    def __init__(self):
+        self.time_manager = TimeManager(total_days=30, total_cycles=3)
+        self.scheduled_events = {
+            1: "事件A",
+            5: "事件B",
+            10: "事件C"
+        }
+        self.action_cards = []
 
 if __name__ == "__main__":
-    unittest.main()
+    root = tk.Tk()
+
+    # 初始化角色管理器
+    character_manager = create_character_manager(root)
+
+    # 獲取男學生和女學生
+    male_student, female_student = get_characters(character_manager)
+
+    # 創建黑幕身分並分配給角色
+    black_mastermind = create_black_mastermind_role()
+    assign_role_to_character(male_student, black_mastermind)
+    assign_role_to_character(female_student, black_mastermind)
+
+    # 初始化遊戲對象和腳本家對象
+    game = MockGame()
+    scriptwriter = None  # 初始化劇本家對象
+
+    # 初始化能力階段
+    phase = PlayerDetectiveAbilityPhase(character_manager, game, scriptwriter)
+
+    # 啟動能力階段的 GUI
+    gui = DetectiveAbilityGUI(root, phase)
+    root.mainloop()
