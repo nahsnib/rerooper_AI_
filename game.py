@@ -1,5 +1,6 @@
 from game_phases.player_detective.player_detective_action_phase import PlayerDetectiveActionPhase
-from game_phases.player_detective.player_detective_ability_phase import PlayerDetectiveAbilityPhase
+from game_phases.player_detective.player_role_ability_phase import PlayerRoleAbilityPhase
+from game_phases.player_detective.player_friendship_ability_phase import PlayerFriendshipAbilityPhase
 from game_phases.player_detective.player_event_phase import EventPhase
 from game_phases.player_detective.player_night_phase import NightPhase
 from game_phases.player_detective.player_cycle_end import CycleEnd
@@ -32,7 +33,8 @@ class GameLoop:
         self.total_days = total_days
         self.scheduled_events = scheduled_events
         self.action_phase = None
-        self.ability_phase = None
+        self.role_phase = None
+        self.friendship_phase = None
         self.event_phase = None
         self.night_phase = None
         self.cycle_end_phase = None
@@ -42,7 +44,8 @@ class GameLoop:
     def setup_phases(self):
         if self.role == "偵探":
             self.action_phase = PlayerDetectiveActionPhase(self.character_manager)
-            self.ability_phase = PlayerDetectiveAbilityPhase(self.character_manager, self)
+            self.role_phase = PlayerRoleAbilityPhase(self.character_manager, self)
+            self.friendship_phase = PlayerFriendshipAbilityPhase(self.character_manager, self)
             self.event_phase = EventPhase(self.character_manager)
             self.night_phase = NightPhase(self.character_manager, self)
             self.cycle_end_phase = CycleEnd(self.character_manager, self)

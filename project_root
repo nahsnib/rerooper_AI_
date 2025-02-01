@@ -16,8 +16,8 @@ project_root/
 │   ├──  player_detective/
 │   │   ├──__init__.py
 │   │   ├── player_detective_action_phase.py
-│   │   ├── player_detective_ability_phase.py
-│   │   ├── player_scriptwriter_ability_phase.py
+│   │   ├── player_role_ability_phase.py
+│   │   ├── player_friendship_ability_phase.py
 │   │   ├── player_event_phase.py
 │   │   ├── player_night_phase.py
 │   │   ├── player_cycle_end.py

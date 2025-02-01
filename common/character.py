@@ -51,6 +51,7 @@ class Character:
         self.role_name = role_name  # 初始化角色身分名稱
 
         # 浮動資訊
+        self.pickup = False
         self.anxiety = 0
         self.conspiracy = 0
         self.friendship = 0
@@ -271,6 +272,12 @@ class CharacterManager(tk.Frame):
 
         self.load_characters()
         self.update_listbox()
+
+    def add_character(self, character):
+        self.characters.append(character)
+
+    def get_pickup_characters(self):
+        return [character for character in self.characters if character.pickup]
 
     def load_characters(self):
         characters_data = load_character_database()
