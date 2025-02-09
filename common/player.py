@@ -1,36 +1,28 @@
 class Player:
-    def __init__(self, role, actions):
-        self.role = role
-        self.defeat_flags = set()  # 用於存儲敗北旗標
-        self.actions = actions
+    def __init__(self, identity, available_actions):
+        self.identity = identity  # "偵探" 或 "劇本家"
+        self.available_actions = {action.action_id: action for action in available_actions}  # 可用的行動
+        self.used_actions = set()  # 記錄已使用的行動
+        self.special_actions = {}  # 特殊能力（暫時保留，日後設計）
 
-    def set_defeat_flag(self, flag):
-        self.defeat_flags.add(flag)
+    def use_action(self, action_id):
+        """標記行動為已使用，並執行行動"""
+        if action_id in self.available_actions:
+            action = self.available_actions[action_id]
+            if action.use():  # 直接調用 Action 內的 use()
+                self.used_actions.add(action_id)
+                return True  # 成功使用行動
+        return False  # 行動已被使用或不存在
 
-    def check_defeat_flags(self):
-        return len(self.defeat_flags) > 0
-    
-    def choose_actions(self, board):
-        # 選擇行動的邏輯（這裡可以使用玩家輸入或AI來選擇）
-        chosen_actions = []
-        for action in self.actions:
-            if action.can_use():
-                # 假設這裡選擇了某個角色為目標
-                target = self.select_target(board)
-                if action.use():
-                    chosen_actions.append((action, target))
-        return chosen_actions
+    def daily_reset_actions(self):
+        """夜晚時，重置每日可用行動"""
+        for action in self.available_actions.values():
+            if action.is_daily_limited:  # 只重置每日限制的行動
+                action.reset()
+        self.used_actions.clear()
 
-    def select_target(self, board):
-        # 選擇目標的邏輯（這裡可以使用玩家輸入或AI來選擇）
-        # 這是一個簡單的示例，實際上應根據遊戲狀態來選擇
-        return board.characters[0]
-
-    def use_abilities(self, board):
-        # 使用能力的邏輯（根據角色的特殊能力）
-        pass
-
-    def apply_special_effects(self, game):
-        # 檢查主規則和副規則的特殊效果
-        for rule in game.rule_table.main_rules + game.rule_table.sub_rules:
-            rule.apply_special_effect(game)
+    def cycle_reset_actions(self):
+        """輪迴結束時，重置所有可用行動"""
+        for action in self.available_actions.values():
+            action.reset()  # 重置所有行動
+        self.used_actions.clear()

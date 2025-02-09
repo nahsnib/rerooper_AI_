@@ -10,27 +10,45 @@ class EventPhase:
         self.game_set = game_set
         self.game = game
 
-    def start(self):
-        today_event = self.check_today_event()
-        if not today_event:
-            self.show_message("今日無事件")
-            return
+    def main(self):
+        today = self.game.time_manager.current_day
+        events_today = [event for event in self.game.scheduled_events.values() if event.date == today]
         
-        criminal = self.get_event_criminal(today_event)
-        if not self.is_event_triggered(criminal):
-            self.show_message("未達事件發生條件，事件不發生")
-            return
+        if not events_today:
+            return self.end_phase()
         
-        self.execute_event(today_event, criminal)
+        for event in events_today:
+            for char in self.character_manager.characters:
+                print(f"🧐 現有角色: '{char.name}' (類型: {type(char.name)})")
+
+            criminal = self.character_manager.get_character_by_name(event.criminal_name)
+            print(f"📌 事件 '{event.name}' 犯人名稱: '{event.criminal_name}' (類型: {type(event.criminal_name)})")
+            print(f"🧐 找到角色: {criminal.name if criminal else '未找到'}")
+
+            if not criminal:
+                print(f"🚨 錯誤: 找不到事件 '{event.name}' 的犯人 '{event.criminal_name}'！")
+                continue
+            
+            if not criminal.alive:
+                print(f"📢 事件 '{event.name}' 未發生: 犯人 '{criminal.name}' 已死亡。")
+                continue
+            
+            if criminal.anxiety < criminal.anxiety_threshold:
+                print(f"📢 事件 '{event.name}' 未發生: '{criminal.name}' 的不安 ({criminal.anxiety}) 低於臨界 ({criminal.anxiety_threshold})。")
+                continue
+            
+            print(f"🔥 觸發事件: {event.name} | 犯人: {criminal.name}")
+            event.effect(self.game)
+            event.happened = True
+        
+        self.end_phase()
+        
 
     def check_today_event(self):
         # 檢查今天是否有事件
         today = self.game.time_manager.current_day
         return self.game_set.scheduled_events.get(today, None)
 
-    def get_event_criminal(self, event):
-        # 獲取事件犯人
-        return self.character_manager.get_character_by_name(event['criminal'])
 
     def is_event_triggered(self, criminal):
         # 判斷事件是否觸發
@@ -40,6 +58,7 @@ class EventPhase:
 
     def execute_event(self, event, criminal):
         # 執行事件
+        event.happened = True
         if not event.get('target_required', False):
             self.apply_event_effects(event)
             self.show_message(f"事件 {event['name']} 發生")
@@ -68,6 +87,10 @@ class EventPhase:
     def show_message(self, message):
         # 顯示訊息給偵探方
         print(message)
+        input("點選確定繼續...")
+
+    def end_phase(self):
+        print("事件階段結束")
         input("點選確定繼續...")
 
 if __name__ == "__main__":

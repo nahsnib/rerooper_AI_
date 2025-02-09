@@ -1,7 +1,7 @@
 # main.py
 import tkinter as tk
 from tkinter import messagebox
-from game import GameLoop
+from gameloop import GameLoop
 from common.character import CharacterManager
 from scriptwriter.ai_gameset import AIGameSet
 

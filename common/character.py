@@ -1,9 +1,9 @@
-import tkinter as tk
-from tkinter import messagebox
-from database.Basecharacter import load_character_database
+
+from database.Basecharacter import get_Basecharacter_by_id, FriendshipAbility
 #from common.area_and_date import areas, hospital, shrine, city, school # 導入地區
 import random
 import logging
+from game_gui import GameGUI
 
 def friendship_ignore(character):
     """
@@ -25,33 +25,27 @@ def friendship_ignore(character):
     logging.info("友好能力有效")
     return (False, "友好能力有效")
 
-def show_friendship_ignore(character):
-    ignore, reason = friendship_ignore(character)
-    message = f"角色: {character.name}\n結果: {reason}"
-    show_message(message)
-
-def show_message(message):
-    root = tk.Tk()
-    root.withdraw()  # 隱藏主窗口
-    messagebox.showinfo("友好能力檢查結果", message)
-    root.destroy()
 
 class Character:
-    def __init__(self, id, name, anxiety_threshold, initial_location, forbidden_area, attributes, friendly_abilities, special_ability=None, role_abilities=None, traits=None, role_name=None):
-        self.id = id
+    def __init__(self, Ch_id, name, anxiety_threshold, initial_location, forbidden_area, attributes, friendship_abilities, special_ability=None, role_abilities=None,
+     traits=None):
+        self.Ch_id = Ch_id
         self.name = name
         self.anxiety_threshold = anxiety_threshold
         self.initial_location = initial_location
-        self.forbidden_area = forbidden_area
+        self.forbidden_area = forbidden_area if forbidden_area is not None else []  # 確保為列表
         self.attributes = attributes
-        self.friendly_abilities = friendly_abilities or []
-        self.role_abilities = role_abilities or []  # 確保初始化 role_abilities
+        self.friendship_abilities = friendship_abilities or []
         self.special_ability = special_ability
         self.traits = traits or []  # 初始化特性屬性
-        self.role_name = role_name  # 初始化角色身分名稱
+        self.role_name = "普通人"  # 初始化角色身分名稱
+        self.role_abilities = role_abilities or []  # 確保初始化 role_abilities
+        self.pickup = False  # 是否為隨機選擇的角色
+
+        self.name = name.strip()  # 確保沒有前後空格
+        print(f"🆕 角色初始化: '{self.name}'")
 
         # 浮動資訊
-        self.pickup = False
         self.anxiety = 0
         self.conspiracy = 0
         self.friendship = 0
@@ -59,8 +53,7 @@ class Character:
         self.is_criminal = False
         self.event_crimes = []
         self.current_location = initial_location  # 設置當前地區
-        self.secret_identity = None
-        self.friendly_ability_usage = {ability['name']: False for ability in self.friendly_abilities}
+        self.friendship_ability_usage = {ability.name: False for ability in self.friendship_abilities}
         self.role_ability_usage = {ability['name']: False for ability in self.role_abilities}
 
     def reset(self):
@@ -71,35 +64,40 @@ class Character:
         self.alive = True
         self.is_criminal = False
         self.event_crimes = []
-        self.secret_identity = None
         self.reset_ability_usage()
+
+    def scholar_effect(self, owner):
+        owner.friendship = 0
+        owner.anxiety = 0
+        owner.conspiracy = 0
+
+    def change_anxiety(self, amount):
+        self.anxiety = max(0, self.anxiety + amount)  # 最低 0
+
+    def change_friendship(self, amount):
+        self.friendship = max(0, self.friendship + amount)  # 最低 0
+
+    def change_conspiracy(self, amount):
+        self.conspiracy = max(0, self.conspiracy + amount)  # 最低 0
 
     def move(self, location):
         if self.alive and location != self.forbidden_area:
             self.current_location = location
 
-    def change_anxiety(self, amount):
-        self.anxiety += amount
-
-    def change_conspiracy(self, amount):
-        self.conspiracy += amount
-
-    def change_friendship(self, amount):
-        self.friendship += amount
-
     def move_anywhere(self):
         new_location = self.current_location
         if self.current_location == "醫院":
-            new_location = "鬧區"
-        elif self.current_location == "鬧區":
+            new_location = "都市"
+        elif self.current_location == "都市":
             new_location = "醫院"
         elif self.current_location == "學校":
             new_location = "神社"
         elif self.current_location == "神社":
             new_location = "學校"
         
-        if new_location != self.forbidden_area:
-           self.current_location = new_location
+        if new_location not in (self.forbidden_area or []):
+            self.current_location = new_location
+
         #暫時先用垂直移動取代
         #if is_player:
         #    self.show_move_anywhere_dialog()
@@ -110,38 +108,38 @@ class Character:
 
     def move_vertical(self):
         location_map = {
-            "醫院": "鬧區",
-            "鬧區": "醫院",
+            "醫院": "都市",
+            "都市": "醫院",
             "學校": "神社",
             "神社": "學校"
         }
         new_location = location_map.get(self.current_location, self.current_location)
-
-        if new_location != self.forbidden_area:
+        print(f"{self.name} 嘗試從 {self.current_location} 移動到 {new_location}，禁制地點是 {self.forbidden_area}")
+        if new_location not in (self.forbidden_area or []):
             self.current_location = new_location
 
     def move_horizontal(self):
         location_map = {
             "醫院": "神社",
             "神社": "醫院",
-            "學校": "鬧區",
-            "鬧區": "學校"
+            "學校": "都市",
+            "都市": "學校"
         }
         new_location = location_map.get(self.current_location, self.current_location)
-
-        if new_location != self.forbidden_area:
+        print(f"{self.name} 嘗試從 {self.current_location} 移動到 {new_location}，禁制地點是 {self.forbidden_area}")
+        if new_location not in (self.forbidden_area or []):
             self.current_location = new_location
-
+        
     def move_diagonal(self):
         location_map = {
             "醫院": "學校",
             "學校": "醫院",
-            "鬧區": "神社",
-            "神社": "鬧區" 
+            "都市": "神社",
+            "神社": "都市" 
         }
         new_location = location_map.get(self.current_location, self.current_location)
-
-        if new_location != self.forbidden_area:
+        print(f"{self.name} 嘗試從 {self.current_location} 移動到 {new_location}，禁制地點是 {self.forbidden_area}")
+        if new_location not in (self.forbidden_area or []):
             self.current_location = new_location
             
             
@@ -149,59 +147,13 @@ class Character:
         self.is_criminal = True
         self.event_crimes.append(event_name)
 
-    def use_friendly_ability(self, ability_name, target=None):
-        for ability in self.friendly_abilities:
-            if ability['name'] == ability_name:
-                if not self.friendly_ability_usage[ability_name] and ability['trigger'](self):
-                    if ability['target_required']:
-                        if target and ability['target_condition'](target, self):
-                            ability['effect'](target)
-                            self.friendly_ability_usage[ability_name] = True
-                            print(f"{self.name} 使用了能力：{ability_name} 對 {target.name}")
-                            return
-                        else:
-                            print(f"無效的目標：{target.name} 不符合條件")
-                            return
-                    else:
-                        ability['effect'](self)
-                        self.friendly_ability_usage[ability_name] = True
-                        print(f"{self.name} 使用了能力：{ability_name}")
-                        return
-                else:
-                    print(f"{self.name} 的友好度不足以使用能力：{ability_name} 或今天已使用過")
-                    return
-        print(f"{self.name} 沒有這個友好能力：{ability_name}")
-
-    def use_role_ability(self, ability_name, target=None):
-        for ability in self.role_abilities:
-            if ability['name'] == ability_name:
-                if not self.role_ability_usage[ability_name]:
-                    if ability['target_required']:
-                        if target and ability['target_condition'](target, self):
-                            ability['effect'](target)
-                            self.role_ability_usage[ability_name] = True
-                            print(f"{self.name} 使用了身分能力：{ability_name} 對 {target.name}")
-                            return
-                        else:
-                            print(f"無效的目標：{target.name} 不符合條件")
-                            return
-                    else:
-                        ability['effect'](self)
-                        self.role_ability_usage[ability_name] = True
-                        print(f"{self.name} 使用了身分能力：{ability_name}")
-                        return
-                else:
-                    print(f"{self.name} 今天已使用過身分能力：{ability_name}")
-                    return
-        print(f"{self.name} 沒有這個身分能力：{ability_name}")
-
     def can_use_ability(self, ability_name):
-        return (ability_name not in self.friendly_ability_usage or not self.friendly_ability_usage[ability_name]) and \
+        return (ability_name not in self.friendship_ability_usage or not self.friendship_ability_usage[ability_name]) and \
                (ability_name not in self.role_ability_usage or not self.role_ability_usage[ability_name])
 
     def reset_ability_usage(self):
-        for ability in self.friendly_ability_usage:
-            self.friendly_ability_usage[ability] = False
+        for ability in self.friendship_ability_usage:
+            self.friendship_ability_usage[ability] = False
         for ability in self.role_ability_usage:
             self.role_ability_usage[ability] = False
 
@@ -209,134 +161,99 @@ class Character:
         self.identity_revealed = True
         print(f"{self.name} 的身份已公開")
 
-    def handle_death(self, cause, game):
-        """
-        處理角色死亡的邏輯
-        :param cause: 死亡原因，可以是事件、身分能力、友好能力等
-        :param game: 遊戲實例，用於檢查和通知相關角色和玩家
-        """
-        if not self.alive:
-            return  # 角色已經死亡，無需重複處理
+    def kill_character(self, character):
+        # 角色死亡前，檢查是否有刑警在同地區
+        for potential_savior in self.characters:
+            if potential_savior.current_location == character.current_location and "刑警" in potential_savior.attributes:
+                decision = GameGUI.ask_user(f"{potential_savior.name} 可以使用能力拯救 {character.name}，是否發動？")
+                if decision:
+                    result = potential_savior.rescue_ability(character)
+                    self.log_event(result)
+                    return  # 終止死亡處理
 
-        self.alive = False
-        print(f"{self.name} 死亡，原因：{cause}")
+        # 若無法拯救，則正式死亡
+        character.alive = False
+        self.log_event(f"{character.name} 已死亡。")
 
-        # 觸發刑警的友好能力
-        for character in game.character_manager.get_all_characters():
-            if character.role == "刑警" and character.current_location == self.current_location:
-                if character.can_use_ability("阻止死亡"):
-                    # 詢問玩家是否要發動刑警的友好能力
-                    user_input = input(f"{character.name} 可以阻止 {self.name} 的死亡，是否發動能力？(y/n): ")
-                    if user_input.lower() == 'y':
-                        ignore, reason = friendship_ignore(character)
-                        print(reason)
-                        if not ignore:
-                            character.use_friendly_ability("阻止死亡", self)
-                            self.alive = True
-                            print(f"{character.name} 阻止了 {self.name} 的死亡")
-                            return
-
-        # 檢查是否為關鍵人物的死亡
-        if self.is_key_person():
-            print(f"關鍵人物 {self.name} 死亡，輪迴立即結束")
-            game.end_cycle()
-
-        # 其他死亡處理邏輯
-        # ...
 
     def is_key_person(self):
         # 假設有一個方法來判定角色是否是關鍵人物
         return "關鍵人物" in self.traits
 
+    def police_effect(self, game):
+        if not game.occurred_events:
+            return "目前沒有已發生的事件。"
+    
+        event_list = "\n".join([f"{event}: {culprit}" for event, culprit in game.occurred_events.items()])
+        return f"已發生的事件與犯人：\n{event_list}"
+
+    def rescue_effect(self, target):
+        if target.alive == False:
+            target.alive = True
+            return f"{self.name} 使用了能力，使 {target.name} 復活！"
+        return f"{target.name} 並沒有死亡，無法使用能力。"
+
     def __str__(self):
         return f"Character({self.name}, Anxiety: {self.anxiety}, Conspiracy: {self.conspiracy}, Friendship: {self.friendship}, Location: {self.current_location}, Alive: {self.alive}, Event Crimes: {self.event_crimes})"
 
 
-
-class CharacterManager(tk.Frame):
-    def __init__(self, parent, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
+class CharacterManager():
+    def __init__(self,character_db):
         self.characters = []
-        self.selected_character = None
-        self.selected_ability = None
-
-        self.character_listbox = tk.Listbox(self, selectmode=tk.SINGLE)
-        self.character_listbox.grid(row=0, column=0, sticky="nsew")
-        self.character_listbox.bind("<<ListboxSelect>>", self.on_character_select)
-
-        self.character_details = tk.Label(self, text="請選擇一個角色")
-        self.character_details.grid(row=0, column=1, sticky="nsew")
-
-        self.actions_frame = tk.Frame(self)
-        self.actions_frame.grid(row=1, column=0, columnspan=2, sticky="nsew")
-
-        self.load_characters()
-        self.update_listbox()
+        self.character_db = character_db  # 存入角色資料庫
 
     def add_character(self, character):
         self.characters.append(character)
 
     def get_pickup_characters(self):
         return [character for character in self.characters if character.pickup]
+    
+    def get_character_by_name(self, name):
+        """根據名稱查找角色"""
+        return next((char for char in self.characters if char.name == name), None)
 
-    def load_characters(self):
-        characters_data = load_character_database()
-        self.characters = []
-        for char_data in characters_data:
-            character = Character(**char_data.__dict__)  # 使用角色的字典來初始化
-            self.characters.append(character)
-        return self.characters
+    def initialize_characters(self, count_range=(10, 14), id_range=(1, 19)):
+        """隨機選擇角色並初始化"""
+        pickup_Ch_ids = random.sample(range(*id_range), random.randint(*count_range))
+        
+        for Ch_id in pickup_Ch_ids:
+            base_char = next((char for char in self.character_db if char.Ch_id == Ch_id), None)  # 🔥 應該從 `character_db` 選取角色
+            if base_char:
+                character = self.initialize_character_by_id(base_char.Ch_id)  # 這裡應該創建新角色
+                character.pickup = True
+                self.characters.append(character)
 
-    def update_listbox(self):
-        self.character_listbox.delete(0, tk.END)
-        for character in self.characters:
-            self.character_listbox.insert(tk.END, f"{character.id}: {character.name}")
-
-    def on_character_select(self, event):
-        selection = self.character_listbox.curselection()
-        if selection:
-            index = selection[0]
-            self.selected_character = self.characters[index]
-            self.update_character_details()
-
-    def update_character_details(self):
-        if self.selected_character:
-            details = (f"名稱: {self.selected_character.name}\n"
-                       f"位置: {self.selected_character.current_location}\n"
-                       f"不安: {self.selected_character.anxiety}\n"
-                       f"陰謀: {self.selected_character.conspiracy}\n"
-                       f"友好: {self.selected_character.friendship}\n"
-                       f"死亡: {'是' if not self.selected_character.alive else '否'}\n"
-                       f"事件犯人: {', '.join(self.selected_character.event_crimes)}")
-            self.character_details.config(text=details)
-
-            # 更新行動和能力
-            self.update_actions_and_abilities()
-
-    def update_actions_and_abilities(self):
-        for widget in self.actions_frame.winfo_children():
-            widget.destroy()
-
-        actions_label = tk.Label(self.actions_frame, text="可用行動與能力")
-        actions_label.pack()
-
-        # 顯示角色的友好能力和身分能力
-        for ability in self.selected_character.friendly_abilities + self.selected_character.role_abilities:
-            ability_name = ability['name']
-            if self.selected_character.can_use_ability(ability_name):
-                ability_button = tk.Button(self.actions_frame, text=ability_name, command=lambda a=ability_name: self.select_ability(a))
-                ability_button.pack()
-            else:
-                ability_button = tk.Button(self.actions_frame, text=ability_name, state=tk.DISABLED)
-                ability_button.pack()
+        print("✅ 已初始化角色: ", [char.name for char in self.characters])  # 確認角色是否正確選擇
 
 
+    def initialize_character_by_id(self,Ch_id):
+        base_character = get_Basecharacter_by_id(Ch_id)
+        if not base_character:
+            raise ValueError(f"Character with ID {Ch_id} not found")
+
+        return Character(
+            Ch_id=base_character.Ch_id,
+            name=base_character.name,
+            anxiety_threshold=base_character.anxiety_threshold,
+            initial_location=base_character.initial_location,
+            forbidden_area=base_character.forbidden_area,
+            attributes=base_character.attributes,
+            friendship_abilities=base_character.friendship_abilities,
+            special_ability=base_character.special_ability
+    )
+    def get_valid_targets(self, fa: FriendshipAbility, all_characters):
+        """篩選符合該友好能力目標條件的角色"""
+        if not fa.target_required:
+            return []  # 如果不需要目標，則直接返回空清單
+
+        return [
+            target for target in all_characters
+            if target is not self  # 不能選擇自己
+            and target.is_alive  # 不能選擇死亡角色
+            and fa.target_condition(target, self)  # 必須符合技能條件
+        ]
 
 
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    root.title("角色管理")
-    character_manager = CharacterManager(root)
-    character_manager.pack(expand=True, fill=tk.BOTH)
-    root.mainloop()
+    character_manager = CharacterManager()

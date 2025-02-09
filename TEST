@@ -1,0 +1,115 @@
+
+
+# 建立身分與能力
+key_figure = Role(1, "關鍵人物")
+key_figure.add_ability(Role_Ability(
+    "犧牲的代價", "被動", "此角色死亡時，輪迴直接結束，腳本家勝利",
+    lambda character, game: game.script_writer.win_cycle() if character.is_dead else None
+))
+
+murderer = Role(2, "殺手")
+murderer.add_trait("友好無視")
+murderer.add_ability(Role_Ability(
+    "夜晚殺戮", "被動", "夜晚階段時，若與其他角色獨處，則殺害之",
+    lambda character, game: (
+        target.handle_death("事件 - 夜晚殺戮", game) if (target := character.current_area.get_random_character_except(character)) and character.current_area.is_night else None
+    )
+))
+murderer.add_ability(Role_Ability(
+    "預謀殺害", "被動", "夜晚階段時，陰謀>3，腳本家勝利，輪迴結束",
+    lambda character, game: (
+        game.script_writer.win_cycle() if character.conspiracy > 3 else None
+    )
+))
+
+mastermind = Role(3, "黑幕")
+mastermind.add_trait("友好無視")
+mastermind.add_ability(Role_Ability(
+    "陰謀操控", "主動", "同地區其他角色或地區+1陰謀",
+    lambda character, script_writer: (
+        target.add_conspiracy(1) if isinstance(target := script_writer.choose_target_or_area(character.current_area)) else target.add_conspiracy(1)
+    )
+))
+
+cultist = Role(4, "邪教徒")
+cultist.add_trait("友好無效")
+cultist.add_ability(Role_Ability(
+    "無法遏止", "被動", "行動結算階段，取消此地區偵探設置的陰謀禁止卡片",
+    lambda area, is_scriptwriter_view: (
+        area.remove_conspiracy_ban()
+    )
+))
+
+witch = Role(5, "魔女")
+witch.add_trait("友好無效")
+
+time_traveler = Role(6, "時間旅行者")
+time_traveler.add_trait("無法被殺害")
+time_traveler.add_ability(Role_Ability(
+    "拯救失敗", "被動", "最後一天夜晚階段，若友好值<2，腳本家勝利，輪迴結束",
+    lambda character, game_state, is_scriptwriter_view: (
+        game_state.end_loop("腳本家勝利")
+        if game_state.current_day == game_state.final_day and character.friendship < 2 else None
+    )
+))
+
+# 添加次要角色
+friend = Role(7, "朋友")
+friend.add_ability(Role_Ability(
+    "友誼破碎", "被動", "輪迴結束死亡時，腳本家勝利並公開身分",
+    lambda character, game: game.script_writer.win_cycle() if character.is_dead else None
+))
+
+misleader = Role(8, "誤導者")
+misleader.add_ability(Role_Ability(
+    "不安增加", "主動", "能力階段對同地區角色+1不安",
+    lambda target, is_scriptwriter_view: (
+        target.add_anxiety(1)
+    )
+))
+
+lover = Role(9, "戀人")
+lover.add_ability(Role_Ability(
+    "生離死別", "被動", "死亡時使情人+6不安",
+    lambda partner, is_scriptwriter_view: (
+        partner.add_anxiety(6)
+    )
+))
+
+loved_one = Role(10, "情人")
+loved_one.add_ability(Role_Ability(
+    "生離死別", "被動", "死亡時使戀人+6不安",
+    lambda partner, is_scriptwriter_view: (
+        partner.add_anxiety(6)
+    )
+))
+loved_one.add_ability(Role_Ability(
+    "為愛痴狂", "被動", "夜晚階段若不安>3且陰謀值>0，腳本家勝利，輪迴結束",
+    lambda character, game_state, is_scriptwriter_view: (
+        game_state.end_loop("腳本家勝利")
+        if character.anxiety > 3 and character.conspiracy > 0 else None       
+    )
+))
+murderer_role = Role(11, "殺人魔")
+murderer_role.add_ability(Role_Ability(
+    "夜晚殺戮", "被動", "夜晚階段時，若與其他角色獨處，則殺害之",
+    lambda character, game: (
+        target.handle_death("身分能力 - 夜晚殺戮", game) if (target := character.current_area.get_random_character_except(character)) and character.current_area.is_night else None
+    )
+))
+
+factor_role = Role(12, "因子")
+factor_role.add_trait("友好無視")
+factor_role.add_ability(Role_Ability(
+    "不安增加·仿", "主動", "如果地區「都市」的陰謀數>1才能發動。能力階段對同地區角色+1不安",
+    lambda target, is_scriptwriter_view: (
+        target.add_anxiety(1),
+        
+        )
+))
+factor_role.add_ability(Role_Ability(
+    "犧牲的代價·仿", "被動", "此角色死亡時，如果地區「學校」的陰謀數>1，輪迴直接結束，腳本家勝利",
+    lambda character, game: game.script_writer.win_cycle() if character.is_dead else None
+    
+    
+))

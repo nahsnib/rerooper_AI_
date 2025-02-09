@@ -1,10 +1,4 @@
-import tkinter as tk
-from tkinter import ttk
-from datetime import datetime
-from common.character import Character
-import copy
 
-# 假設 game_history.py 中的 GameHistory 類已定義
 from game_history import GameHistory
 
 class Area:
@@ -35,9 +29,6 @@ class Area:
     def move_anywhere(self):
         pass
 
-    def prevent_movement(self):
-        pass
-
     def change_anxiety(self, amount):
         pass
 
@@ -48,7 +39,7 @@ class Area:
 # 定義地區
 hospital = Area(1, "醫院")
 shrine = Area(2, "神社")
-city = Area(3, "鬧區")
+city = Area(3, "都市")
 school = Area(4, "學校")
 
 # 添加地區到地圖

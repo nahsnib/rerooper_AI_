@@ -1,62 +1,73 @@
-from common.character import CharacterManager, friendship_ignore  # 引入 CharacterManager 和 friendship_ignore 函數
-
-def check_friendship_ignore(character):
-    """
-    檢查角色的友好能力是否會被無效或無視。
-    
-    參數:
-        character: 需要檢查的角色對象。
-        
-    返回:
-        (bool, str): (是否無效或無視, 原因描述)
-    """
-    ignore, reason = friendship_ignore(character)
-    return not ignore, reason
+import random
+from common.character import CharacterManager
+from common.player import Player
+from game_gui import GameGUI
 
 class PlayerFriendshipAbilityPhase:
-    def __init__(self, character_manager, game, scriptwriter):
-        self.character_manager = character_manager
+    def __init__(self, game, game_gui):
         self.game = game
-        self.scriptwriter = scriptwriter
-        self.active_abilities = self.get_active_abilities()
+        self.game_gui = game_gui
+        self.phase_type = "friendship"  # ✅ 新增此屬性
+        self.selected_ability = None
+        self.selected_target = None
+        self.available_abilities = []
 
-    def get_active_abilities(self):
-        active_abilities = []
-        characters = self.character_manager.get_pickup_characters()  # 從 character_manager 取得角色列表
-        for character in characters:
-            for ability in character.friendly_abilities:
-                if ability['trigger'](character) and not character.friendly_ability_usage.get(ability['name'], False):
-                    active_abilities.append((character, ability))
-        print(f"active_abilities after initialization: {active_abilities}")  # 添加打印語句
-        return active_abilities
 
-    def execute_ability(self, character, ability, target=None):
-        # 執行角色的能力
-        print(f"active_abilities: {self.active_abilities}")  # 添加打印語句
-        if (character, ability) in self.active_abilities:
-            if ability.get('target_required', False) and target:
-                ability['effect'](target)
+    def execute(self):
+        """啟動 GUI，讓玩家選擇能力"""
+        
+        self.game_gui.update_friendship_abilities()
+
+    def confirm_ability_selection(self, ability_id):
+        """確認選擇的能力"""
+        self.selected_ability = next(
+            (ability for ability in self.available_abilities if ability.FA_id == ability_id),
+            None
+        )
+        print(f"🔍 Debug: 選擇的能力 = {self.selected_ability}")
+        if self.selected_ability:
+            if self.selected_ability.target_required:
+                self.game_gui.prompt_for_target(self.selected_ability)
             else:
-                ability['effect'](character)  # 確保增加陰謀值的是正在執行能力的角色
-            character.friendly_ability_usage[ability['name']] = True
-            self.active_abilities = [item for item in self.active_abilities if item != (character, ability)]  # 移除已使用的能力
-            message = f"{character.name} 使用了能力：{ability['name']}"
-            self.check_abilities()
-        else:
-            message = "該角色的能力無法啟用"
-        return message
+                self.execute_ability()
 
-    def check_abilities(self):
-        # 更新 active_abilities 列表
-        self.active_abilities = self.get_active_abilities()
 
-    def get_character_by_name(self, name):
-        characters = self.character_manager.get_pickup_characters()  # 從 character_manager 取得角色列表
-        for character in characters:
-            if character.name == name:
-                return character
-        return None
+    def execute_ability(self):
+        """執行玩家選擇的友好能力"""
+        print(f"🔍 [DEBUG] self.selected_target: {self.selected_target} ({type(self.selected_target)})")
 
-    def check_friendship_ignore(self, character):
-        # 使用通用函數來檢查友好能力是否會被無效或無視
-        return check_friendship_ignore(character)
+        if self.selected_ability and self.selected_target:
+            
+            target = self.selected_target  # 取得玩家選擇的目標
+
+            print(f"🎯 正在對 {target.name} 使用 {self.selected_ability.name}")
+
+            # ✅ 確保 `use()` 有傳入 `user` 和 `target`
+            success = self.selected_ability.use(self.game, target)
+            
+
+
+
+
+            # 🟢 確保能力存在於列表內再移除
+            if self.selected_ability in self.available_abilities:
+                self.available_abilities.remove(self.selected_ability)
+
+            # 清除已選擇的能力與目標
+            self.selected_ability = None
+            self.selected_target = None
+
+            # ✅ 確保更新 GUI，而非錯誤呼叫
+            if hasattr(self.game_gui, "update_friendship_abilities"):
+                self.game_gui.update_friendship_abilities()
+            else:
+                print("⚠️ 無法更新友好能力清單，請確認 GUI 是否正確初始化！")
+
+
+
+
+
+    def end_phase(self):
+        """結束友好能力階段"""
+        self.game_gui.show_message("結束友好能力階段")
+
