@@ -226,7 +226,7 @@ def load_Basecharacters():
                     owner_name='上班族',
                     required_friendship=  3,
                     active= True, # 主動能力
-                    target_condition= None,
+                    target_condition= lambda target, owner: target == owner,
                     effect= None, #目前難以設計，先略過。
                     #effect= lambda owner: print(f"{owner.name} 的身份已公開"),
                     limit_use= False
@@ -242,15 +242,14 @@ def load_Basecharacters():
             attributes=['大人', '女性'],
             friendship_abilities=[
                 FriendshipAbility(
-                    FA_id= 701,
-                    owner_name='情報販子',
-                    name= '情報販子：指定規則X1或規則X2，腳本家公開被指定的規則。（1輪迴限用1次）',
-                    required_friendship=  5,
-                    active= True, # 主動能力
-                    target_condition= None,
-                    effect= None, #目前難以設計，先略過。
-                    #effect= lambda game: game.reveal_rule(),
-                    limit_use= True # 限用能力
+                    FA_id=701,
+                    owner_name="情報販子",
+                    name="情報販子：指定規則X1或規則X2，腳本家公開被指定的規則。（1輪迴限用1次）",
+                    required_friendship=5,
+                    active=True,  # 主動能力
+                    target_condition=lambda target, owner: target == owner,
+                    effect = lambda game: game.reveal_sub_rule(),  # 使用我們新寫的函數
+                    limit_use=True  # 限用能力
                 )
             ]
         ),
@@ -263,25 +262,27 @@ def load_Basecharacters():
             attributes=['大人', '男性'],
             friendship_abilities=[
                 FriendshipAbility(
-                    FA_id= 801,
+                    FA_id=801,
                     owner_name='醫生',
-                    name= '醫生：同地區另一名角色+1不安或者-1不安。若此角色的身分擁有特性友好無視、友好無效，則劇本家也可以在劇本家能力使用階段時使用此能力',
-                    required_friendship=  2,
-                    active= True, # 主動能力
-                    target_condition= lambda target, owner: target.current_location == owner.current_location,
-                    effect= lambda owner, target: target.change_anxiety(1),  # 或者 -1，取決於劇本家的選擇,
-                    limit_use= False
+                    name='醫生：同地區另一名角色+1不安或者-1不安。',
+                    required_friendship=2,
+                    active=True,  # 主動能力
+                    target_condition=lambda target, owner: target.current_location == owner.current_location and target != owner,
+                    effect=lambda game_gui, target: target.anxiety_ctrl(game_gui),  
+                    limit_use=False
                 ),
+
                 FriendshipAbility(
-                    FA_id= 802,
+                    FA_id=802,
                     owner_name='醫生',
-                    name= '醫生：本輪迴中，住院病人解除移動限制',
-                    required_friendship=  3,
-                    active= True, # 主動能力
-                    target_condition= None,
-                    effect= lambda game: game.remove_patient_restriction(),
-                    limit_use= False
+                    name='醫生：本輪迴中，住院病人解除移動限制',
+                    required_friendship=3,
+                    active=True,  # 主動能力
+                    target_condition=lambda target, owner: target.name == '住院病人',
+                    effect=lambda game, target: setattr(target, 'forbidden_location', []),  # 修正 effect
+                    limit_use=False
                 )
+
             ]
         ),
         BaseCharacter(
@@ -302,16 +303,16 @@ def load_Basecharacters():
             forbidden_area=None,
             attributes=['學生', '少女'],
             friendship_abilities=[ #目前難以設計，先略
-                #FriendshipAbility(
-                    #FA_id= 1001,
-                    #owner_name='班長',
-                    #name= '班長：偵探回收1張【1輪迴只能使用1次】的行動卡（1輪迴限用1次）',
-                    #required_friendship=  2,
-                    #active= True, # 主動能力
-                    #target_condition= None,
-                    #effect= lambda game: game.detective_recover_action_card(),
-                    #limit_use= True # 限用能力
-                #)
+                FriendshipAbility(
+                    FA_id=1001,
+                    owner_name='班長',
+                    name='班長：偵探重置1張【1輪迴只能使用1次】的行動（1輪迴限用1次）',
+                    required_friendship=2,
+                    active=True,  # 主動能力
+                    target_condition=lambda target, owner: target == owner,
+                    effect=lambda game_gui, player: reset_chosen_action(game_gui, player),
+                    limit_use=True  # 限用能力
+                )
             ]
         ),
         BaseCharacter(

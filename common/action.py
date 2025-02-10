@@ -20,9 +20,14 @@ class Action:
             return True
         return False
 
-    def reset(self):
-        """重置行動的使用次數"""
-        self.times_used = 0
+    def reset_chosen_action(self, game_gui):
+        """讓玩家選擇一個限用行動"""
+        choice = game_gui.prompt_choice(
+            message=f"要讓重置哪一個行動？",
+            choices={"禁止移動 A": , "禁止移動 B": ,"禁止移動 C": ,"不安-1 A": , "不安-1 B": ,"不安-1 C": ,"友好+2 A": , "友好+2 B": ,"友好+2 C": , "取消": None}
+        )
+        if choice is not None:
+            choice.times_used = 0
 
     def __str__(self):
         return f"Action({self.action_id}: {self.name}, Used: {self.times_used}/{self.usage_limit})"

@@ -186,6 +186,16 @@ class Character:
     
         event_list = "\n".join([f"{event}: {culprit}" for event, culprit in game.occurred_events.items()])
         return f"已發生的事件與犯人：\n{event_list}"
+    
+    def anxiety_ctrl(self, game_gui):
+        """讓玩家選擇 +1 或 -1 不安"""
+        choice = game_gui.prompt_choice(
+            message=f"要讓 {self.name} +1 不安 還是 -1 不安？",
+            choices={"+1 不安": 1, "-1 不安": -1, "取消": None}
+        )
+        if choice is not None:
+            self.change_anxiety(choice)
+
 
     def rescue_effect(self, target):
         if target.alive == False:

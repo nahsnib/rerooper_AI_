@@ -347,6 +347,16 @@ class GameGUI:
         else:
             print("⚠️ [GUI] 無法執行能力，選擇的能力或目標為 None！")
 
+    def prompt_choice(self, message, choices):
+        """
+        顯示一個下拉選單，讓玩家從選項中選擇，回傳選擇的值。
+        choices: 可以是 {選項名稱: 值} 的 dict，也可以是 [(選項名稱, 值)] 的列表
+        """
+        if isinstance(choices, list):  # 如果是 [(選項名稱, 值)]，轉換成 dict
+            choices = dict(choices)
+
+        return self.ask_choice(message=message, options=choices)  # 假設 GUI 內部有 ask_choice()
+
 
     def show_message(self, message):
         messagebox.showinfo("訊息", message)

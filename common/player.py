@@ -1,9 +1,15 @@
+class identity:
+    def __init__(self, name, available_actions):
+        self.name = name  # "偵探" 或 "劇本家"
+        self.available_actions = {action.action_id: action for action in available_actions}  # 該角色的行動清單
+
+
 class Player:
-    def __init__(self, identity, available_actions):
-        self.identity = identity  # "偵探" 或 "劇本家"
-        self.available_actions = {action.action_id: action for action in available_actions}  # 可用的行動
+    def __init__(self, identity):
+        self.identity = identity  # `identity` 類別
         self.used_actions = set()  # 記錄已使用的行動
-        self.special_actions = {}  # 特殊能力（暫時保留，日後設計）
+        self.special_actions = {}  # 特殊能力（暫時保留）
+
 
     def use_action(self, action_id):
         """標記行動為已使用，並執行行動"""

@@ -38,6 +38,26 @@ class Game:
         if info not in self.public_information:
             self.public_information.append(info)
 
+    def reveal_sub_rule(self):
+        """依序揭露副規則，每次揭露一條，最多兩條"""
+        if not hasattr(self, "revealed_sub_rules"):
+            self.revealed_sub_rules = []  # 初始化已公開規則列表
+
+        sub_rules = self.selected_sub_rules  # 取得副規則列表
+
+        # 確保 `sub_rules` 是 `Rule` 類別的列表
+        if not isinstance(sub_rules, list):
+            raise TypeError("selected_sub_rules 必須是一個列表")
+
+        rule_names = [rule.name for rule in sub_rules]  # 取得所有副規則的名稱
+
+        # 如果還有未公開的規則，則公開下一條
+        if len(self.revealed_sub_rules) < len(rule_names):
+            next_rule = rule_names[len(self.revealed_sub_rules)]
+            self.revealed_sub_rules.append(next_rule)  # 記錄已公開的規則
+            self.add_public_info(f"情報販子揭露了一條副規則：{next_rule}")  # 加入公開訊息
+
+
     def daily_reset_actions(self):
         """夜晚時，重置所有玩家的每日行動"""
         for player in self.players.values():
