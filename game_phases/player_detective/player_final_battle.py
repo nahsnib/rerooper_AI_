@@ -1,71 +1,70 @@
-import tkinter as tk
-from tkinter import ttk
-from common.character import CharacterManager
-from database.RuleTable import RuleTable
-
-class FinalBattle:
-    def __init__(self, root, character_manager, rule_table):
-        self.root = root
-        self.character_manager = character_manager
+class CycleEnd:
+    def __init__(self, game, rule_table):
+        self.game = game
         self.rule_table = rule_table
-        self.identities = ["普通人"] + self.rule_table.get_identities()
-        self.character_identities = {}  # 用於存儲玩家選擇的身份
 
-        self.create_widgets()
+    def check_scriptwriter_victory_conditions(self):
+        """檢查劇本家是否達成勝利條件"""
+        if self.rule_table.check_victory_conditions(self.game):
+            return True
+        
+        for rule in self.rule_table.main_rules + self.rule_table.sub_rules:
+            if rule.apply_special_effect(self.game):
+                return True
+        
+        return False
 
-    def create_widgets(self):
-        # 建立表格
-        characters = self.character_manager.get_all_characters()
-        num_characters = len(characters)
-        self.table_frame = tk.Frame(self.root)
-        self.table_frame.grid(row=0, column=0, padx=10, pady=10)
+    def display_message(self, message):
+        """顯示訊息給玩家"""
+        print(message)
+        input("點選確定繼續...")
 
-        # 第一橫列：展示所有角色
-        for i, character in enumerate(characters):
-            tk.Label(self.table_frame, text=character.name).grid(row=0, column=i)
+    def prompt_final_battle(self):
+        """詢問玩家是否進入最終決戰"""
+        response = input("是否要進入最後決戰？（yes/no）: ")
+        return response.lower() == 'yes'
 
-        # 第二橫列：每個格子都有一個下拉式選單
-        self.identity_vars = []
-        for i, character in enumerate(characters):
-            identity_var = tk.StringVar(value="普通人")
-            self.identity_vars.append(identity_var)
-            dropdown = ttk.Combobox(self.table_frame, textvariable=identity_var, values=self.identities, state='readonly')
-            dropdown.grid(row=1, column=i)
-            self.character_identities[character.name] = identity_var
+    def cycle_reset(self):
+        """執行輪迴重置機制"""
+        self.game.day = 1
+        
+        for event in self.game.event_manager.events:
+            event.reset()
+        
+        for character in self.game.character_manager.get_all_characters():
+            character.cycle_reset()
+        
+        for area in self.game.area_manager.areas:
+            area.cycle_reset()
+        
+        self.game.rule_table.reset_limited_abilities()
+        
+        self.display_message("輪迴已重置，遊戲回到初始狀態。")
 
-        # 按鈕：最終決戰！
-        self.final_battle_button = tk.Button(self.root, text="最終決戰！", command=self.check_answers)
-        self.final_battle_button.grid(row=1, column=0, pady=10)
+    def execute(self):
+        """執行 CycleEnd 階段"""
+        # 檢查關鍵人物是否死亡
+        for character in self.game.character_manager.get_all_characters():
+            if character.name == "關鍵人物" and not character.alive:
+                character.use_ability("犧牲的代價", self.game)
 
-    def check_answers(self):
-        # 檢視玩家的答案是否正確
-        correct = True
-        for character in self.character_manager.get_all_characters():
-            selected_identity = self.character_identities[character.name].get()
-            actual_identity = character.secret_identity if character.secret_identity else "普通人"
-            if selected_identity != actual_identity:
-                correct = False
-                break
-
-        if correct:
-            self.show_message("恭喜！你成功識破了所有角色的身份！")
-        else:
-            self.show_message("很遺憾，你未能識破所有角色的身份。")
-
-    def show_message(self, message):
-        # 顯示訊息給玩家
-        msg_box = tk.Toplevel(self.root)
-        msg_box.title("結果")
-        tk.Label(msg_box, text=message).pack(padx=20, pady=20)
-        tk.Button(msg_box, text="確定", command=msg_box.destroy).pack(pady=10)
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    root.title("最終決戰")
-    
-    character_manager = CharacterManager()
-    rule_table = RuleTable()
-
-    final_battle = FinalBattle(root, character_manager, rule_table)
-
-    root.mainloop()
+        # 劇本家勝利檢查
+        if self.check_scriptwriter_victory_conditions():
+            self.display_message("劇本家的勝利！")
+            return "scriptwriter_win"
+        
+        # 檢查剩餘輪迴數
+        if self.game.get_remaining_cycles() == 0:
+            self.display_message("進入最終決戰！")
+            return "final_battle"
+        
+        # 詢問偵探玩家是否提前進入最終決戰
+        if self.prompt_final_battle():
+            self.display_message("進入最終決戰！")
+            return "final_battle"
+        
+        # 減少輪迴數並執行輪迴重置
+        self.game.decrement_cycles()
+        self.cycle_reset()
+        
+        return "cycle_reset"
