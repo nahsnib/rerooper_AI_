@@ -54,13 +54,14 @@ class RuleTable:
         return next((char for char in load_rule_table() if char.id == rule_table_id), None)
 
 class Event:
-    def __init__(self, id, name, effect):
-        self.id = id  # 事件 ID
+    def __init__(self, id, name, culprit_required, trigger_condition, effect):
+        self.id = id  # 事件編號
         self.name = name  # 事件名稱
         self.effect = effect  # 事件效果函數
-        self.criminal_name = None  # 事件犯人（由遊戲決定）
+        self.criminal_name = None  # 事件犯人
         self.happened = False  # 事件是否發生
         self.date = 0  # 事件發生日期
+
     
     def trigger(self, game, script_writer):
         """ 觸發事件 """
@@ -138,47 +139,98 @@ def load_rule_table():
                 Rule(11, "因果之線", "輪迴重啟後，前一輪迴友好>0的角色+2不安。", roles={}, special_effect=lambda game_state: game_state.add_anxiety_to_characters_with_friendship_above(0, 2))
             ],
             events= [
-                Event(1, "殺人事件", lambda culprit, game, script_writer: [
-                    target.handle_death("事件 - 殺人事件", game)
-                    for target in [script_writer.choose_character_in_area(culprit.location, exclude=[culprit])]
-                ]),
-                
-                Event(2, "流言蜚語", lambda culprit, game, script_writer: [
-                    targets[0].add_anxiety(2), targets[1].add_conspiracy_points(1)
-                    for targets in [script_writer.choose_two_characters()]
-                ]),
-                
-                Event(3, "自殺", lambda culprit, game, script_writer: culprit.handle_death("事件 - 自殺", game)),
-                
-                Event(4, "醫院事件", lambda culprit, game, script_writer: [
-                    character.handle_death("事件 - 醫院事件", game) if game.area_manager.get_area("醫院").conspiracy_points > 0 else None
-                    for character in game.area_manager.get_area("醫院").characters
-                ] + [
-                    script_writer.win_cycle() if game.area_manager.get_area("醫院").conspiracy_points > 1 else None
-                ]),
-                
-                Event(5, "遠距殺人", lambda culprit, game, script_writer: [
-                    target.handle_death("事件 - 遠距殺人", game)
-                    for target in [script_writer.choose_character_with_condition(lambda char: char.conspiracy_points > 1)]
-                ]),
-                
-                Event(6, "失蹤", lambda culprit, game, script_writer: [
-                    culprit.move_to(new_area), new_area.add_conspiracy_points(1)
-                    for new_area in [script_writer.choose_area_except(culprit.location)]
-                ]),
-                
-                Event(7, "流傳", lambda culprit, game, script_writer: [
-                    target1.add_friendliness(-2), target2.add_friendliness(2)
-                    for target1, target2 in [script_writer.choose_two_characters()]
-                ]),
-                
-                Event(8, "蝴蝶效應", lambda culprit, game, script_writer: [
-                    setattr(target, stat, getattr(target, stat) + 1)
-                    for target in [script_writer.choose_character_in_area(culprit.location)]
-                    for stat in [script_writer.choose_stat(["anxiety", "friendliness", "conspiracy_points"])]
-                ]),
-                
-                Event(9, "褻瀆", lambda culprit, game, script_writer: game.area_manager.get_area("神社").add_conspiracy_points(2))
+ 
+               Event(
+                    id=1,
+                    name="殺人事件",
+                    culprit_required=True,
+                    trigger_condition=lambda criminal, area, game: criminal in area.characters,
+                    effect=lambda criminal, area, game: (
+                        possible_targets := [target for target in area.characters if target != criminal],
+                        game.character_manager.kill_character(criminal, game.script_writer.choose_character(possible_targets))
+                        if possible_targets else None
+                    )
+                ),
+                Event(
+                    id=2,
+                    name="流言蜚語",
+                    culprit_required=False,
+                    trigger_condition=lambda game: True,
+                    effect=lambda game: (
+                        possible_targets := game.script_writer.choose_two_characters(),
+                        possible_targets[0].add_anxiety(2),
+                        possible_targets[1].add_conspiracy_points(1)
+                    ) if possible_targets else None
+                ),
+                Event(
+                    id=3,
+                    name="自殺",
+                    culprit_required=True,
+                    trigger_condition=lambda criminal, game: True,
+                    effect=lambda criminal, game: game.character_manager.kill_character(criminal, criminal)
+                ),
+                Event(
+                    id=4,
+                    name="醫院事件",
+                    culprit_required=False,
+                    trigger_condition=lambda area, game: True,
+                    effect=lambda area, game: (
+                        [game.character_manager.kill_character(character, character) for character in area.characters]
+                        if area.conspiracy_points > 0 else [],
+                        game.win_cycle() if area.conspiracy_points > 1 else None
+                    )
+                ),
+                Event(
+                    id=5,
+                    name="遠距殺人",
+                    culprit_required=False,
+                    trigger_condition=lambda game: True,
+                    effect=lambda game: (
+                        possible_targets := [target for target in game.characters if target.conspiracy_points > 1],
+                        game.character_manager.kill_character(None, game.script_writer.choose_character(possible_targets))
+                        if possible_targets else None
+                    )
+                ),
+                Event(
+                    id=6,
+                    name="失蹤",
+                    culprit_required=True,
+                    trigger_condition=lambda criminal, game: True,
+                    effect=lambda criminal, game: (
+                        new_area := game.script_writer.choose_area_except(criminal.current_location),
+                        criminal.move_to(new_area),
+                        new_area.add_conspiracy_points(1)
+                    )
+                ),
+                Event(
+                    id=7,
+                    name="流傳",
+                    culprit_required=True,
+                    trigger_condition=lambda game: True,
+                    effect=lambda game: (
+                        possible_targets := game.script_writer.choose_two_characters(),
+                        possible_targets[0].add_friendliness(-2),
+                        possible_targets[1].add_friendliness(2)
+                    ) if possible_targets else None
+                ),
+                Event(
+                    id=8,
+                    name="蝴蝶效應",
+                    culprit_required=True,
+                    trigger_condition=lambda area, game: True,
+                    effect=lambda area, game: (
+                        target := game.script_writer.choose_character_in_area(area),
+                        stat := game.script_writer.choose_stat(["anxiety", "friendliness", "conspiracy_points"]),
+                        setattr(target, stat, getattr(target, stat) + 1)
+                    ) if target else None
+                ),
+                Event(
+                    id=9,
+                    name="褻瀆",
+                    culprit_required=False,
+                    trigger_condition=lambda shrine, game: True,
+                    effect=lambda shrine: shrine.add_conspiracy_points(2)
+                )
             ],
 
             roles=[
