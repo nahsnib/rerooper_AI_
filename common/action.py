@@ -20,17 +20,32 @@ class Action:
             return True
         return False
 
-    def reset_chosen_action(self, game_gui):
-        """讓玩家選擇一個限用行動"""
-        choice = game_gui.prompt_choice(
-            message=f"要讓重置哪一個行動？",
-            choices={"禁止移動 A": , "禁止移動 B": ,"禁止移動 C": ,"不安-1 A": , "不安-1 B": ,"不安-1 C": ,"友好+2 A": , "友好+2 B": ,"友好+2 C": , "取消": None}
-        )
-        if choice is not None:
-            choice.times_used = 0
 
     def __str__(self):
         return f"Action({self.action_id}: {self.name}, Used: {self.times_used}/{self.usage_limit})"
+
+
+def reset_chosen_action(game_gui, player):
+    """讓玩家選擇一個已經用過的【1輪迴只能使用1次】的行動，並重置它"""
+    used_limited_actions = {
+        action.name: action
+        for action in player.role.available_actions.values()
+        if action.usage_limit == 1 and action.times_used > 0
+    }
+
+    # 如果沒有可重置的行動，則直接返回
+    if not used_limited_actions:
+        game_gui.show_message("沒有可重置的行動。")
+        return
+
+    # 讓玩家選擇要重置的行動
+    choice = game_gui.prompt_choice(
+        message="要重置哪一個行動？",
+        choices={**used_limited_actions, "取消": None}
+    )
+
+    if choice is not None:
+        choice.times_used = 0
 
 # 劇本家的行動列表
 scriptwriter_actions = [

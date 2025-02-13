@@ -33,7 +33,7 @@ class Character:
         self.name = name
         self.anxiety_threshold = anxiety_threshold
         self.initial_location = initial_location
-        self.forbidden_area = forbidden_area if forbidden_area is not None else []  # 確保為列表
+        self.forbidden_area = forbidden_area or []
         self.attributes = attributes
         self.friendship_abilities = friendship_abilities or []
         self.special_ability = special_ability
@@ -55,8 +55,9 @@ class Character:
         self.current_location = initial_location  # 設置當前地區
         self.friendship_ability_usage = {ability.name: False for ability in self.friendship_abilities}
         self.role_ability_usage = {ability['name']: False for ability in self.role_abilities}
+        self.guilty = 0
 
-    def reset(self):
+    def cycle_reset(self):
         self.anxiety = 0
         self.conspiracy = 0
         self.friendship = 0
@@ -65,6 +66,7 @@ class Character:
         self.is_criminal = False
         self.event_crimes = []
         self.reset_ability_usage()
+        self.guilty = 0
 
     def scholar_effect(self, owner):
         owner.friendship = 0
@@ -84,27 +86,31 @@ class Character:
         if self.alive and location != self.forbidden_area:
             self.current_location = location
 
-    def move_anywhere(self):
-        new_location = self.current_location
-        if self.current_location == "醫院":
-            new_location = "都市"
-        elif self.current_location == "都市":
-            new_location = "醫院"
-        elif self.current_location == "學校":
-            new_location = "神社"
-        elif self.current_location == "神社":
-            new_location = "學校"
-        
-        if new_location not in (self.forbidden_area or []):
-            self.current_location = new_location
+    def move_anywhere_player(self, game_gui):
+        """ 玩家選擇角色要移動的地點 """
+        available_locations = list(set(['醫院', '神社', '都市', '學校']) - set(self.forbidden_area))
 
-        #暫時先用垂直移動取代
-        #if is_player:
-        #    self.show_move_anywhere_dialog()
-        #else:
-        #    # AI 隨機選擇新地區
-        #    new_area = random.choice(list(areas.values()))
-        #    self.perform_move(new_area)
+        # 透過 GUI 讓玩家選擇
+        choice = game_gui.prompt_choice(
+            message=f"想要去哪裡？",
+            choices={location: location for location in available_locations}  # 修正 `choices`
+        )
+
+        if choice:
+            self.current_location = choice
+            print(f"📍 玩家移動 {self.name} 到 {choice}")
+        else:
+            print(f"❌ 玩家取消了 {self.name} 的移動")
+
+    def move_anywhere_AI(self, game):
+        """ AI 自動選擇角色要移動的地點 """
+        available_locations = game.area_manager.get_all_locations()
+        
+        # AI 決策邏輯（這裡用隨機選擇作為範例，實際可改成 AI 判斷最佳地點）
+        chosen_location = random.choice(available_locations)
+        
+        self.current_location = chosen_location
+        print(f"🤖 AI 移動 {self.name} 到 {chosen_location}")
 
     def move_vertical(self):
         location_map = {
@@ -115,7 +121,7 @@ class Character:
         }
         new_location = location_map.get(self.current_location, self.current_location)
         print(f"{self.name} 嘗試從 {self.current_location} 移動到 {new_location}，禁制地點是 {self.forbidden_area}")
-        if new_location not in (self.forbidden_area or []):
+        if new_location not in (self.forbidden_area):
             self.current_location = new_location
 
     def move_horizontal(self):
@@ -127,7 +133,7 @@ class Character:
         }
         new_location = location_map.get(self.current_location, self.current_location)
         print(f"{self.name} 嘗試從 {self.current_location} 移動到 {new_location}，禁制地點是 {self.forbidden_area}")
-        if new_location not in (self.forbidden_area or []):
+        if new_location not in (self.forbidden_area):
             self.current_location = new_location
         
     def move_diagonal(self):
@@ -139,7 +145,7 @@ class Character:
         }
         new_location = location_map.get(self.current_location, self.current_location)
         print(f"{self.name} 嘗試從 {self.current_location} 移動到 {new_location}，禁制地點是 {self.forbidden_area}")
-        if new_location not in (self.forbidden_area or []):
+        if new_location not in (self.forbidden_area):
             self.current_location = new_location
             
             
@@ -176,16 +182,28 @@ class Character:
         self.log_event(f"{character.name} 已死亡。")
 
 
-    def is_key_person(self):
-        # 假設有一個方法來判定角色是否是關鍵人物
-        return "關鍵人物" in self.traits
+    def reveal_criminal(self, owner, game, game_gui):
+        """讓玩家選擇一個事件，並得知其犯人"""
+        past_events = [event for event in game.scheduled_events if event.happened]  # 已發生的事件
+        all_events = game.scheduled_events  # 遊戲中的所有事件（未必發生）
 
-    def police_effect(self, game):
-        if not game.occurred_events:
-            return "目前沒有已發生的事件。"
-    
-        event_list = "\n".join([f"{event}: {culprit}" for event, culprit in game.occurred_events.items()])
-        return f"已發生的事件與犯人：\n{event_list}"
+        # 根據角色來決定可選擇的事件
+        selectable_events = past_events if owner.name == '刑警' else all_events
+
+        if not selectable_events:
+            game_gui.display_message("沒有可供查詢的事件！")
+            return
+
+        # 讓玩家選擇一個事件
+        choice = game_gui.prompt_choice(
+            message=f"想要知道哪一起事件的犯人？",
+            choices={event.name: event for event in selectable_events}
+        )
+
+        if choice:
+            criminal = choice.criminal  # 假設事件物件有 `criminal` 屬性
+            game.add_public_info(f"{owner.name}揭露了 {choice.name}的犯人是{criminal.name}")  # 加入公開訊息
+
     
     def anxiety_ctrl(self, game_gui):
         """讓玩家選擇 +1 或 -1 不安"""

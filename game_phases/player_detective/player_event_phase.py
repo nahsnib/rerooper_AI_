@@ -33,8 +33,12 @@ class EventPhase:
                 print(f"📢 事件 '{event.name}' 未發生: 犯人 '{criminal.name}' 已死亡。")
                 continue
             
-            if criminal.anxiety < criminal.anxiety_threshold:
+            if criminal.anxiety < criminal.anxiety_threshold and criminal.guilty != 1:
                 print(f"📢 事件 '{event.name}' 未發生: '{criminal.name}' 的不安 ({criminal.anxiety}) 低於臨界 ({criminal.anxiety_threshold})。")
+                continue
+
+            if criminal.guilty == -1:
+                print(f"📢 事件 '{event.name}' 未發生: '{criminal.name}' 被效果排除犯案。")
                 continue
             
             print(f"🔥 觸發事件: {event.name} | 犯人: {criminal.name}")

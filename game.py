@@ -11,28 +11,20 @@ class Game:
         self.time_manager = TimeManager(total_days, total_cycles)
         self.scheduled_events = scheduled_events
         self.character_manager = character_manager  # 🔥 儲存 character_manager
-        self.areas = [Area(3,"都市"), Area(4,"學校"), Area(1,"醫院"), Area(2,"神社")]  # 命名更清楚
-        
-        self.EX_gauge = 0  # EX 槽
+        self.areas = areas  # 讓 `areas` 由外部傳入，提高靈活性
 
-        self.occurred_events = {}
+        self.EX_gauge = 0  # EX 槽
+        self.happened_events = {}
         self.public_information = []  # 存儲公開資訊（字串格式）
-        # 初始化玩家
+
+        # 初始化玩家，並傳入 `game` 參考
         self.players = {
-            "偵探": Player("偵探", self.get_detective_actions()),
-            "劇本家": Player("劇本家", self.get_scriptwriter_actions())
+            "偵探": Player("偵探"),
+            "劇本家": Player("劇本家")
         }
 
-    def get_detective_actions(self):
-        """獲取偵探可用的行動"""
-        from common.action import detective_actions  # 確保從 action.py 讀取
-        return detective_actions
 
-    def get_scriptwriter_actions(self):
-        """獲取劇本家可用的行動"""
-        from common.action import scriptwriter_actions
-        return scriptwriter_actions
-
+        
     def add_public_info(self, info):
         """新增公開資訊，避免重複"""
         if info not in self.public_information:
