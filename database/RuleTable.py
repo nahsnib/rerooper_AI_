@@ -26,29 +26,30 @@ class RuleTable:
         self.special_rules.append(rule)
     
     def display_rules(self):
-        print(f"規則表編號: {self.id}")
-        print(f"名稱: {self.name}")
-        print("主規則:")
-        for index, rule in enumerate(self.main_rules, start=1):
-            print(f"{index}. {rule.name}: {rule.description}")
+        #print(f"規則表編號: {self.id}")
+        #print(f"名稱: {self.name}")
+        #print("主規則:")
+        #for index, rule in enumerate(self.main_rules, start=1):
+            #print(f"{index}. {rule.name}: {rule.description}")
         
-        print("副規則:")
-        for index, rule in enumerate(self.sub_rules, start=1):
-            print(f"{index}. {rule.name}: {rule.description}")
+        #print("副規則:")
+        #for index, rule in enumerate(self.sub_rules, start=1):
+            #print(f"{index}. {rule.name}: {rule.description}")
         
-        print("事件:")
-        for index, event in enumerate(self.events, start=1):
-            print(f"{index}. {event.name}")
+        #print("事件:")
+        #for index, event in enumerate(self.events, start=1):
+        #    print(f"{index}. {event.name}")
         
-        print("身分:")
-        for index, role in enumerate(self.roles, start=1):
-            print(f"{index}. {role.name}")
-            for idx, ability in enumerate(role.abilities, start=1):
-                print(f"   ({ability.active}): {ability.description}")
+        #print("身分:")
+        #for index, role in enumerate(self.roles, start=1):
+        #    print(f"{index}. {role.name}")
+        #    for idx, ability in enumerate(role.abilities, start=1):
+        #        print(f"   ({ability.active}): {ability.description}")
         
-        print("特殊規則:")
-        for index, rule in enumerate(self.special_rules, start=1):
-            print(f"{index}. {rule}")
+        #print("特殊規則:")
+        #for index, rule in enumerate(self.special_rules, start=1):
+        #    print(f"{index}. {rule}")
+        return
 
     def get_rule_table_by_id(rule_table_id):
         return next((char for char in load_rule_table() if char.id == rule_table_id), None)
@@ -72,6 +73,12 @@ class Event:
         
         self.effect(culprit, game, script_writer)
         self.happened = True
+
+
+    def reveal_criminal(self, game):
+        """ 揭曉犯人 """
+        game.add_public_info(f" {self.name} 的犯人是 {self.criminal_name}")
+
     def __str__(self):
         return self.name  # 返回事件名稱
 

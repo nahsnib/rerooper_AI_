@@ -20,32 +20,14 @@ class Action:
             return True
         return False
 
+    def cycle_reset(self):
+        self.times_used = 0
 
     def __str__(self):
         return f"Action({self.action_id}: {self.name}, Used: {self.times_used}/{self.usage_limit})"
 
 
-def reset_chosen_action(game_gui, player):
-    """讓玩家選擇一個已經用過的【1輪迴只能使用1次】的行動，並重置它"""
-    used_limited_actions = {
-        action.name: action
-        for action in player.role.available_actions.values()
-        if action.usage_limit == 1 and action.times_used > 0
-    }
 
-    # 如果沒有可重置的行動，則直接返回
-    if not used_limited_actions:
-        game_gui.show_message("沒有可重置的行動。")
-        return
-
-    # 讓玩家選擇要重置的行動
-    choice = game_gui.prompt_choice(
-        message="要重置哪一個行動？",
-        choices={**used_limited_actions, "取消": None}
-    )
-
-    if choice is not None:
-        choice.times_used = 0
 
 # 劇本家的行動列表
 scriptwriter_actions = [

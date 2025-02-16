@@ -16,23 +16,20 @@ def main():
         total_cycles=gameset.total_cycles,
         character_manager = gameset.character_manager,
         scheduled_events=gameset.scheduled_events,
-        areas= [Area(3,"都市"), Area(4,"學校"), Area(1,"醫院"), Area(2,"神社")]
+        area_manager = gameset.area_manager,
+        selected_main_rule = gameset.main_rule,
+        selected_sub_rules = gameset.sub_rules,
     )
+    
 
-    # 🟢 讓所有角色 +2 友好
+    # 🟢 讓所有角色 +N 友好
     for char in game.character_manager.characters:
-        char.change_friendship(3)
+        char.change_friendship(5)
         char.change_anxiety(2)
-        for char in game.character_manager.characters:
-            print(f"角色 {char.name} 的友好能力：")
-            print(f"  原始數據: {char.friendship_abilities}")  # 🟢 先列出原始內容，確保它的結構
-            for ability in char.friendship_abilities:
-                if isinstance(ability, FriendshipAbility):
-                    print(f"  - {ability.name} (需求友好值: {ability.required_friendship})")
-                else:
-                    print(f"  - (未知類型) {ability}")
+
 
     game_gui = GameGUI(root, game, game.character_manager.characters, None)
+    game.game_gui = game_gui  # ✅ 這行確保 Game 類別能夠存取 GUI
     game_gui.update_area_widgets()  # ✅ 這行確保地區顯示
 
     friendship_phase = PlayerFriendshipAbilityPhase(game, game_gui)

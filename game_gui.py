@@ -10,6 +10,7 @@ class GameGUI:
         self.selected_targets = []
         self.create_widgets()
 
+
     def set_phase(self, phase):
         self.phase = phase
         
@@ -22,7 +23,7 @@ class GameGUI:
 
         # 🔵 友好能力階段
         elif self.phase.phase_type == "friendship":
-            self.update_friendship_abilities()
+            self.update_FA_selection()
             self.action_phase_frame.grid_remove()
             self.ability_frame.grid()
 
@@ -99,16 +100,27 @@ class GameGUI:
             tk.Label(self.area_frame, text=details, relief="solid", padx=10, pady=5).grid(row=i // 2, column=i % 2, sticky="nsew")
 
     def get_area_display_info(self):
-        """獲取所有地區的顯示資訊，包含角色位置與地區陰謀數值"""
+        """獲取所有地區的顯示資訊，包含角色位置、地區陰謀數值與角色狀態（包含死亡狀態）"""
         area_info = {}
+
+        # 建立 name → area 的映射，確保能正確找到區域
+        area_by_name = {area.name: area for area in self.game.area_manager.areas.values()}
+
         for area_name in ["醫院", "神社", "都市", "學校"]:
-            conspiracy_value = self.game.areas[area_name].conspiracy if area_name in self.game.areas else 0
+            area = area_by_name.get(area_name, None)
+            conspiracy_value = area.conspiracy if area else 0
             area_text = f"{area_name} - ☣{conspiracy_value}\n"
 
             # 找出該區域內的角色
             characters_in_area = [char for char in self.game.character_manager.characters if char.current_location == area_name]
             for char in characters_in_area:
-                area_text += f"{char.name}：❤ {char.friendship} || ⚠︎ {char.anxiety}/{char.anxiety_threshold} || ☣{char.conspiracy}\n"
+                char_text = f"{char.name}：❤ {char.friendship} || ⚠︎ {char.anxiety}/{char.anxiety_threshold} || ☣{char.conspiracy}"
+                
+                # **如果角色已死亡，則用刪除線表示**
+                if not char.alive:
+                    char_text = f"🪦{char_text}"
+
+                area_text += char_text + "\n"
 
             area_info[area_name] = area_text
 
@@ -123,7 +135,7 @@ class GameGUI:
         # 按照事件的 date 屬性排序
         sorted_events = sorted(events.items(), key=lambda x: x[1].date)
 
-        for day, event in sorted_events:
+        for date, event in sorted_events:
             tk.Label(self.events_frame, text=f"{event.date}: {event.name}").pack(anchor="w")
 
 
@@ -150,7 +162,7 @@ class GameGUI:
 
             target_var = tk.StringVar()
             target_combobox = ttk.Combobox(choice_frame, textvariable=target_var, 
-                               values=self.get_available_targets(), width=15)
+                               values=self.get_available_action_targets(), width=15)
             target_combobox.grid(row=0, column=0, padx=2)
             self.target_vars.append(target_var)
 
@@ -162,10 +174,10 @@ class GameGUI:
             action_combobox.grid(row=0, column=1, padx=2)
             self.action_comboboxes.append(action_combobox)
 
-        self.confirm_button = tk.Button(self.player_frame, text="確認行動", 
+        self.confirm_action_button = tk.Button(self.player_frame, text="確認行動", 
                                 command=lambda: self.phase.confirm_action_selection() if self.phase else None)
 
-        self.confirm_button.grid(row=4, column=0, columnspan=2, pady=10)
+        self.confirm_action_button.grid(row=4, column=0, columnspan=2, pady=10)
 
     def update_scriptwriter_actions(self, scriptwriter_selections):
         actions_text = "劇本家的行動目標：\n"
@@ -228,54 +240,67 @@ class GameGUI:
         else:
             print("❌ 無法找到偵探玩家")
         
-    def get_available_targets(self):
+    def get_available_action_targets(self):
         """獲取所有可選擇的目標（角色 + 地區）"""
         targets = [character.name for character in self.game.character_manager.characters]  # 加入所有角色
         targets.extend(["醫院", "神社", "都市", "學校"])  # 加入所有地區
         return targets
+
 
     def create_ability_widgets(self):
         self.ability_frame = tk.LabelFrame(self.main_frame, text="友好能力", padx=5, pady=5)
         self.ability_frame.grid(row=0, column=2, columnspan=2, sticky="nsew")
         self.ability_frame.grid_remove()  # ✅ 預設隱藏，不會影響 layout
 
-    def update_friendship_abilities(self):
+    def update_FA_selection(self):
         """顯示所有可用的友好能力（不區分角色）"""
         self.ability_frame.grid()  # ✅ 顯示友好能力框架
         for widget in self.ability_frame.winfo_children():
             widget.destroy()
 
-        # 🟢 建立可用能力列表
-        self.available_abilities = [
-            ability for character in self.characters 
-            for ability in character.friendship_abilities if ability.is_available(character)
-        ]
-
-        print("🎯 更新可用的友好能力:", [ability.name for ability in self.available_abilities])  # Debug
-
+        # 更新可用能力列表
+        self.phase.update_available_abilities()
+        
+        # 建立下拉選單
         self.ability_var = tk.StringVar()
         self.ability_combobox = ttk.Combobox(
             self.ability_frame, textvariable=self.ability_var,
-            values=[ability.name for ability in self.available_abilities]
+            values=[ability.name for ability in self.phase.available_abilities]
         )
         self.ability_combobox.pack()
 
-        confirm_button = tk.Button(
+        # 確認按鈕，使用 lambda 來確保選擇的能力名稱正確傳入 phase
+        self.confirm_FA_button = tk.Button(
             self.ability_frame, text="確認能力",
-            command=self.update_target_selection
+            command=lambda: self.phase.confirm_FA_selection(self.ability_var.get())
         )
-        confirm_button.pack()
+        self.confirm_FA_button.pack()
 
         # 目標選擇下拉式選單
-        self.target_var = tk.StringVar()
-        self.target_combobox = ttk.Combobox(self.ability_frame, textvariable=self.target_var)
-        self.target_combobox.pack()
+        self.FA_target_var = tk.StringVar()
+        self.FA_target_combobox = ttk.Combobox(self.ability_frame, textvariable=self.FA_target_var)
+        self.FA_target_combobox.pack()
 
-        confirm_target_button = tk.Button(
+        self.confirm_FA_target_button = tk.Button(
             self.ability_frame, text="確認目標",
-            command=self.confirm_target_selection
+            command=lambda: self.phase.confirm_FA_target_selection(self.FA_target_var.get())
         )
-        confirm_target_button.pack()
+        self.confirm_FA_target_button.pack()
+
+        # 🟢 額外選擇下拉式選單
+        self.extra_var = tk.StringVar()
+        self.extra_combobox = ttk.Combobox(self.ability_frame, textvariable=self.extra_var)
+        self.extra_combobox.pack()
+
+        self.extra_selected_choice = None  # 用來存儲選擇的結果
+        self.extra_selection_done = False  # 用來追蹤是否按下確認
+
+
+        self.confirm_extra_button = tk.Button(
+            self.ability_frame, text="確認額外選擇",
+            command=self.confirm_extra_selection
+        )
+        self.confirm_extra_button.pack()
 
         # 🟢 加入「結束友好能力階段」按鈕
         end_button = tk.Button(
@@ -285,77 +310,62 @@ class GameGUI:
         )
         end_button.pack()
 
-    def update_target_selection(self):
+
+    def update_FA_targets_selection(self):
         """依據選擇的能力，更新可用目標列表"""
-        selected_ability_name = self.ability_var.get()
-        selected_ability = next((a for a in self.available_abilities if a.name == selected_ability_name), None)
+        self.FA_target_combobox["values"] = [target for target in self.phase.available_targets]
 
-        if not selected_ability:
+    def update_extra_selection(self, message, choices):
+        """
+        讓玩家在 GUI 中選擇額外選項，並回傳選擇結果。
+        
+        :param message: 提示訊息
+        :param choices: 可供選擇的選項（字典，鍵值相同）
+        :return: 玩家選擇的選項（或 None）
+        """
+        # 更新選單內容
+        self.extra_combobox["values"] = list(choices.keys())
+        self.extra_combobox.pack()  # 顯示選擇框
+        self.confirm_extra_button.pack()  # 顯示確認按鈕
+        self.show_message(message)  # 顯示提示訊息
+        
+        self.extra_var.set(list(choices.keys())[0])  # 預設選擇第一個選項
+
+        # 重置選擇狀態
+        self.extra_selected_choice = None
+        self.extra_selection_done = False
+
+        # 等待玩家選擇（使用主迴圈）
+        while not self.extra_selection_done:
+            self.root.update()  # 更新 UI，防止卡死
+
+        return choices.get(self.extra_selected_choice, None)  # 回傳選擇的數值
+
+
+
+    def confirm_extra_selection(self):
+        """確認額外選擇，並結束等待選擇的迴圈"""
+        selected_value = self.extra_var.get()  # 取得選擇的值
+        if not selected_value:  # 確保選擇不為空
+            self.show_message("請先選擇額外選項！")
             return
 
-        # 🔹 **通知 PlayerFriendshipAbilityPhase**
-        self.phase.confirm_ability_selection(selected_ability.FA_id)
-
-        # 解析發動能力的角色
-        ability_owner_id = selected_ability.FA_id // 100
-        self.current_character = next((char for char in self.game.character_manager.characters if char.Ch_id == ability_owner_id), None)
-
-        if not self.current_character:
-            print(f"⚠️ 無法找到 ID 為 {ability_owner_id} 的角色")
-            return
-
-        # 更新可用目標列表
-        self.valid_targets = [
-            char.name for char in self.game.character_manager.characters
-            if selected_ability.target_condition(char, self.current_character)
-        ]
-        self.target_combobox["values"] = self.valid_targets
-
-        print(f"🎯 可選目標: {self.valid_targets}")
-
-
-
-    def confirm_target_selection(self):
-        """確認目標並執行能力"""
-        selected_target_name = self.target_var.get()
-        selected_ability_name = self.ability_var.get()
-
-        if not selected_target_name:
-            self.show_message("請先選擇目標！")
-            return
-
+        self.extra_selected_choice = selected_value  # 記錄選擇結果
+        self.extra_selection_done = True  # 讓 `update_extra_selection` 迴圈結束
         
 
-        # 取得選擇的能力與目標
-        selected_target = next((c for c in self.game.character_manager.characters if c.name == selected_target_name), None)
-        selected_ability = next((a for a in self.available_abilities if a.name == selected_ability_name), None)
-
-        if not selected_ability or not selected_target:
-            self.show_message("請重新選擇能力與目標！")
-            return
-
-        # ✅ **通知 PlayerFriendshipAbilityPhase**
-        self.phase.selected_ability = selected_ability
-        self.phase.selected_target = selected_target
-        # 🟢 執行能力
-
-
+    def execute_selected_ability(self):
+        """執行選定的能力"""
+        print(f"🎯 選擇的能力: {self.phase.selected_ability}"
+              f"，選擇的目標: {self.phase.selected_target}")  # 🛠 除錯用
         if self.phase.selected_ability and self.phase.selected_target:
             self.phase.execute_ability()
             self.update_area_widgets()
-            self.update_friendship_abilities()
+            self.update_FA_selection()
+            self.update_public_information()
         else:
             print("⚠️ [GUI] 無法執行能力，選擇的能力或目標為 None！")
 
-    def prompt_choice(self, message, choices):
-        """
-        顯示一個下拉選單，讓玩家從選項中選擇，回傳選擇的值。
-        choices: 可以是 {選項名稱: 值} 的 dict，也可以是 [(選項名稱, 值)] 的列表
-        """
-        if isinstance(choices, list):  # 如果是 [(選項名稱, 值)]，轉換成 dict
-            choices = dict(choices)
-
-        return self.ask_choice(message=message, options=choices)  # 假設 GUI 內部有 ask_choice()
 
 
     def show_message(self, message):

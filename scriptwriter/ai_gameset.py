@@ -1,21 +1,24 @@
 import random
 from database.RuleTable import RuleTable
 from database.Basecharacter import load_Basecharacters
-from common.character import Character, CharacterManager
-from common.area_and_date import TimeManager
+from common.character import CharacterManager
+from common.area_and_date import AreaManager
 from game import Game
 
 class AIGameSet:
     def __init__(self):
         # 步驟 1: 隨機選擇主要規則表
         self.rule_table = RuleTable.get_rule_table_by_id(random.randint(1,1))
-        print("選擇的規則表: ", self.rule_table.name) 
-        # 步驟 2: 選擇角色
+        #print("選擇的規則表: ", self.rule_table.name) 
+        # 步驟 2: 選擇角色與地區
         self.character_db = load_Basecharacters() 
         self.character_manager = CharacterManager(self.character_db)  # 讓 Manager 管理角色
         self.character_manager.initialize_characters()  # 讓 Manager 選角色
 
-        print("選擇的角色: ", [character.name for character in self.character_manager.characters])
+        self.area_manager = AreaManager()  # 初始化地區管理器
+        self.area_manager.initialize_areas()  # 初始化地區
+
+        #print("選擇的角色: ", [character.name for character in self.character_manager.characters])
 
         self.total_cycles = 4  # 初始化輪迴數
         self.total_days = 4  # 初始化總日期數
@@ -44,9 +47,9 @@ class AIGameSet:
         # 步驟 6: 選定主規則和副規則
         self.main_rule = random.choice(self.rule_table.main_rules)
         self.sub_rules = random.sample(self.rule_table.sub_rules, 2)
-        print("選擇的主要規則: ", self.main_rule.name)
-        print("選擇的副規則: ", [rule.name for rule in self.sub_rules])
-
+        #print("選擇的主要規則: ", self.main_rule.name)
+        #print("選擇的副規則: ", [rule.name for rule in self.sub_rules])
+        print("選擇的 sub_rules:", self.sub_rules, type(self.sub_rules))
         # 步驟 7: 秘密分配角色身分
         self.roles = self.assign_roles()
 
@@ -62,7 +65,7 @@ class AIGameSet:
             for role, count in rule.roles.items():
                 role_requirements[role] = role_requirements.get(role, 0) + count  # 合併副規則的需求
 
-        print("\n需要分配的身分：", role_requirements)  # 調試用，確認需求正確
+        #print("\n需要分配的身分：", role_requirements)  # 調試用，確認需求正確
 
         # 2️⃣ **準備角色分配**
         available_characters = self.character_manager.characters[:]  # 可選角色列表（複製避免修改原本的 `self.characters`）
@@ -119,16 +122,13 @@ class AIGameSet:
   
     def assign_event_criminals(self):
         num_events = len(self.scheduled_events)
-        num_characters = len(self.character_manager.characters)
-        print(f"\n🔍 事件數量：{num_events}，角色數量：{num_characters}")
-
         criminals = random.sample(self.character_manager.characters, k=num_events)  # 隨機選擇不同的角色作為每個事件的犯人
 
         for (day, event), criminal in zip(self.scheduled_events.items(), criminals):
             event.criminal_name = criminal.name  # 直接更新事件的 criminal_name
 
             # 🔍 Debug 訊息
-            print(f"✅ 事件 '{event.name}'（第 {day} 天）犯人設置為：{criminal.name}")
+            #print(f"✅ 事件 '{event.name}'（第 {day} 天）犯人設置為：{criminal.name}")
 
 
     def get_public_info(self):
@@ -145,9 +145,9 @@ class AIGameSet:
             "main_rule": self.main_rule.name,
             "sub_rules": [rule.name for rule in self.sub_rules],
             "roles": {
-                next((char.name for char in self.character_manager.characters if char.id == Ch_id), f"未知角色 {Ch_id}"): role_name
+                next((char.name for char in self.character_manager.characters if char.Ch_id == Ch_id), f"未知角色 {Ch_id}"): role_name
                 for Ch_id, role_name in self.roles.items()
             },
-            "event_criminals": {day: criminal.name for day, criminal in self.event_criminals.items()}
+
         }
         return secret_info

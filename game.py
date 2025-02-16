@@ -1,30 +1,40 @@
-from common.character import Character
-from common.area_and_date import TimeManager, Area
+
+from common.area_and_date import TimeManager
 from database.RuleTable import RuleTable
 from common.player import Player
 
 class Game:
-    def __init__(self, total_days, total_cycles, character_manager, scheduled_events, areas):
+    def __init__(self,selected_main_rule,selected_sub_rules, total_days, total_cycles, character_manager, scheduled_events, area_manager):
         self.rule_table = RuleTable()
-        self.selected_main_rule = self.rule_table.main_rules
-        self.selected_sub_rules = self.rule_table.sub_rules
+        self.selected_main_rule = selected_main_rule
+        self.selected_sub_rules = selected_sub_rules
         self.time_manager = TimeManager(total_days, total_cycles)
         self.scheduled_events = scheduled_events
         self.character_manager = character_manager  # 🔥 儲存 character_manager
-        self.areas = areas  # 讓 `areas` 由外部傳入，提高靈活性
+        self.area_manager = area_manager  # 讓 `areas` 由外部傳入，提高靈活性
+
+        self.game_gui = None  # 預設為 None，初始化時再設定
 
         self.EX_gauge = 0  # EX 槽
         self.happened_events = {}
         self.public_information = []  # 存儲公開資訊（字串格式）
 
+        
         # 初始化玩家，並傳入 `game` 參考
         self.players = {
             "偵探": Player("偵探"),
             "劇本家": Player("劇本家")
         }
+    def get_area_by_id(self, area_id):
+        return self.area_manager.fetch_area_by_id(area_id)
 
-
+    def get_area_by_name(self, name):
+        return self.area_manager.fetch_area_by_name(name)
         
+    def set_gui(self, game_gui):
+        """初始化 GUI 介面"""
+        self.game_gui = game_gui
+
     def add_public_info(self, info):
         """新增公開資訊，避免重複"""
         if info not in self.public_information:

@@ -20,7 +20,9 @@ def main():
         total_cycles=gameset.total_cycles,
         character_manager = gameset.character_manager,
         scheduled_events=gameset.scheduled_events,
-        areas= [Area(3,"都市"), Area(4,"學校"), Area(1,"醫院"), Area(2,"神社")]
+        area_manager = gameset.area_manager,
+        selected_main_rule = gameset.main_rule,
+        selected_sub_rules = gameset.sub_rules
     )
 
     # 2️⃣   啟動 GUI 介面

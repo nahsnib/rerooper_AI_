@@ -6,16 +6,20 @@ class Area:
         self.id = id
         self.name = name
         self.characters = []  # 該地區內的角色列表
-        self.conspiracy_points = 0  # 該地區的陰謀值
+        self.conspiracy = 0   # 該地區的陰謀值
 
     def add_character(self, character):
         self.characters.append(character)
 
     def remove_character(self, character):
-        self.characters.remove(character)
+        if character in self.characters:
+            self.characters.remove(character)
 
     def change_conspiracy(self, amount):
-        self.conspiracy_points += amount
+        self.conspiracy = max(0, self.conspiracy + amount)  # 陰謀值最低為 0
+
+    def __repr__(self):
+        return f"Area({self.id}, {self.name})"
 
     def move_horizontal(self):
         pass
@@ -35,27 +39,30 @@ class Area:
     def change_friendship(self, amount):
         pass
 
+class AreaManager:
+    def __init__(self):
+        self.areas = {}  # 存儲所有區域
+        self.initialize_areas()
 
-# 定義地區
-hospital = Area(1, "醫院")
-shrine = Area(2, "神社")
-city = Area(3, "都市")
-school = Area(4, "學校")
+    def initialize_areas(self):
+        self.areas[1] = Area(1, "醫院")
+        self.areas[2] = Area(2, "神社")
+        self.areas[3] = Area(3, "都市")
+        self.areas[4] = Area(4, "學校")
 
-# 添加地區到地圖
-areas = {
-    hospital.id: hospital,
-    shrine.id: shrine,
-    city.id: city,
-    school.id: school,
-}
 
-def get_area_by_id(area_id):
-    return areas.get(area_id, None)
-
-def display_all_areas():
-    for area in areas.values():
-        area.display_area_info()
+    def fetch_area_by_id(self, area_id):
+        return self.areas.get(area_id, None)
+    
+    def fetch_area_by_name(self, name):
+        for area in self.areas.values():
+            if area.name == name:
+                return area
+        return None
+   
+    def display_all_areas(self):
+        for area in self.areas.values():
+            area.display_area_info()
 
 class TimeManager:
     def __init__(self, total_days, total_cycles):

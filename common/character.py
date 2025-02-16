@@ -43,7 +43,7 @@ class Character:
         self.pickup = False  # 是否為隨機選擇的角色
 
         self.name = name.strip()  # 確保沒有前後空格
-        print(f"🆕 角色初始化: '{self.name}'")
+        #print(f"🆕 角色初始化: '{self.name}'")
 
         # 浮動資訊
         self.anxiety = 0
@@ -86,12 +86,13 @@ class Character:
         if self.alive and location != self.forbidden_area:
             self.current_location = location
 
-    def move_anywhere_player(self, game_gui):
+    def move_anywhere_player(self, game):
         """ 玩家選擇角色要移動的地點 """
+        game_gui = game.game_gui  # 從 game 內部獲取 GUI
         available_locations = list(set(['醫院', '神社', '都市', '學校']) - set(self.forbidden_area))
 
         # 透過 GUI 讓玩家選擇
-        choice = game_gui.prompt_choice(
+        choice = game_gui.update_extra_selection(
             message=f"想要去哪裡？",
             choices={location: location for location in available_locations}  # 修正 `choices`
         )
@@ -163,58 +164,14 @@ class Character:
         for ability in self.role_ability_usage:
             self.role_ability_usage[ability] = False
 
-    def reveal_identity(self):
-        self.identity_revealed = True
-        print(f"{self.name} 的身份已公開")
+    def reveal_role(self,game):
+        print(f"{self.name} 的身份是{self.role_name}")
+        game.add_public_info(f" {self.name} 的身分是 {self.role_name}")
 
     def kill_character(self, character):
-        # 角色死亡前，檢查是否有刑警在同地區
-        for potential_savior in self.characters:
-            if potential_savior.current_location == character.current_location and "刑警" in potential_savior.attributes:
-                decision = GameGUI.ask_user(f"{potential_savior.name} 可以使用能力拯救 {character.name}，是否發動？")
-                if decision:
-                    result = potential_savior.rescue_ability(character)
-                    self.log_event(result)
-                    return  # 終止死亡處理
 
-        # 若無法拯救，則正式死亡
         character.alive = False
-        self.log_event(f"{character.name} 已死亡。")
-
-
-    def reveal_criminal(self, owner, game, game_gui):
-        """讓玩家選擇一個事件，並得知其犯人"""
-        past_events = [event for event in game.scheduled_events if event.happened]  # 已發生的事件
-        all_events = game.scheduled_events  # 遊戲中的所有事件（未必發生）
-
-        # 根據角色來決定可選擇的事件
-        selectable_events = past_events if owner.name == '刑警' else all_events
-
-        if not selectable_events:
-            game_gui.display_message("沒有可供查詢的事件！")
-            return
-
-        # 讓玩家選擇一個事件
-        choice = game_gui.prompt_choice(
-            message=f"想要知道哪一起事件的犯人？",
-            choices={event.name: event for event in selectable_events}
-        )
-
-        if choice:
-            criminal = choice.criminal  # 假設事件物件有 `criminal` 屬性
-            game.add_public_info(f"{owner.name}揭露了 {choice.name}的犯人是{criminal.name}")  # 加入公開訊息
-
-    
-    def anxiety_ctrl(self, game_gui):
-        """讓玩家選擇 +1 或 -1 不安"""
-        choice = game_gui.prompt_choice(
-            message=f"要讓 {self.name} +1 不安 還是 -1 不安？",
-            choices={"+1 不安": 1, "-1 不安": -1, "取消": None}
-        )
-        if choice is not None:
-            self.change_anxiety(choice)
-
-
+  
     def rescue_effect(self, target):
         if target.alive == False:
             target.alive = True
@@ -240,7 +197,7 @@ class CharacterManager():
         """根據名稱查找角色"""
         return next((char for char in self.characters if char.name == name), None)
 
-    def initialize_characters(self, count_range=(10, 14), id_range=(1, 19)):
+    def initialize_characters(self, count_range=(10, 14), id_range=(1, 20)):
         """隨機選擇角色並初始化"""
         pickup_Ch_ids = random.sample(range(*id_range), random.randint(*count_range))
         
@@ -251,7 +208,7 @@ class CharacterManager():
                 character.pickup = True
                 self.characters.append(character)
 
-        print("✅ 已初始化角色: ", [char.name for char in self.characters])  # 確認角色是否正確選擇
+        #print("✅ 已初始化角色: ", [char.name for char in self.characters])  # 確認角色是否正確選擇
 
 
     def initialize_character_by_id(self,Ch_id):

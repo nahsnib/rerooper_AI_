@@ -1,5 +1,6 @@
 from scriptwriter.ai_gameset import AIGameSet
 from game import Game
+from common.area_and_date import Area   
 
 def test_ai_gameset():
     """ 測試 AIGameSet 並用它初始化 Game 物件 """
@@ -11,9 +12,9 @@ def test_ai_gameset():
     game = Game(
         total_days=gameset.total_days,
         total_cycles=gameset.total_cycles,
-        characters=gameset.characters,
+        character_manager = gameset.character_manager,
         scheduled_events=gameset.scheduled_events,
-        areas=gameset.character_db  # 這部分要確保是地區資訊
+        area_manager = gameset.area_manager
     )
     
     # 3️⃣ 測試 Game 物件是否成功建立
@@ -24,7 +25,7 @@ def test_ai_gameset():
     print(f"總天數: {game.time_manager.total_days}")
     print(f"總輪迴數: {game.time_manager.remaining_cycles}")
     print(f"已安排事件: {game.scheduled_events}")
-    print(f"角色數量: {len(game.characters)}")
+    print(f"角色數量: {len(game.character_manager.characters)}")
 
     # 5️⃣ 測試 `AIGameSet` 的輸出是否符合 `Game` 設定
     public_info = gameset.get_public_info()
