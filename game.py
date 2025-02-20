@@ -2,6 +2,7 @@
 from common.area_and_date import TimeManager
 from database.RuleTable import RuleTable
 from common.player import Player
+from ai.scriptwriter_ai import Scriptwriter_AI
 
 class Game:
     def __init__(self,selected_main_rule,selected_sub_rules, total_days, total_cycles, character_manager, scheduled_events, area_manager):
@@ -11,6 +12,9 @@ class Game:
         self.time_manager = TimeManager(total_days, total_cycles)
         self.scheduled_events = scheduled_events
         self.character_manager = character_manager  # 🔥 儲存 character_manager
+        
+        self.passive_abilities = {}
+
         self.area_manager = area_manager  # 讓 `areas` 由外部傳入，提高靈活性
 
         self.game_gui = None  # 預設為 None，初始化時再設定
@@ -25,6 +29,9 @@ class Game:
             "偵探": Player("偵探"),
             "劇本家": Player("劇本家")
         }
+        # 初始化劇本家AI
+        self.scriptwriter_AI = Scriptwriter_AI(self)
+
     def get_area_by_id(self, area_id):
         return self.area_manager.fetch_area_by_id(area_id)
 
@@ -39,6 +46,7 @@ class Game:
         """新增公開資訊，避免重複"""
         if info not in self.public_information:
             self.public_information.append(info)
+            self.game_gui.update_public_information()
 
     def reveal_sub_rule(self):
         """依序揭露副規則，每次揭露一條，最多兩條"""

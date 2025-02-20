@@ -5,30 +5,9 @@ import random
 import logging
 from game_gui import GameGUI
 
-def friendship_ignore(character):
-    """
-    判斷角色的友好能力是否會被無效或無視
-    :param character: 角色實例
-    :return: (bool, str) 第一個值表示友好能力是否被無效或可能被無視，第二個值是判定結果的描述
-    """
-    if '友好無效' in character.traits:
-        logging.info("友好能力無效")
-        return (True, "友好能力無效")
-    elif '友好無視' in character.traits:
-        result = random.choice([True, False])
-        if result:
-            logging.info("友好能力無效")
-            return (True, "友好能力無效")
-        else:
-            logging.info("友好能力有效")
-            return (False, "友好能力有效")
-    logging.info("友好能力有效")
-    return (False, "友好能力有效")
-
-
 class Character:
-    def __init__(self, Ch_id, name, anxiety_threshold, initial_location, forbidden_area, attributes, friendship_abilities, special_ability=None, role_abilities=None,
-     traits=None):
+    def __init__(self, Ch_id, name, anxiety_threshold, initial_location, forbidden_area, attributes, friendship_abilities, 
+                 special_ability=None, role_abilities=None, traits=None):
         self.Ch_id = Ch_id
         self.name = name
         self.anxiety_threshold = anxiety_threshold
@@ -39,7 +18,8 @@ class Character:
         self.special_ability = special_ability
         self.traits = traits or []  # 初始化特性屬性
         self.role_name = "普通人"  # 初始化角色身分名稱
-        self.role_abilities = role_abilities or []  # 確保初始化 role_abilities
+        self.active_role_abilities = []  # 存放主動能力
+        self.passive_role_abilities = []  # 存放被動能力
         self.pickup = False  # 是否為隨機選擇的角色
 
         self.name = name.strip()  # 確保沒有前後空格
@@ -53,7 +33,6 @@ class Character:
         self.is_criminal = False
         self.event_crimes = []
         self.current_location = initial_location  # 設置當前地區
-        self.friendship_ability_usage = {ability.name: False for ability in self.friendship_abilities}
         self.role_ability_usage = {ability['name']: False for ability in self.role_abilities}
         self.guilty = 0
 
@@ -68,10 +47,11 @@ class Character:
         self.reset_ability_usage()
         self.guilty = 0
 
-    def scholar_effect(self, owner):
-        owner.friendship = 0
-        owner.anxiety = 0
-        owner.conspiracy = 0
+    def scholar_effect(self, game,extra):
+        self.friendship = 0
+        self.anxiety = 0
+        self.conspiracy = 0
+        game.EX_gauge += extra
 
     def change_anxiety(self, amount):
         self.anxiety = max(0, self.anxiety + amount)  # 最低 0
@@ -86,33 +66,12 @@ class Character:
         if self.alive and location != self.forbidden_area:
             self.current_location = location
 
-    def move_anywhere_player(self, game):
+    def move_to_anywhere(self, new_location):
         """ 玩家選擇角色要移動的地點 """
-        game_gui = game.game_gui  # 從 game 內部獲取 GUI
-        available_locations = list(set(['醫院', '神社', '都市', '學校']) - set(self.forbidden_area))
-
-        # 透過 GUI 讓玩家選擇
-        choice = game_gui.update_extra_selection(
-            message=f"想要去哪裡？",
-            choices={location: location for location in available_locations}  # 修正 `choices`
-        )
-
-        if choice:
-            self.current_location = choice
-            print(f"📍 玩家移動 {self.name} 到 {choice}")
-        else:
-            print(f"❌ 玩家取消了 {self.name} 的移動")
-
-    def move_anywhere_AI(self, game):
-        """ AI 自動選擇角色要移動的地點 """
-        available_locations = game.area_manager.get_all_locations()
+        print(f"{self.name} 嘗試從 {self.current_location} 移動到 {new_location}，禁制地點是 {self.forbidden_area}")
+        if new_location not in (self.forbidden_area):
+            self.current_location = new_location
         
-        # AI 決策邏輯（這裡用隨機選擇作為範例，實際可改成 AI 判斷最佳地點）
-        chosen_location = random.choice(available_locations)
-        
-        self.current_location = chosen_location
-        print(f"🤖 AI 移動 {self.name} 到 {chosen_location}")
-
     def move_vertical(self):
         location_map = {
             "醫院": "都市",
@@ -166,17 +125,68 @@ class Character:
 
     def reveal_role(self,game):
         print(f"{self.name} 的身份是{self.role_name}")
+        if self.name == '異質者' and game.time_manager.total_cycles == game.time_manager.remains_cycles:
+            return print("異質者的友好能力在最初輪迴不可使用！")
         game.add_public_info(f" {self.name} 的身分是 {self.role_name}")
 
-    def kill_character(self, character):
+    def kill_character(self, game, target):
+        """執行角色死亡，並檢查是否有刑警可阻止該次死亡"""
 
-        character.alive = False
-  
-    def rescue_effect(self, target):
-        if target.alive == False:
-            target.alive = True
-            return f"{self.name} 使用了能力，使 {target.name} 復活！"
-        return f"{target.name} 並沒有死亡，無法使用能力。"
+        # 先尋找「刑警」角色
+        police = None
+        for character in game.character_manager.characters:
+            if character.name == "刑警":
+                police = character
+                break  # 找到刑警後，立即停止搜尋
+
+        # 如果沒有刑警，直接讓角色死亡
+        if not police:
+            target.alive = False
+            return
+
+        # 查找刑警的「刑警能力」(FA_id = 502)
+        police_ability = next(
+            (fa for fa in police.friendship_abilities if fa.FA_id == 502),
+            None
+        )
+
+        # 檢查刑警是否符合條件
+        if (
+            police.alive and
+            police.current_location == target.current_location and
+            police.friendship >= 5 and  # 友好值 ≥ 5
+            police_ability and police_ability.times_used == 0  # 能力未使用
+        ):
+            # 詢問玩家是否要發動能力
+            if game.game_gui.ask_player(target, 502): 
+                police_ability.times_used += 1  # 標記能力已使用
+                # 進行 `friendship_ignore()` 判定
+                if not self.friendship_ignore():
+                    # 若沒有被拒絕，成功救援
+                    print(f"刑警保護了{target.name}")
+                    return  # 直接結束，不進行死亡處理
+
+        # 若無法阻止，則角色死亡
+        target.alive = False
+
+    def butterfly_effect(self, game):
+        """交由AI決定一個屬性+1"""
+        #choice = game.scriptwriter_AI.choose_option(["friendship", "anxiety", "conspiracy"]) 簡化版本，目前都選陰謀
+        choice = "conspiracy"
+        if choice == "friendship":
+            self.change_friendship(1)
+        elif choice == "anxiety":
+            self.change_anxiety(1)
+        elif choice == "conspiracy":
+            self.change_conspiracy(1)
+
+    def friendship_ignore(self):
+        """判斷角色的友好能力是否會被無效"""
+        if '友好無效' in self.traits:
+            return True
+        if '友好無視' in self.traits:
+            return random.random() < 0.5
+        return False  
 
     def __str__(self):
         return f"Character({self.name}, Anxiety: {self.anxiety}, Conspiracy: {self.conspiracy}, Friendship: {self.friendship}, Location: {self.current_location}, Alive: {self.alive}, Event Crimes: {self.event_crimes})"

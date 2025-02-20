@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+from functools import partial
 
 class GameGUI:
     def __init__(self, root, game, characters, phase=None):  # ✅ 預設 phase=None
@@ -8,6 +9,10 @@ class GameGUI:
         self.characters = characters
         self.phase = phase  # 可以是 None
         self.selected_targets = []
+
+        self.ask_popup = None  # 🔹 用來存放詢問視窗
+        self.ask_result = None  # 🔹 用來存放玩家選擇（True/False）
+
         self.create_widgets()
 
 
@@ -298,7 +303,7 @@ class GameGUI:
 
         self.confirm_extra_button = tk.Button(
             self.ability_frame, text="確認額外選擇",
-            command=self.confirm_extra_selection
+            command=self.phase.confirm_extra_selection(self.extra_var.get())
         )
         self.confirm_extra_button.pack()
 
@@ -315,7 +320,7 @@ class GameGUI:
         """依據選擇的能力，更新可用目標列表"""
         self.FA_target_combobox["values"] = [target for target in self.phase.available_targets]
 
-    def update_extra_selection(self, message, choices):
+    def update_extra_selection(self, choices):
         """
         讓玩家在 GUI 中選擇額外選項，並回傳選擇結果。
         
@@ -324,10 +329,9 @@ class GameGUI:
         :return: 玩家選擇的選項（或 None）
         """
         # 更新選單內容
-        self.extra_combobox["values"] = list(choices.keys())
+        self.extra_combobox["values"] = choices
         self.extra_combobox.pack()  # 顯示選擇框
         self.confirm_extra_button.pack()  # 顯示確認按鈕
-        self.show_message(message)  # 顯示提示訊息
         
         self.extra_var.set(list(choices.keys())[0])  # 預設選擇第一個選項
 
@@ -339,32 +343,56 @@ class GameGUI:
         while not self.extra_selection_done:
             self.root.update()  # 更新 UI，防止卡死
 
-        return choices.get(self.extra_selected_choice, None)  # 回傳選擇的數值
+        return choices.get(self.extra_selected_choice)  # 回傳選擇的數值
 
 
-
-    def confirm_extra_selection(self):
-        """確認額外選擇，並結束等待選擇的迴圈"""
-        selected_value = self.extra_var.get()  # 取得選擇的值
-        if not selected_value:  # 確保選擇不為空
-            self.show_message("請先選擇額外選項！")
-            return
-
-        self.extra_selected_choice = selected_value  # 記錄選擇結果
-        self.extra_selection_done = True  # 讓 `update_extra_selection` 迴圈結束
+    def ask_player(self, target, reason):
+        """依據輸入的reason，判斷要問什麼問題"""
         
+        # 確保不會有多個視窗
+        if hasattr(self, "ask_popup") and self.ask_popup:
+            self.ask_popup.destroy()
 
-    def execute_selected_ability(self):
-        """執行選定的能力"""
-        print(f"🎯 選擇的能力: {self.phase.selected_ability}"
-              f"，選擇的目標: {self.phase.selected_target}")  # 🛠 除錯用
-        if self.phase.selected_ability and self.phase.selected_target:
-            self.phase.execute_ability()
-            self.update_area_widgets()
-            self.update_FA_selection()
-            self.update_public_information()
-        else:
-            print("⚠️ [GUI] 無法執行能力，選擇的能力或目標為 None！")
+        # 創建詢問視窗
+        self.ask_popup = tk.Toplevel(self.root)
+        self.ask_popup.geometry("300x150")
+        self.ask_popup.transient(self.root)  # 讓視窗始終在主視窗上方
+        self.ask_popup.grab_set()   # 讓玩家只能操作這個視窗
+
+        # 設定標題與內容
+        self.ask_popup.title("詢問玩家")
+        ask_messages = {
+            502: "是否要讓刑警拯救 {target_name} ？",
+            "final_battle": "是否要直接進入最終決戰？"
+        }
+        message = ask_messages.get(reason, "是否要進行這個動作？").format(target_name=target.name)
+        
+        label = tk.Label(self.ask_popup, text=message, wraplength=250)
+        label.pack(pady=10)
+
+        # 建立按鈕
+        button_frame = tk.Frame(self.ask_popup)
+        button_frame.pack()
+
+        yes_button = tk.Button(button_frame, text="是", width=10, command=partial(self.set_ask_result, True))
+        yes_button.pack(side="left", padx=10, pady=5)
+
+        no_button = tk.Button(button_frame, text="否", width=10, command=partial(self.set_ask_result, False))
+        no_button.pack(side="right", padx=10, pady=5)
+
+        self.ask_popup.wait_window()  # 等待玩家選擇
+        return self.ask_result  # 回傳玩家選擇結果
+
+    def set_ask_result(self, result):
+        """儲存玩家選擇結果並關閉視窗"""
+        self.ask_result = result
+        if self.ask_popup and self.ask_popup.winfo_exists():
+            self.ask_popup.destroy()
+        self.ask_popup = None
+
+
+
+
 
 
 

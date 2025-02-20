@@ -1,7 +1,7 @@
 
 import random
 
-class AIScriptWriter:
+class Scriptwriter_AI:
     def __init__(self, game):
         self.game = game
     
@@ -20,3 +20,16 @@ class AIScriptWriter:
         chosen_target = random.choice(available_targets)
         print(f"🎯 AI 選擇的 '{action_name}' 目標: {chosen_target.name}")
         return chosen_target
+
+    def choose_victims(self, event, valid_targets, victim_count):
+        """
+        從有效目標中隨機選擇受害者
+        :param event: 觸發的事件
+        :param valid_targets: 可選擇的受害者清單
+        :param victim_count: 需要選擇的受害者數量
+        :return: 選定的受害者列表
+        """
+        if victim_count is None:
+            return valid_targets  # 所有符合條件的角色都成為受害者
+        
+        return random.sample(valid_targets, victim_count)  # 隨機選擇指定數量的受害者

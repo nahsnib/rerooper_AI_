@@ -39,11 +39,12 @@ class FriendshipAbility:
         self.require_extra_selection = require_extra_selection  # 是否需要額外選擇
 
     def is_available(self, character):
-        """檢查這個能力是否可用"""
+        """檢查這個能力是否可用"""  
         if self.limit_use and self.times_used >= 1:
             #print(f"⚠️ {self.name} 發動失敗，已達使用上限！")
             return False
-        # ✅ 增加 daily_used 檢查
+        elif not self.active:
+            return False
         return character.friendship >= self.required_friendship and not self.daily_used and self.active
     
     def get_owner_by_name(self, game):
@@ -60,7 +61,7 @@ class FriendshipAbility:
         self.times_used += 1  
         self.daily_used = True
         if self.owner_name != '護士' and self.owner_name != '異質者': # 除了護士、異質者的友好能力，其他友好能力都要判定友好無視或友好無效
-            if not self.friendship_ignore(owner):
+            if owner.friendship_ignore():
                 return False
             # ✅ 執行 effect
             self.effect(game, owner, target, extra)  # 確保 effect 被執行
@@ -69,19 +70,6 @@ class FriendshipAbility:
         else:
             print(f"⚠️ {self.name} 發動失敗，目標不符合條件！")
             return False
-
-
-
-    def friendship_ignore(self, owner):
-        """判定角色的特性是否影響友好能力"""
-        if '友好無效' in owner.traits:
-            print(f"⚠️ {owner.name} 被無效，無法發動！")
-            return False  # 能力完全無效
-        elif '友好無視' in owner.traits:
-            if random.random() < 0.5:  # 50% 機率讓能力無效
-                print(f"⚠️ {owner.name} 被無效，無法發動！")
-                return False
-        return True  # 能力可以正常發動
                
 
 def load_Basecharacters():
@@ -120,7 +108,7 @@ def load_Basecharacters():
                     owner_name='女學生',
                     required_friendship=  2,
                     active= True, # 主動能力
-                    target_condition= lambda target, owner:target.alive and target != owner and target.current_location == owner.current_location and '學生' in target.attributes,
+                    target_condition= lambda target, owner: target != owner and target.current_location == owner.current_location and '學生' in target.attributes,
                     effect=lambda game, owner, target, extra: target.change_anxiety(-1),
                     limit_use= False
                 )
@@ -140,7 +128,7 @@ def load_Basecharacters():
                     owner_name='大小姐',
                     required_friendship= 3 ,
                     active= True, # 主動能力
-                    target_condition= lambda target, owner:target.alive and target.current_location == owner.current_location and  target.current_location == '學校' or '都市',
+                    target_condition= lambda target, owner: target.current_location == owner.current_location and target.current_location in ['學校', '都市'],
                     effect=lambda game, owner, target, extra: target.change_friendship(1),
                     limit_use= False
                 )
@@ -170,7 +158,7 @@ def load_Basecharacters():
                     owner_name='巫女',
                     required_friendship=  5,
                     active= True, # 主動能力
-                    target_condition= lambda target, owner:target.alive and target.current_location == owner.current_location,
+                    target_condition= lambda target, owner: target.current_location == owner.current_location,
                     effect=lambda game, owner, target, extra: target.reveal_role(game),
                     limit_use= True # 限用能力
                 )
@@ -193,19 +181,18 @@ def load_Basecharacters():
                     target_condition= lambda target, owner: target == '事件',
                     effect=lambda game, owner, target, extra: target.reveal_criminal(game),
                     limit_use= True, # 限用能力
-                    )
+                    ),
                 
-                #FriendshipAbility(
-                #    FA_id= 502,
-                #    owner_name='刑警',
-                #    name= '刑警：當同地區的角色死亡時可立即使用此能力，使該死亡無效。（1輪迴限用1次）',
-                #    required_friendship=  5,
-                #    active= False, # 被動能力
-                #    target_condition= lambda target, owner: target.is_dead and target.current_location == owner.current_location,
-                #     
-                #    effect= lambda owner, target: target.revive(),
-                #    limit_use= True # 限用能力
-                #)
+                FriendshipAbility(
+                    FA_id= 502,
+                    owner_name='刑警',
+                    name= '刑警：當同地區的角色死亡時可立即使用此能力，使該死亡無效。（1輪迴限用1次）',
+                    required_friendship=  5,
+                    active= False, # 被動能力
+                    target_condition= lambda target, owner: target.is_dead and target.current_location == owner.current_location,                     
+                    effect= lambda owner, target: target.revive(),
+                    limit_use= True # 限用能力
+                )
             ]
         ),
         BaseCharacter(
@@ -262,7 +249,7 @@ def load_Basecharacters():
                     name='醫生：同地區另一名角色+1不安或者-1不安。',
                     required_friendship=2,
                     active=True,  # 主動能力
-                    target_condition=lambda target, owner:target.alive and target.current_location == owner.current_location and target != owner,
+                    target_condition=lambda target, owner: target.current_location == owner.current_location and target != owner,
                     effect=lambda game, owner, target, extra: target.anxiety_change(extra),  
                     limit_use=False,
                     require_extra_selection = True  # 需要額外選擇
@@ -274,7 +261,7 @@ def load_Basecharacters():
                     name='醫生：本輪迴中，住院病人解除移動限制',
                     required_friendship=3,
                     active=True,  # 主動能力
-                    target_condition=lambda target, owner:target.alive and target.name == '住院病人',
+                    target_condition=lambda target, owner: target.name == '住院病人',
                     effect=lambda game, owner, target, extra: setattr(target, 'forbidden_location', []),  # 修正 effect
                     limit_use=False
                 )
@@ -305,7 +292,7 @@ def load_Basecharacters():
                     name='班長：偵探重置1張【1輪迴只能使用1次】的行動（1輪迴限用1次）',
                     required_friendship=2,
                     active=True,  # 主動能力
-                    target_condition=lambda target, owner: target.usage_limit == 1 and target.times_used >0,  # 特殊條件，選擇行動使用次數為 1 且已使用過的行動
+                    target_condition=lambda target, owner: target == '行動',  # 特殊條件，選擇行動使用次數為 1 且已使用過的行動
                     effect=lambda game, owner, target, extra: target.reset_action(),  # 修正 effect
                     limit_use=True,  # 限用能力
                 )
@@ -326,8 +313,8 @@ def load_Basecharacters():
                     required_friendship=  4,
                     active= True, # 主動能力
 
-                    target_condition= lambda target, owner: target.alive and target != owner and target.current_location == owner.current_location,
-                    effect=lambda game, owner, target, extra: owner.kill_character(target),
+                    target_condition= lambda target, owner:  target != owner and target.current_location == owner.current_location,
+                    effect=lambda game, owner, target, extra: owner.kill_character(game,target),
                     limit_use= True # 限用能力
                 ),
                 FriendshipAbility(
@@ -336,7 +323,7 @@ def load_Basecharacters():
                     name= '異世界人：復活同地區的1具屍體（1輪迴限用1次）',
                     required_friendship=  5,
                     active= True, # 主動能力
-                    target_condition= lambda target, owner: not target.alive and target.current_location == owner.current_location,
+                    target_condition= lambda target, owner: target.current_location == owner.current_location,
                     effect=lambda game, owner, target, extra: setattr(target, 'alive', True),
                     limit_use= True # 限用能力
                 )
@@ -366,7 +353,7 @@ def load_Basecharacters():
                     name= '神格：從同一地區的1名角色或地區上-1陰謀',
                     required_friendship=  5,
                     active= True, # 主動能力
-                    target_condition = lambda target, owner: (target.alive and target.current_location == owner.current_location) 
+                    target_condition = lambda target, owner: (target.current_location == owner.current_location) 
                         or ( target.name == owner.current_location),
                     effect=lambda game, owner, target, extra: target.change_conspiracy(-1),
                     limit_use= False,
@@ -388,7 +375,7 @@ def load_Basecharacters():
                     name= '偶像：同地區的1名另外一個角色-1不安',
                     required_friendship=  3,
                     active= True, # 主動能力
-                    target_condition= lambda target, owner: target.alive and target != owner and target.current_location == owner.current_location,
+                    target_condition= lambda target, owner:  target != owner and target.current_location == owner.current_location,
                     effect=lambda game, owner, target, extra: target.change_anxiety(-1),
                     limit_use= False
                 ),
@@ -398,7 +385,7 @@ def load_Basecharacters():
                     name= '偶像：同地區的1名角色+1友好',
                     required_friendship=  4,
                     active= True, # 主動能力
-                    target_condition= lambda target, owner:target.alive and target != owner and target.current_location == owner.current_location,
+                    target_condition= lambda target, owner: target != owner and target.current_location == owner.current_location,
                     effect=lambda game, owner, target, extra: target.change_friendship(1),
                     limit_use= False
                 )
@@ -418,7 +405,7 @@ def load_Basecharacters():
                     name= '記者：對同地區另外一名角色+1不安',
                     required_friendship=  2,
                     active= True, # 主動能力
-                    target_condition= lambda target, owner:target.alive and target != owner and target.current_location == owner.current_location,
+                    target_condition= lambda target, owner: target != owner and target.current_location == owner.current_location,
                     effect=lambda game, owner, target, extra: target.change_anxiety(1),
                     limit_use= False
                 ),
@@ -428,7 +415,7 @@ def load_Basecharacters():
                     name= '記者：對同地區另外一名角色或該地區+1陰謀',
                     required_friendship=  2,
                     active= True, # 主動能力
-                    target_condition= lambda target, owner: (target.alive and target != owner and target.current_location == owner.current_location
+                    target_condition= lambda target, owner: ( target != owner and target.current_location == owner.current_location
                     ) or target.name == owner.current_location,
                     effect=lambda game, owner, target, extra: target.change_conspiracy(1),
                     limit_use= False
@@ -450,7 +437,7 @@ def load_Basecharacters():
                     required_friendship=  5,
                     active= True, # 主動能力
                     #因為難以設計，暫時用別的取代target_condition= lambda target, owner:target.alive and target != owner and (target.current_location == owner.current_location or target.current_location == owner.territory),
-                    target_condition= lambda target, owner:target.alive and target != owner and target.current_location == owner.current_location,
+                    target_condition= lambda target, owner: target != owner and target.current_location == owner.current_location,
                     effect=lambda game, owner, target, extra: target.reveal_role(game),
                     limit_use= True # 限用能力
                 )
@@ -471,7 +458,7 @@ def load_Basecharacters():
                     name= '護士：同地區另外一名角色-1不安，僅能對不安達到或超過不安臨界的角色使用。這個能力不會被"友好無視"或"友好無效"取消',
                     required_friendship=  2,
                     active= True, # 主動能力
-                    target_condition= lambda target, owner: target.alive and target != owner and target.current_location == owner.current_location and target.anxiety >= target.anxiety_threshold,
+                    target_condition= lambda target, owner:  target != owner and target.current_location == owner.current_location and target.anxiety >= target.anxiety_threshold,
                     effect=lambda game, owner, target, extra: target.change_anxiety(-1),
                     limit_use= False
                 )
@@ -512,7 +499,7 @@ def load_Basecharacters():
                     required_friendship=  3,
                     active= True, # 主動能力
                     target_condition= lambda target, owner: target == owner,
-                    effect=lambda game, owner, target, extra: target.scholar_effect(owner),
+                    effect=lambda game, owner, target, extra: target.scholar_effect(extra),
                     limit_use= False,
                     require_extra_selection = True  # 需要額外選擇
                 )
@@ -533,8 +520,8 @@ def load_Basecharacters():
                     name='幻象：將與此角色同地區的1名角色移動至任何地區（1輪迴限用1次）',
                     required_friendship=3,
                     active=True,  # 主動能力
-                    target_condition=lambda target, owner: target.alive and target.current_location == owner.current_location,
-                    effect=lambda game, owner, target, extra: target.move_anywhere_player(game),
+                    target_condition=lambda target, owner: target.current_location == owner.current_location,
+                    effect=lambda game, owner, target, extra: target.move_anywhere(extra),
                     limit_use=True,  # 限用能力
                     require_extra_selection = True  # 需要額外選擇
                 ),

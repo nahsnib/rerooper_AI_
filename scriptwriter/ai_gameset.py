@@ -23,14 +23,24 @@ class AIGameSet:
         self.total_cycles = 4  # 初始化輪迴數
         self.total_days = 4  # 初始化總日期數
 
-        self.main_rule = []  # 秘密主規則
-        self.sub_rules = []  # 秘密副規則
+        self.main_rule = []  # 主規則
+        self.sub_rules = []  # 副規則
         self.scheduled_events = {}
-        self.roles = {}  # 秘密角色身分
-        self.event_criminals = {}  # 秘密事件犯人
+        self.roles = {}  # 角色身分
+        self.event_criminals = {}  # 事件犯人
 
 
-        
+        self.passive_abilities = {
+            "on_death": [],
+            "night_phase": [],
+            "end_of_cycle": [],
+            "start_of_cycle": [],
+            "change_anxiety": [],
+            "change_conspiracy": [],
+            "area_conspiracy": [],
+            "assign_criminal": [],
+            "post_event": []
+        }
         self.initialize_script()  # 初始化劇本
 
     def initialize_script(self):
@@ -53,24 +63,25 @@ class AIGameSet:
         # 步驟 7: 秘密分配角色身分
         self.roles = self.assign_roles()
 
-        # 步驟 8: 設定事件的犯人             
+        # 步驟 8: 收集所有角色的被動能力
+        #self.collect_passive_abilities() 步驟7順便完成
+
+        # 步驟 9: 設定事件的犯人             
         self.event_criminals = self.assign_event_criminals()
 
     def assign_roles(self):
         """ 根據已選定的 main_rule 和 sub_rules，為角色分配適當的身分 """
 
         # 1️⃣ **收集需要分配的角色身分**
-        role_requirements = self.main_rule.roles.copy()  # 先複製主規則的角色需求
+        role_requirements = self.main_rule.asign_roles.copy()  # 先複製主規則的角色需求
         for rule in self.sub_rules:
-            for role, count in rule.roles.items():
+            for role, count in rule.asign_roles.items():
                 role_requirements[role] = role_requirements.get(role, 0) + count  # 合併副規則的需求
-
-        #print("\n需要分配的身分：", role_requirements)  # 調試用，確認需求正確
 
         # 2️⃣ **準備角色分配**
         available_characters = self.character_manager.characters[:]  # 可選角色列表（複製避免修改原本的 `self.characters`）
         assigned_roles = {}  # 存放角色分配結果 (角色ID -> 身分名稱)
-        
+
         # 角色類型與對應物件（確保從列表轉成字典）
         all_roles = {role.name: role for role in self.rule_table.roles}
 
@@ -87,16 +98,42 @@ class AIGameSet:
 
                 chosen_character = random.choice(available_characters)  # 隨機選擇一名角色
                 available_characters.remove(chosen_character)  # 從可用角色列表中移除
-                
+
                 # 設定角色的身份、能力、特性
                 chosen_character.role_name = role_name
-                chosen_character.traits = all_roles[role_name].traits  # 角色的特性
-                chosen_character.role_abilities = all_roles[role_name].abilities  # 角色的能力
-                
+                chosen_character.traits = all_roles[role_name].traits  # 角色的特性                
+
+                # 設置主動能力並填入 owner_name（確保能力是獨立的副本）
+                chosen_character.active_role_abilities = []
+                for ability in all_roles[role_name].active_abilities:
+                    new_ability = ability.copy()  # 建立副本，確保不影響原始 `RA`
+                    new_ability.owner_name = chosen_character.name  
+                    chosen_character.active_role_abilities.append(new_ability)
+
+                # 設置被動能力並填入 owner_name（確保能力是獨立的副本）
+                chosen_character.passive_role_abilities = []
+                for ability in all_roles[role_name].passive_abilities:
+                    new_ability = ability.copy()  # 建立副本，確保不影響原始 `RA`
+                    new_ability.owner_name = chosen_character.name  
+                    chosen_character.passive_role_abilities.append(new_ability)
+
+                # **即時收集該角色的被動能力**
+                self.collect_passive_abilities(chosen_character.passive_role_abilities)
+
                 assigned_roles[chosen_character.Ch_id] = role_name  # 記錄角色ID與分配的身份
 
         # 4️⃣ **回傳角色分配結果**
-            return assigned_roles
+        return assigned_roles
+
+
+    def collect_passive_abilities(self, all_passive_RA):
+        """ 遍歷所有角色，收集並存儲他們的被動能力 """
+        for ability in all_passive_RA:
+            if ability.trigger_condition in self.passive_abilities:
+                self.passive_abilities[ability.trigger_condition].append(ability)
+            else:
+                print(f"⚠ 未知的被動能力觸發條件: {ability.trigger_condition}")
+
 
     def select_events(self, max_events):
         if not self.rule_table.events:
