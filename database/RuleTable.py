@@ -120,12 +120,12 @@ class Rule:
         return False
 
 class ActiveRoleAbility:
-    def __init__(self, id, name, description, effect,owner_name, requires_target=False):
+    def __init__(self, id, name, description, effect,owner_name, target_condition):
         self.id = id  # 能力的唯一編號
         self.name = name  # 能力名稱
         self.description = description  # 能力描述
         self.effect = effect  # 能力效果函數
-        self.requires_target = requires_target  # 是否需要選擇目標
+        self.target_condition = target_condition  # 是否需要選擇目標
         self.owner_name = owner_name
 
     def use(self, user, target=None):
@@ -266,26 +266,40 @@ def load_rule_table():
                     )
                 ]
                 ),
-                Role(2, "殺手",traits=["友好無視"], abilities=[
-        Role_Ability(id=201, name="不安增加", active= True, description="自己增加 1 點不安", effect=lambda character: character.change_anxiety(1), requires_target=False),
-        
-                ]),
-                Role(3, "黑幕",traits=["友好無視"], abilities=[
-        Role_Ability(id=301, name="不安增加", active= True, description="自己增加 1 點不安", effect=lambda character: character.change_anxiety(1), requires_target=False),
-        
-                ]),
-                Role(4, "邪教徒",traits=["友好無視"], abilities=[
-        Role_Ability(id=401, name="不安增加", active= True, description="自己增加 1 點不安", effect=lambda character: character.change_anxiety(1), requires_target=False),
-        
-                ]),
-                Role(5, "魔女",traits=["友好無視"], abilities=[
-        Role_Ability(id=501, name="不安增加", active= True, description="自己增加 1 點不安", effect=lambda character: character.change_anxiety(1), requires_target=False),
-        
-                ]),
-                Role(6, "時間旅行者",traits=["友好無視"], abilities=[
-        Role_Ability(id=601, name="不安增加", active= True, description="自己增加 1 點不安", effect=lambda character: character.change_anxiety(1), requires_target=False),
-        
-                ]),
+                Role(102, "殺手",traits=["友好無視"], abilities=[
+                        PassiveRoleAbility(
+                        id=1021,
+                        name="The killer",
+                        description="夜晚階段時，如果自己陰謀>=4，劇本家勝利，輪迴結束。",
+                        condition="night_phase",
+                        effect=lambda game, owner: game.cycle_end("lose") if owner.conspiracy > 3
+                    ),
+                    PassiveRoleAbility(
+                        id=1022,
+                        name="Kill Key",
+                        description="夜晚階段時，如果與同地區有陰謀值>=2的關鍵人物，將其殺害。",
+                        condition="night_phase",
+                        effect=lambda game, owner: [
+                            owner.kill_character(game, key)
+                            for key in game.character_manager.characters  # 遍歷所有角色
+                            if key.role_name == "關鍵人物"  # 確保對方是關鍵人物
+                            and key.current_location == owner.current_location  # 確保與殺手在同地區
+                            and key.conspiracy >= 2  # 確保關鍵人物的陰謀值達到 2 以上
+                        ]
+                    )
+                ),
+                 Role(103, "黑幕",traits=["友好無視"], abilities=[
+                        ActiveRoleAbility(
+                        id=1031,
+                        name="conspirator",
+                        description="同地區的一個角色或者該地區+1陰謀",
+                        target_condition=target.current_location == owner.current_location or target.name == owner.current_location,
+                        effect=lambda game, target: target.change_conspiracy(1) 
+                    )
+                ),
+                Role(104, "邪教徒",traits=["友好無效"], abilities=[]),
+                Role(105, "魔女",traits=["友好無效"], abilities=[]),
+                Role(106, "時間旅行者",traits=["不死"], abilities=[]),
                 Role(7, "朋友",traits=["友好無視"], abilities=[
         Role_Ability(id=701, name="不安增加", active= True, description="自己增加 1 點不安", effect=lambda character: character.change_anxiety(1), requires_target=False),
         
