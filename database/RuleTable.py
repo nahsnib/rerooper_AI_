@@ -148,210 +148,260 @@ class PassiveRoleAbility:
         """檢查條件，若符合則觸發能力"""
         if self.condition(game, character):
             self.effect(character)
-
-
+main_rules_BTX=[
+    Rule(101, "殺人計畫", None, asign_roles={"關鍵人物": 1, "殺手": 1, "黑幕": 1}),
+    Rule(102, "被封印之物",None, asign_roles={"黑幕": 1, "邪教徒": 1}, special_effect=lambda game_state: game_state.end_loop("腳本家勝利")),
+    Rule(103, "和我簽下契約吧！", "輪迴結束時，若關鍵人物陰謀>1，腳本家勝利。關鍵人物必須為少女", asign_roles={"關鍵人物": 1}, special_effect=lambda game_state: game_state.end_loop("腳本家勝利")),
+    Rule(104, "未來改變作戰", "蝴蝶效應事件發生後，該輪迴結束時腳本家勝利。", asign_roles={"邪教徒": 1, "時間旅行者": 1}),
+    Rule(105, "巨型定時炸彈", "魔女*1。輪迴結束時，若魔女的初期所在區域陰謀>1，腳本家勝利。", asign_roles={"魔女": 1}, special_effect=lambda game_state: game_state.end_loop("腳本家勝利"))
+],
+sub_rules_BTX=[
+    Rule(111,"友情小圈圈", None, asign_roles={"朋友": 2, "誤導者": 1}),
+    Rule(112, "戀愛的模樣", None, asign_roles={"病嬌": 1, "戀人": 1}),
+    Rule(113, "殺人魔潛伏", None, asign_roles={"朋友": 1, "殺人魔": 1}),
+    Rule(114, "人心惶惶", "每輪迴一次，腳本家可以在能力階段使任意地區+1陰謀。", asign_roles={}, special_effect=lambda game_state: game_state.add_conspiracy_points_to_any_area()),
+    Rule(115, "惡性譫妄病毒", "本遊戲中，普通人不安>2時，變成殺人魔。", asign_roles={"誤導者": 1}, special_effect=lambda game_state: game_state.transform_normal_to_murderer()),
+    Rule(116, "因果之線", "輪迴重啟後，前一輪迴友好>0的角色+2不安。", asign_roles={}, special_effect=lambda game_state: game_state.add_anxiety_to_characters_with_friendship_above(0, 2))
+]
+events_BTX=[ 
+    Event(
+        id=101,
+        name="殺人事件",
+        victim_required=True,
+        victim_condition=lambda game, criminal, victim: victim.alive and criminal.current_location == victim.current_location and criminal != victim,
+        effect=lambda game, criminal, victim: criminal.kill_character(game, victim)
+    ),
+    Event(
+        id=102,
+        name="流言蜚語",
+        victim_required=True,
+        victim_count = 2,
+        victim_condition=lambda game, criminal, victim: victim.alive,  # 任何受害者皆可
+        effect=lambda game, criminal, victims: (
+                victims[0].change_anxiety(2),
+                victims[1].change_conspiracy(1)
+            ) if len(victims) >= 2 else None  # 確保有足夠的受害者
+        ),
+    Event(
+        id=103,
+        name="自殺",      
+        victim_required=False,              
+        effect=lambda game, criminal, victims: criminal.kill_character(game, criminal)
+    ),
+    Event(
+        id=104,
+        name="醫院事件",
+        victim_required = True,  # 需要篩選受害者（醫院內的角色）
+        victim_count = None,
+        victim_condition = lambda game, criminal, victim: victim.current_location == "醫院" and victim.alive,  # 限定地點
+        effect=lambda game, criminal, victims: (
+            (hospital := game.area_manager.fetch_area_by_name("醫院")) and  # 確保醫院區域存在
+            (
+                [criminal.kill_character(game, victim) for victim in victims]
+                if hospital.conspiracy > 0 else None,
+                game.win_cycle() if hospital.conspiracy > 1 else None
+            )
+        )
+    ),
+    Event(
+        id=105,
+        name="遠距殺人",
+        victim_required=True,
+        victim_condition=lambda game, criminal, victim: victim.conspiracy>1 and victim.alive,
+        effect=lambda game, criminal, victim: criminal.kill_character(game, victim)
+    ),
+    Event(
+        id=106,
+        name="失蹤",
+        victim_required=True,
+        victim_condition=lambda game, criminal, victim: victim == 'Area', # 特殊需求，指定地區為受害者
+        effect=lambda game, criminal, victim: (
+            criminal.move_to_anywhere(victim.name),
+            victim.change_conspiracy(1)
+        )
+    ),
+    Event(
+        id=107,
+        name="流傳",
+        victim_required=True,
+        victim_count = 2,
+        victim_condition=lambda game, criminal, victim: victim.alive,  # 任何受害者皆可
+        effect=lambda game, criminal, victims: (
+                victims[0].change_friendship(2),
+                victims[1].change_friendship(-2)
+            ) if len(victims) >= 2 else None  # 確保有足夠的受害者
+        ),
+    Event(
+        id=108,
+        name="蝴蝶效應",
+        victim_required=True,
+        victim_condition=lambda game, criminal, victim: victim.alive and criminal.current_location == victim.current_location,
+        effect=lambda game, criminal, victim: victim.butterfly_effect(game)
+    ),
+    Event(
+        id=109,
+        name="褻瀆",
+        victim_required=False,
+        effect=lambda game, criminal, victim: game.area_manager.fetch_area_by_name("神社").change_conspiracy(1)
+    )
+],
+roles_BTX=[
+    Role(101, "關鍵人物", traits=[],abilities=[
+        PassiveRoleAbility(
+            id=1011,
+            name="The key",
+            description="此角色死亡時，劇本家勝利，輪迴結束。",
+            condition="on_death",
+            effect=lambda game, owner: game.cycle_end("lose") 
+            )
+        ]
+    ),
+    Role(102, "殺手",traits=["友好無視"], abilities=[
+        PassiveRoleAbility(
+            id=1021,
+            name="The killer",
+            description="夜晚階段時，如果自己陰謀>=4，劇本家勝利，輪迴結束。",
+            condition="night_phase",
+            effect=lambda game, owner: game.cycle_end("lose") if owner.conspiracy > 3
+            ),
+        PassiveRoleAbility(
+            id=1022,
+            name="Kill Key",
+            description="夜晚階段時，如果與同地區有陰謀值>=2的關鍵人物，將其殺害。",
+            condition="night_phase",
+            effect=lambda game, owner: [
+                owner.kill_character(game, key)
+                for key in game.character_manager.characters  # 遍歷所有角色
+                if key.role_name == "關鍵人物"  # 確保對方是關鍵人物
+                and key.current_location == owner.current_location  # 確保與殺手在同地區
+                and key.conspiracy >= 2  # 確保關鍵人物的陰謀值達到 2 以上
+                ]
+            )
+        ]
+    ),
+    Role(103, "黑幕",traits=["友好無視"], abilities=[
+        ActiveRoleAbility(
+            id=1031,
+            name="conspirator",
+            description="同地區的一個角色或者該地區+1陰謀",
+            target_condition=target.current_location == owner.current_location or target.name == owner.current_location,
+            effect=lambda game, target: target.change_conspiracy(1) 
+            )
+        ]
+    ),
+    Role(104, "邪教徒",traits=["友好無效"], abilities=[]),
+    Role(105, "魔女",traits=["友好無效"], abilities=[]),
+    Role(106, "時間旅行者",traits=["不死"], abilities=[
+        PassiveRoleAbility(
+            id=1061,
+            name="Time traveler",
+            description="夜晚階段時，如果自己友好<=2，劇本家勝利，輪迴結束。",
+            condition="night_phase",
+            effect=lambda game, owner: game.cycle_end("lose") if owner.conspiracy > 3
+            )
+        ]
+    ),
+    Role(107, "朋友",traits=[], abilities=[
+        PassiveRoleAbility(
+                id=1071,
+                name="The friend",
+                description="輪迴結束時，如果未能存活，劇本家勝利，身分公開。",
+                condition="cycle_end",
+                effect=lambda game, owner: (
+                    owner.reveal_role(),  # 確保角色公開身份
+                    game.cycle_end("lose") if not owner.alive else None  # 若未存活則敗北
+                )
+            ),
+        PassiveRoleAbility(
+            id=1072,
+            name="everlasting friendship",
+            description="輪迴開始時，如果身分已經公開，+1友好",
+            condition="cycle_start",
+            effect=lambda game, owner: owner.change_friendship(1) if owner.revealed
+            ]
+            )
+        ]),
+    Role(108, "誤導者",traits=[], abilities=[
+            ActiveRoleAbility(
+                id=1081,
+                name="disturber",
+                description="同地區的一個角色+1不安",
+                target_condition=target.current_location == owner.current_location,
+                effect=lambda game, target: target.change_anxiety(1) 
+                )
+            ]
+        ),
+    Role(109, "病嬌",traits=[], abilities=[
+        PassiveRoleAbility(
+            id=1091,
+            name="Lover",
+            description="死亡時，戀人+6不安",
+            condition="on_death",
+            effect=lambda game, owner: [
+                lover.anxiety(6)
+                for lover in game.character_manager.characters  # 遍歷所有角色
+                if lover.role.name == "戀人"  # 確保對方是戀人
+                and lover.alive
+                ]
+            PassiveRoleAbility(
+            id=1092,
+            name="Yandere",
+            description="夜晚時，如果自己不安>2且陰謀>0，則劇本家勝利，輪迴結束",
+            condition="night_phase",
+            effect=lambda game, owner: owner: game.cycle_end("lose") if owner.conspiracy > 0 and owner.anxiety>2            
+            ),
+        ]
+        ),
+    Role(110, "戀人",,traits=[], abilities=[
+        PassiveRoleAbility(
+            id=1101,
+            name="Lover",
+            description="死亡時，病嬌+6不安",
+            condition="on_death",
+            effect=lambda game, owner: [
+                lover.anxiety(6)
+                for lover in game.character_manager.characters  # 遍歷所有角色
+                if lover.role.name == "病嬌"  # 確保對方是病嬌
+                and lover.alive
+                ]
+        ),
+    Role(111, "殺人魔",traits=[], abilities=[
+        PassiveRoleAbility(
+            id=1111,
+            name="Murder",
+            description="夜晚時，若有任何角色與其獨處，殺害該角色",
+            condition="night_phase",
+            effect=lambda game, owner: [
+                ]
+        ),
+    Role(112, "因子",traits=["友好無視"], abilities=[
+        PassiveRoleAbility(
+            id=1121,
+            name="Murder",
+            description="",
+            condition="night_phase",
+            effect=lambda game, owner: [
+                ]
+        ),
+        PassiveRoleAbility(
+            id=1122,
+            name="Murder",
+            description="",
+            condition="night_phase",
+            effect=lambda game, owner: [
+                ]
+        ),
+]
 def load_rule_table():
 # 創建規則表
     return [
         RuleTable(
             id=1,
             name=  "Basic Tragedy X",
-            main_rules=[
-                Rule(101, "殺人計畫", None, asign_roles={"關鍵人物": 1, "殺手": 1, "黑幕": 1}),
-                Rule(102, "被封印之物",None, asign_roles={"黑幕": 1, "邪教徒": 1}, special_effect=lambda game_state: game_state.end_loop("腳本家勝利")),
-                Rule(103, "和我簽下契約吧！", "輪迴結束時，若關鍵人物陰謀>1，腳本家勝利。關鍵人物必須為少女", asign_roles={"關鍵人物": 1}, special_effect=lambda game_state: game_state.end_loop("腳本家勝利")),
-                Rule(104, "未來改變作戰", "蝴蝶效應事件發生後，該輪迴結束時腳本家勝利。", asign_roles={"邪教徒": 1, "時間旅行者": 1}),
-                Rule(105, "巨型定時炸彈", "魔女*1。輪迴結束時，若魔女的初期所在區域陰謀>1，腳本家勝利。", asign_roles={"魔女": 1}, special_effect=lambda game_state: game_state.end_loop("腳本家勝利"))
-            ],
-            sub_rules=[
-                Rule(111,"友情小圈圈", None, asign_roles={"朋友": 2, "誤導者": 1}),
-                Rule(112, "戀愛的模樣", None, asign_roles={"病嬌": 1, "戀人": 1}),
-                Rule(113, "殺人魔潛伏", None, asign_roles={"朋友": 1, "殺人魔": 1}),
-                Rule(114, "人心惶惶", "每輪迴一次，腳本家可以在能力階段使任意地區+1陰謀。", asign_roles={}, special_effect=lambda game_state: game_state.add_conspiracy_points_to_any_area()),
-                Rule(115, "惡性譫妄病毒", "本遊戲中，普通人不安>2時，變成殺人魔。", asign_roles={"誤導者": 1}, special_effect=lambda game_state: game_state.transform_normal_to_murderer()),
-                Rule(116, "因果之線", "輪迴重啟後，前一輪迴友好>0的角色+2不安。", asign_roles={}, special_effect=lambda game_state: game_state.add_anxiety_to_characters_with_friendship_above(0, 2))
-            ],
-            events= [ 
-                Event(
-                    id=101,
-                    name="殺人事件",
-                    victim_required=True,
-                    victim_condition=lambda game, criminal, victim: victim.alive and criminal.current_location == victim.current_location and criminal != victim,
-                    effect=lambda game, criminal, victim: criminal.kill_character(game, victim)
-                ),
-                Event(
-                    id=102,
-                    name="流言蜚語",
-                    victim_required=True,
-                    victim_count = 2,
-                    victim_condition=lambda game, criminal, victim: victim.alive,  # 任何受害者皆可
-                    effect=lambda game, criminal, victims: (
-                            victims[0].change_anxiety(2),
-                            victims[1].change_conspiracy(1)
-                        ) if len(victims) >= 2 else None  # 確保有足夠的受害者
-                    ),
-
-                Event(
-                    id=103,
-                    name="自殺",      
-                    victim_required=False,              
-                    effect=lambda game, criminal, victims: criminal.kill_character(game, criminal)
-                ),
-                Event(
-                    id=104,
-                    name="醫院事件",
-                    victim_required = True,  # 需要篩選受害者（醫院內的角色）
-                    victim_count = None,
-                    victim_condition = lambda game, criminal, victim: victim.current_location == "醫院" and victim.alive,  # 限定地點
-                    effect=lambda game, criminal, victims: (
-                        (hospital := game.area_manager.fetch_area_by_name("醫院")) and  # 確保醫院區域存在
-                        (
-                            [criminal.kill_character(game, victim) for victim in victims]
-                            if hospital.conspiracy > 0 else None,
-                            game.win_cycle() if hospital.conspiracy > 1 else None
-                        )
-                    )
-                ),
-                Event(
-                    id=105,
-                    name="遠距殺人",
-                    victim_required=True,
-                    victim_condition=lambda game, criminal, victim: victim.conspiracy>1 and victim.alive,
-                    effect=lambda game, criminal, victim: criminal.kill_character(game, victim)
-                ),
-                Event(
-                    id=106,
-                    name="失蹤",
-                    victim_required=True,
-                    victim_condition=lambda game, criminal, victim: victim == 'Area', # 特殊需求，指定地區為受害者
-                    effect=lambda game, criminal, victim: (
-                        criminal.move_to_anywhere(victim.name),
-                        victim.change_conspiracy(1)
-                    )
-                ),
-                Event(
-                    id=107,
-                    name="流傳",
-                    victim_required=True,
-                    victim_count = 2,
-                    victim_condition=lambda game, criminal, victim: victim.alive,  # 任何受害者皆可
-                    effect=lambda game, criminal, victims: (
-                            victims[0].change_friendship(2),
-                            victims[1].change_friendship(-2)
-                        ) if len(victims) >= 2 else None  # 確保有足夠的受害者
-                    ),
-                Event(
-                    id=108,
-                    name="蝴蝶效應",
-                    victim_required=True,
-                    victim_condition=lambda game, criminal, victim: victim.alive and criminal.current_location == victim.current_location,
-                    effect=lambda game, criminal, victim: victim.butterfly_effect(game)
-                ),
-                Event(
-                    id=109,
-                    name="褻瀆",
-                    victim_required=False,
-                    effect=lambda game, criminal, victim: game.area_manager.fetch_area_by_name("神社").change_conspiracy(1)
-                )
-            ],
-
-            roles=[
-                Role(101, "關鍵人物", traits=[],abilities=[
-                        PassiveRoleAbility(
-                        id=1011,
-                        name="The key",
-                        description="此角色死亡時，劇本家勝利，輪迴結束。",
-                        condition="on_death",
-                        effect=lambda game, owner: game.cycle_end("lose") 
-                        )
-                    ]
-                ),
-                Role(102, "殺手",traits=["友好無視"], abilities=[
-                        PassiveRoleAbility(
-                        id=1021,
-                        name="The killer",
-                        description="夜晚階段時，如果自己陰謀>=4，劇本家勝利，輪迴結束。",
-                        condition="night_phase",
-                        effect=lambda game, owner: game.cycle_end("lose") if owner.conspiracy > 3
-                        ),
-                        PassiveRoleAbility(
-                        id=1022,
-                        name="Kill Key",
-                        description="夜晚階段時，如果與同地區有陰謀值>=2的關鍵人物，將其殺害。",
-                        condition="night_phase",
-                        effect=lambda game, owner: [
-                            owner.kill_character(game, key)
-                            for key in game.character_manager.characters  # 遍歷所有角色
-                            if key.role_name == "關鍵人物"  # 確保對方是關鍵人物
-                            and key.current_location == owner.current_location  # 確保與殺手在同地區
-                            and key.conspiracy >= 2  # 確保關鍵人物的陰謀值達到 2 以上
-                            ]
-                        )
-                    ]
-                ),
-                Role(103, "黑幕",traits=["友好無視"], abilities=[
-                        ActiveRoleAbility(
-                        id=1031,
-                        name="conspirator",
-                        description="同地區的一個角色或者該地區+1陰謀",
-                        target_condition=target.current_location == owner.current_location or target.name == owner.current_location,
-                        effect=lambda game, target: target.change_conspiracy(1) 
-                        )
-                    ]
-                ),
-                Role(104, "邪教徒",traits=["友好無效"], abilities=[]),
-                Role(105, "魔女",traits=["友好無效"], abilities=[]),
-                Role(106, "時間旅行者",traits=["不死"], abilities=[
-                        PassiveRoleAbility(
-                        id=1061,
-                        name="Time traveler",
-                        description="夜晚階段時，如果自己友好<=2，劇本家勝利，輪迴結束。",
-                        condition="night_phase",
-                        effect=lambda game, owner: game.cycle_end("lose") if owner.conspiracy > 3
-                        )
-                    ]
-                ),
-                Role(107, "朋友",traits=["友好無視"], abilities=[
-                        PassiveRoleAbility(
-                            id=1071,
-                            name="The friend",
-                            description="輪迴結束時，如果未能存活，劇本家勝利，身分公開。",
-                            condition="cycle_end",
-                            effect=lambda game, owner: (
-                                owner.reveal_role(),  # 確保角色公開身份
-                                game.cycle_end("lose") if not owner.alive else None  # 若未存活則敗北
-                            )
-                        ),
-                        PassiveRoleAbility(
-                        id=1072,
-                        name="everlasting friendship",
-                        description="輪迴開始時，如果身分已經公開，+1友好",
-                        condition="cycle_start",
-                        effect=lambda game, owner: owner.change_friendship(1) if owner.revealed
-                        ]
-                        )
-                    ]),
-                Role(8, "誤導者",traits=["友好無視"], abilities=[
-        Role_Ability(id=801, name="不安增加", active= True, description="自己增加 1 點不安", effect=lambda character: character.change_anxiety(1), requires_target=False),
-        
-                ]),
-                Role(9, "病嬌",traits=["友好無視"], abilities=[
-        Role_Ability(id=901, name="不安增加", active= True, description="自己增加 1 點不安", effect=lambda character: character.change_anxiety(1), requires_target=False),
-        
-                ]),
-                Role(10, "戀人",traits=["友好無視"], abilities=[
-        Role_Ability(id=1001, name="不安增加", active= True, description="自己增加 1 點不安", effect=lambda character: character.change_anxiety(1), requires_target=False),
-        
-                ]),
-                Role(11, "殺人魔",traits=["友好無視"], abilities=[
-        Role_Ability(id=1101, name="不安增加", active= True, description="自己增加 1 點不安", effect=lambda character: character.change_anxiety(1), requires_target=False),
-        
-                ]),
-                Role(12, "因子",traits=["友好無視"], abilities=[
-        Role_Ability(id=1201, name="不安增加", active= True, description="自己增加 1 點不安", effect=lambda character: character.change_anxiety(1), requires_target=False),
-        
-                ])
-            ],
+            main_rules=main_rules_BTX,
+            sub_rules=sub_rules_BTX,
+            events= events_BTX,
+            roles=,
             special_rules=[],
         )
     ]
