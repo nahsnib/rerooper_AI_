@@ -263,8 +263,8 @@ def load_rule_table():
                         description="此角色死亡時，劇本家勝利，輪迴結束。",
                         condition="on_death",
                         effect=lambda game, owner: game.cycle_end("lose") 
-                    )
-                ]
+                        )
+                    ]
                 ),
                 Role(102, "殺手",traits=["友好無視"], abilities=[
                         PassiveRoleAbility(
@@ -273,8 +273,8 @@ def load_rule_table():
                         description="夜晚階段時，如果自己陰謀>=4，劇本家勝利，輪迴結束。",
                         condition="night_phase",
                         effect=lambda game, owner: game.cycle_end("lose") if owner.conspiracy > 3
-                    ),
-                    PassiveRoleAbility(
+                        ),
+                        PassiveRoleAbility(
                         id=1022,
                         name="Kill Key",
                         description="夜晚階段時，如果與同地區有陰謀值>=2的關鍵人物，將其殺害。",
@@ -285,25 +285,52 @@ def load_rule_table():
                             if key.role_name == "關鍵人物"  # 確保對方是關鍵人物
                             and key.current_location == owner.current_location  # 確保與殺手在同地區
                             and key.conspiracy >= 2  # 確保關鍵人物的陰謀值達到 2 以上
-                        ]
-                    )
+                            ]
+                        )
+                    ]
                 ),
-                 Role(103, "黑幕",traits=["友好無視"], abilities=[
+                Role(103, "黑幕",traits=["友好無視"], abilities=[
                         ActiveRoleAbility(
                         id=1031,
                         name="conspirator",
                         description="同地區的一個角色或者該地區+1陰謀",
                         target_condition=target.current_location == owner.current_location or target.name == owner.current_location,
                         effect=lambda game, target: target.change_conspiracy(1) 
-                    )
+                        )
+                    ]
                 ),
                 Role(104, "邪教徒",traits=["友好無效"], abilities=[]),
                 Role(105, "魔女",traits=["友好無效"], abilities=[]),
-                Role(106, "時間旅行者",traits=["不死"], abilities=[]),
-                Role(7, "朋友",traits=["友好無視"], abilities=[
-        Role_Ability(id=701, name="不安增加", active= True, description="自己增加 1 點不安", effect=lambda character: character.change_anxiety(1), requires_target=False),
-        
-                ]),
+                Role(106, "時間旅行者",traits=["不死"], abilities=[
+                        PassiveRoleAbility(
+                        id=1061,
+                        name="Time traveler",
+                        description="夜晚階段時，如果自己友好<=2，劇本家勝利，輪迴結束。",
+                        condition="night_phase",
+                        effect=lambda game, owner: game.cycle_end("lose") if owner.conspiracy > 3
+                        )
+                    ]
+                ),
+                Role(107, "朋友",traits=["友好無視"], abilities=[
+                        PassiveRoleAbility(
+                            id=1071,
+                            name="The friend",
+                            description="輪迴結束時，如果未能存活，劇本家勝利，身分公開。",
+                            condition="cycle_end",
+                            effect=lambda game, owner: (
+                                owner.reveal_role(),  # 確保角色公開身份
+                                game.cycle_end("lose") if not owner.alive else None  # 若未存活則敗北
+                            )
+                        ),
+                        PassiveRoleAbility(
+                        id=1072,
+                        name="everlasting friendship",
+                        description="輪迴開始時，如果身分已經公開，+1友好",
+                        condition="cycle_start",
+                        effect=lambda game, owner: owner.change_friendship(1) if owner.revealed
+                        ]
+                        )
+                    ]),
                 Role(8, "誤導者",traits=["友好無視"], abilities=[
         Role_Ability(id=801, name="不安增加", active= True, description="自己增加 1 點不安", effect=lambda character: character.change_anxiety(1), requires_target=False),
         
