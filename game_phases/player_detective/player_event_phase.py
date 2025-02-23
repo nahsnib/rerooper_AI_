@@ -11,12 +11,15 @@ class EventPhase:
     def main(self):
         today = self.game.time_manager.current_day
         events_today = [event for event in self.game.scheduled_events.values() if event.date == today]
-        
+        print("=== 今日事件 ===")
+        for event in events_today:
+            print(f"事件: {event.name} | 犯人: {event.criminal.name} | ID: {id(event)}")
+        print("=================")
         if not events_today:
             return self.end_phase()
         
         for event in events_today:
-            criminal = self.game.character_manager.get_character_by_name(event.criminal_name)
+            criminal = event.criminal
             
             if not criminal or not criminal.alive:
                 continue
@@ -40,7 +43,7 @@ class EventPhase:
             self.show_message(f"事件 {event.name} 發生")
             return
         
-        valid_targets = [victim for victim in self.game.character_manager.get_pickup_characters() if event.victim_condition(self.game,criminal, victim)]
+        valid_targets = [victim for victim in self.game.character_manager.characters if event.victim_condition(self.game,criminal, victim)]
         if event.id == 106: #失蹤事件改以地區為受害者
             valid_targets = [self.game.area_manager.fetch_area_by_name("醫院"), 
                              self.game.area_manager.fetch_area_by_name("神社"), 

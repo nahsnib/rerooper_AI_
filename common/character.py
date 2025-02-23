@@ -1,13 +1,13 @@
 
 from database.Basecharacter import get_Basecharacter_by_id, FriendshipAbility
-#from common.area_and_date import areas, hospital, shrine, city, school # 導入地區
+from database.RuleTable import Role
 import random
 import logging
 from game_gui import GameGUI
 
 class Character:
     def __init__(self, Ch_id, name, anxiety_threshold, initial_location, forbidden_area, attributes, friendship_abilities, 
-                 special_ability=None, role_abilities=None, traits=None):
+                 special_ability=None, traits=None):
         self.Ch_id = Ch_id
         self.name = name
         self.anxiety_threshold = anxiety_threshold
@@ -16,14 +16,8 @@ class Character:
         self.attributes = attributes
         self.friendship_abilities = friendship_abilities or []
         self.special_ability = special_ability
-        self.traits = traits or []  # 初始化特性屬性
-        self.role_name = "普通人"  # 初始化角色身分名稱
-        self.active_role_abilities = []  # 存放主動能力
-        self.passive_role_abilities = []  # 存放被動能力
+        self.role = Role()  # 初始化角色身分名稱
         self.pickup = False  # 是否為隨機選擇的角色
-
-        self.name = name.strip()  # 確保沒有前後空格
-        #print(f"🆕 角色初始化: '{self.name}'")
 
         # 浮動資訊
         self.anxiety = 0
@@ -32,15 +26,21 @@ class Character:
         self.alive = True
         self.is_criminal = False
         self.event_crimes = []
-        self.current_location = initial_location  # 設置當前地區
-        self.role_ability_usage = {ability['name']: False for ability in self.role_abilities}
+        if self.initial_location == None:       # 設置當前地區為初始地區，若沒有則隨機選擇
+            self.move_to_anywhere(random.choice(['醫院', '神社', '都市', '醫院']))
+        else :
+            self.current_location = self.initial_location
         self.guilty = 0
 
-    def cycle_reset(self):
+    def char_cycle_reset(self):
         self.anxiety = 0
         self.conspiracy = 0
         self.friendship = 0
-        self.current_location = self.initial_location
+        if self.Ch_id == 18: self.butterfly_effect
+        if self.initial_location == None:
+            self.move_to_anywhere(random.choice('醫院', '神社', '都市', '醫院'))
+        else :
+            self.current_location = self.initial_location
         self.alive = True
         self.is_criminal = False
         self.event_crimes = []
@@ -54,7 +54,7 @@ class Character:
         game.EX_gauge += extra
 
     def change_anxiety(self, amount):
-        self.anxiety = max(0, self.anxiety + amount)  # 最低 0
+        self.anxiety = max(0, self.anxiety + int(amount))  # 最低 0
 
     def change_friendship(self, amount):
         self.friendship = max(0, self.friendship + amount)  # 最低 0
@@ -62,13 +62,8 @@ class Character:
     def change_conspiracy(self, amount):
         self.conspiracy = max(0, self.conspiracy + amount)  # 最低 0
 
-    def move(self, location):
-        if self.alive and location != self.forbidden_area:
-            self.current_location = location
-
     def move_to_anywhere(self, new_location):
         """ 玩家選擇角色要移動的地點 """
-        print(f"{self.name} 嘗試從 {self.current_location} 移動到 {new_location}，禁制地點是 {self.forbidden_area}")
         if new_location not in (self.forbidden_area):
             self.current_location = new_location
         
@@ -124,13 +119,15 @@ class Character:
             self.role_ability_usage[ability] = False
 
     def reveal_role(self,game):
-        print(f"{self.name} 的身份是{self.role_name}")
+        print(f"{self.name} 的身份是{self.role.name}")
         if self.name == '異質者' and game.time_manager.total_cycles == game.time_manager.remains_cycles:
             return print("異質者的友好能力在最初輪迴不可使用！")
-        game.add_public_info(f" {self.name} 的身分是 {self.role_name}")
+        game.add_public_info(f" {self.name} 的身分是 {self.role.name}")
 
     def kill_character(self, game, target):
         """執行角色死亡，並檢查是否有刑警可阻止該次死亡"""
+        if target.role.traits == ['不死']:
+            return
 
         # 先尋找「刑警」角色
         police = None
@@ -171,8 +168,7 @@ class Character:
 
     def butterfly_effect(self, game):
         """交由AI決定一個屬性+1"""
-        #choice = game.scriptwriter_AI.choose_option(["friendship", "anxiety", "conspiracy"]) 簡化版本，目前都選陰謀
-        choice = "conspiracy"
+        choice = random.choice(["friendship", "anxiety", "conspiracy"]) #簡化版本，目前都選陰謀
         if choice == "friendship":
             self.change_friendship(1)
         elif choice == "anxiety":
@@ -180,13 +176,24 @@ class Character:
         elif choice == "conspiracy":
             self.change_conspiracy(1)
 
+    def murder_effect(self, game):
+        # 獲取當前地區的所有角色（不包含自身）
+        characters_in_area = [char for char in game.get_characters_in_area(self.current_location) if char != self]
+
+        # 若當前區域只剩一個其他角色，則執行殺害
+        if len(characters_in_area) == 1:
+            self.kill_character(game, characters_in_area[0])
+
     def friendship_ignore(self):
         """判斷角色的友好能力是否會被無效"""
-        if '友好無效' in self.traits:
+        if '友好無效' in self.role.traits:
+            print("能力被無效！")
             return True
-        if '友好無視' in self.traits:
+        elif '友好無視' in self.role.traits:
+            print("能力被無效！")
             return random.random() < 0.5
-        return False  
+        else:
+            return False  
 
     def __str__(self):
         return f"Character({self.name}, Anxiety: {self.anxiety}, Conspiracy: {self.conspiracy}, Friendship: {self.friendship}, Location: {self.current_location}, Alive: {self.alive}, Event Crimes: {self.event_crimes})"
@@ -219,7 +226,6 @@ class CharacterManager():
                 self.characters.append(character)
 
         #print("✅ 已初始化角色: ", [char.name for char in self.characters])  # 確認角色是否正確選擇
-
 
     def initialize_character_by_id(self,Ch_id):
         base_character = get_Basecharacter_by_id(Ch_id)

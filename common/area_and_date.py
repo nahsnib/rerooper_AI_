@@ -41,28 +41,29 @@ class Area:
 
 class AreaManager:
     def __init__(self):
-        self.areas = {}  # 存儲所有區域
+        self.areas = []  # 存儲所有區域
         self.initialize_areas()
 
     def initialize_areas(self):
-        self.areas[1] = Area(1, "醫院")
-        self.areas[2] = Area(2, "神社")
-        self.areas[3] = Area(3, "都市")
-        self.areas[4] = Area(4, "學校")
+        self.areas.append(Area(1, "醫院"))
+        self.areas.append(Area(2, "神社"))
+        self.areas.append(Area(3, "都市"))
+        self.areas.append(Area(4, "學校"))
 
 
     def fetch_area_by_id(self, area_id):
         return self.areas.get(area_id, None)
     
     def fetch_area_by_name(self, name):
-        for area in self.areas.values():
+        for area in self.areas:
             if area.name == name:
                 return area
         return None
    
     def display_all_areas(self):
-        for area in self.areas.values():
+        for area in self.areas:
             area.display_area_info()
+
 
 class TimeManager:
     def __init__(self, total_days, total_cycles):

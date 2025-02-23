@@ -1,34 +1,30 @@
 from scriptwriter.ai_gameset import AIGameSet
 from common.character import CharacterManager
 from game import Game
-from game_phases.player_detective.player_role_ability_phase import PlayerRoleAbilityPhase
+from game_phases.player_detective.player_RA_phase import PlayerRAPhase
 import random
 
 def main():
-    character_manager = CharacterManager()
-    ai_gameset = AIGameSet(character_manager)
-
-    # 設定角色並顯示
-    characters = ai_gameset.characters
-    for character in characters:
-        character.pickup = True  # 確保角色被選中
-        character_manager.add_character(character)
-
-    # 顯示角色資訊
-    for character in character_manager.get_characters():
-        print(f"角色生成: {character.name}, 初始位置: {character.initial_location}")
-
-    # 初始化遊戲
+    
+    # 1️⃣ 產生遊戲設定
+    gameset = AIGameSet()
+    
+    # 2️⃣ 使用 AIGameSet 的數據建立 Game 物件
     game = Game(
-        total_days=ai_gameset.total_days,
-        total_cycles=ai_gameset.total_cycles,
-        characters=ai_gameset.characters,
-        scheduled_events=ai_gameset.scheduled_events,
-        areas=ai_gameset.character_db
+        selected_rule_table = gameset.selected_rule_table,  # 選規則表
+        selected_main_rule = gameset.selected_main_rule,    # 選主規則
+        selected_sub_rules = gameset.selected_sub_rules,    # 選副規則
+
+        character_manager = gameset.character_manager,      # 人
+        scheduled_events = gameset.scheduled_events,        # 事件
+        time_manager = gameset.time_manager,                # 時間
+        area_manager = gameset.area_manager,                # 地區
+        passive_abilities = gameset.passive_abilities       # 物件導向的被動能力列表
     )
     
+    
     # 初始化角色能力階段
-    role_ability_phase = PlayerRoleAbilityPhase(character_manager, game)
+    role_ability_phase = PlayerRAPhase(game)
 
     # 模擬角色能力階段
     simulate_role_ability_phase(role_ability_phase)

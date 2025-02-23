@@ -25,58 +25,54 @@ class BaseCharacter:
 
 
 class FriendshipAbility:
-    def __init__(self, FA_id,owner_name, name, required_friendship, active, target_condition, effect, limit_use,require_extra_selection=False):
+    def __init__(self, FA_id,owner_name, name, required_friendship, 
+                 active = True, target_condition = None, effect = None, limit_use=False,require_extra_selection=False):
         self.FA_id = FA_id
         self.owner_name = owner_name
         self.name = name
         self.required_friendship = required_friendship
-        self.active = True
+        self.active = active        #都預設為主動能力
         self.target_condition = target_condition
         self.effect = effect
-        self.times_used = 0
+
         self.limit_use = limit_use
-        self.daily_used = False
         self.require_extra_selection = require_extra_selection  # 是否需要額外選擇
 
-    def is_available(self, character):
-        """檢查這個能力是否可用"""  
+        self.daily_used = False     # 今天是否用過，預設0
+        self.times_used = 0         # 本輪迴使用次數，預設0
+
+    def is_available(self, owner):
+        """檢查這個能力是否可用"""
         if self.limit_use and self.times_used >= 1:
             #print(f"⚠️ {self.name} 發動失敗，已達使用上限！")
             return False
-        elif not self.active:
+        elif owner.friendship < self.required_friendship:
+            #print(f"{self.name} 發動失敗，友好度不足)
             return False
-        return character.friendship >= self.required_friendship and not self.daily_used and self.active
+        elif self.daily_used:
+            #print(f"{self.name} 發動失敗，本日已經使用過")
+            return False
+        else:
+            return True 
     
     def get_owner_by_name(self, game):
         return next((c for c in game.character_manager.characters if c.name == self.owner_name), None)
 
       
-    def use(self, game, target, extra=None):
-        owner = self.get_owner_by_name(game)
-        if owner is None:
-            print(f"⚠️ 發動失敗！找不到擁有者 {self.owner_name}")
-            return False
-
-        
+    def use(self, game, target, extra):
+        owner = self.get_owner_by_name(game)       
         self.times_used += 1  
         self.daily_used = True
         if self.owner_name != '護士' and self.owner_name != '異質者': # 除了護士、異質者的友好能力，其他友好能力都要判定友好無視或友好無效
-            if owner.friendship_ignore():
-                return False
-            # ✅ 執行 effect
-            self.effect(game, owner, target, extra)  # 確保 effect 被執行
+            if owner.friendship_ignore(): return 
+        self.effect(game, owner, target, extra)  # 確保 effect 被執行
 
-            return True
-        else:
-            print(f"⚠️ {self.name} 發動失敗，目標不符合條件！")
-            return False
+
                
 
 def load_Basecharacters():
     return [
-        BaseCharacter(
-            Ch_id=1,
-            name='男學生',
+        BaseCharacter(Ch_id=1, name='男學生',
             anxiety_threshold=2,
             initial_location='學校',
             forbidden_area=None,
@@ -87,16 +83,12 @@ def load_Basecharacters():
                     name= '男學生：同地區的１名另外一個"學生"-1不安',
                     owner_name='男學生',
                     required_friendship= 2,
-                    active= True, # 主動能力
                     target_condition= lambda target, owner: target != owner and target.current_location == owner.current_location and '學生' in target.attributes,
                     effect=lambda game, owner, target,extra: target.change_anxiety(-1),
-                    limit_use= False  
                 )
             ]
         ),
-        BaseCharacter(
-            Ch_id=2,
-            name='女學生',
+        BaseCharacter(Ch_id=2, name='女學生',
             anxiety_threshold=3,
             initial_location='學校',
             forbidden_area=None,
@@ -107,16 +99,12 @@ def load_Basecharacters():
                     name= '女學生：同地區的１名另外一個"學生"-1不安',
                     owner_name='女學生',
                     required_friendship=  2,
-                    active= True, # 主動能力
                     target_condition= lambda target, owner: target != owner and target.current_location == owner.current_location and '學生' in target.attributes,
                     effect=lambda game, owner, target, extra: target.change_anxiety(-1),
-                    limit_use= False
                 )
             ]
         ),
-        BaseCharacter(
-            Ch_id=3,
-            name='大小姐',
+        BaseCharacter(Ch_id=3, name='大小姐',
             anxiety_threshold=1,
             initial_location='學校',
             forbidden_area=None,
@@ -127,16 +115,12 @@ def load_Basecharacters():
                     name= '大小姐：當此角色位於學校或都市時才能使用此能力。對同地區的1名角色放置+1友好',
                     owner_name='大小姐',
                     required_friendship= 3 ,
-                    active= True, # 主動能力
                     target_condition= lambda target, owner: target.current_location == owner.current_location and target.current_location in ['學校', '都市'],
                     effect=lambda game, owner, target, extra: target.change_friendship(1),
-                    limit_use= False
                 )
             ]
         ),
-        BaseCharacter(
-            Ch_id=4,
-            name='巫女',
+        BaseCharacter(Ch_id=4, name='巫女',
             anxiety_threshold=2,
             initial_location='神社',
             forbidden_area=['都市'],
@@ -147,57 +131,48 @@ def load_Basecharacters():
                     name= '巫女：當此角色位於神社時才能使用此能力。神社-1陰謀',
                     owner_name='巫女',
                     required_friendship=  3 ,
-                    active= True, # 主動能力
                     target_condition= lambda target, owner: target == '神社',
                     effect=lambda game, owner, target, extra: game.area_manager.areas[2].change_conspiracy(-1),
-                    limit_use= False
                 ),
                 FriendshipAbility(
                     FA_id= 402,
                     name= '巫女：得知同地區的一名角色的身份（1輪迴限用1次）',
                     owner_name='巫女',
                     required_friendship=  5,
-                    active= True, # 主動能力
                     target_condition= lambda target, owner: target.current_location == owner.current_location,
                     effect=lambda game, owner, target, extra: target.reveal_role(game),
                     limit_use= True # 限用能力
                 )
             ]
         ),
-        BaseCharacter(
-            Ch_id=5,
-            name='刑警',
+        BaseCharacter(Ch_id=5, name='刑警',
             anxiety_threshold=3,
-            initial_location='都市',
+            initial_location='醫院',
             forbidden_area=None,
             attributes=['大人', '男性'],
             friendship_abilities=[ #目前難以設計，先略過。
-                    FriendshipAbility(
+                FriendshipAbility(
                     FA_id= 501,
                     owner_name='刑警',
                     name= '刑警：得知此輪迴中，一個已發生的事件之犯人。（1輪迴限用1次）',
                     required_friendship=  4,
-                    active= True, # 主動能力
                     target_condition= lambda target, owner: target == '事件',
                     effect=lambda game, owner, target, extra: target.reveal_criminal(game),
                     limit_use= True, # 限用能力
                     ),
-                
                 FriendshipAbility(
                     FA_id= 502,
                     owner_name='刑警',
                     name= '刑警：當同地區的角色死亡時可立即使用此能力，使該死亡無效。（1輪迴限用1次）',
                     required_friendship=  5,
                     active= False, # 被動能力
-                    target_condition= lambda target, owner: target.is_dead and target.current_location == owner.current_location,                     
-                    effect= lambda owner, target: target.revive(),
+                    target_condition= lambda target, owner: None,                    
+                    effect= lambda owner, target: None,
                     limit_use= True # 限用能力
                 )
             ]
         ),
-        BaseCharacter(
-            Ch_id=6,
-            name='上班族',
+        BaseCharacter(Ch_id=6, name='上班族',
             anxiety_threshold=2,
             initial_location='都市',
             forbidden_area=['學校'],
@@ -215,9 +190,7 @@ def load_Basecharacters():
                 )
             ]
         ),
-        BaseCharacter(
-            Ch_id=7,
-            name='情報販子',
+        BaseCharacter(Ch_id=7, name='情報販子',
             anxiety_threshold=3,
             initial_location='都市',
             forbidden_area=None,
@@ -235,9 +208,7 @@ def load_Basecharacters():
                 )
             ]
         ),
-        BaseCharacter(
-            Ch_id=8,
-            name='醫生',
+        BaseCharacter(Ch_id=8, name='醫生',
             anxiety_threshold=2,
             initial_location='醫院',
             forbidden_area=None,
@@ -250,7 +221,7 @@ def load_Basecharacters():
                     required_friendship=2,
                     active=True,  # 主動能力
                     target_condition=lambda target, owner: target.current_location == owner.current_location and target != owner,
-                    effect=lambda game, owner, target, extra: target.anxiety_change(extra),  
+                    effect=lambda game, owner, target, extra: target.change_anxiety(extra),  
                     limit_use=False,
                     require_extra_selection = True  # 需要額外選擇
                 ),
@@ -268,9 +239,7 @@ def load_Basecharacters():
 
             ]
         ),
-        BaseCharacter(
-            Ch_id=9,
-            name='住院病人',
+        BaseCharacter(Ch_id=9, name='住院病人',
             anxiety_threshold=2,
             initial_location='醫院',
             forbidden_area=['學校', '神社', '都市'],
@@ -278,9 +247,7 @@ def load_Basecharacters():
             friendship_abilities=[],
             special_ability=None
         ),
-        BaseCharacter(
-            Ch_id=10,
-            name='班長',
+        BaseCharacter(Ch_id=10, name='班長',
             anxiety_threshold=2,
             initial_location='學校',
             forbidden_area=None,
@@ -298,9 +265,7 @@ def load_Basecharacters():
                 )
             ]
         ),
-        BaseCharacter(
-            Ch_id=11,
-            name='異世界人',
+        BaseCharacter(Ch_id=11, name='異世界人',
             anxiety_threshold=2,
             initial_location='神社',
             forbidden_area=['醫院'],
@@ -329,9 +294,7 @@ def load_Basecharacters():
                 )
             ]
         ),
-        BaseCharacter(
-            Ch_id=12,
-            name='神格',
+        BaseCharacter(Ch_id=12, name='神格',
             anxiety_threshold=3,
             initial_location='神社',
             forbidden_area=None,
@@ -361,9 +324,7 @@ def load_Basecharacters():
             ],
             special_ability='此角色要在剩餘輪迴數為X時才會正式進入遊戲中。X由腳本家構築腳本時秘密決定'#目前難以設計，先略過。
         ),
-        BaseCharacter(
-            Ch_id=13,
-            name='偶像',
+        BaseCharacter(Ch_id=13, name='偶像',
             anxiety_threshold=2,
             initial_location='都市',
             forbidden_area=None,
@@ -391,9 +352,7 @@ def load_Basecharacters():
                 )
             ]
         ),
-        BaseCharacter(
-            Ch_id=14,
-            name='記者',
+        BaseCharacter(Ch_id=14, name='記者',
             anxiety_threshold=2,
             initial_location='都市',
             forbidden_area=None,
@@ -422,9 +381,7 @@ def load_Basecharacters():
                 )
             ]
         ),
-        BaseCharacter(
-            Ch_id=15,
-            name='耆老',
+        BaseCharacter(Ch_id=15, name='耆老',
             anxiety_threshold=4,
             initial_location='都市',
             forbidden_area=None,
@@ -444,9 +401,7 @@ def load_Basecharacters():
             ],
             special_ability='此角色使用身份能力時，也可以從"領地"為出發點。由劇本家在製作劇本時指定1個地區作為"領地"，須公開'
         ),
-        BaseCharacter(
-            Ch_id=16,
-            name='護士',
+        BaseCharacter(Ch_id=16, name='護士',
             anxiety_threshold=3,
             initial_location='醫院',
             forbidden_area=None,
@@ -464,11 +419,9 @@ def load_Basecharacters():
                 )
             ]
         ),
-        BaseCharacter(
-            Ch_id=17,
-            name='手下',
+        BaseCharacter(Ch_id=17, name='手下',
             anxiety_threshold=1,
-            initial_location='都市',  # 初期地區由腳本家決定，但暫時先設定為都市，方便測試
+            initial_location=None,  # 初期地區由腳本家決定
             forbidden_area=None,
             attributes=['大人', '男性'],
             friendship_abilities=[
@@ -477,16 +430,12 @@ def load_Basecharacters():
                     owner_name='手下',
                     name= '手下：直到本輪迴結束，不會觸發此角色為犯人的事件',
                     required_friendship=  3,
-                    active= True, # 主動能力
                     target_condition= lambda target, owner: target == owner,
                     effect=lambda game, owner, target, extra: setattr(target, 'guilty', -1),  # 修正 effect
-                    limit_use= False
                 )
             ]
         ),
-        BaseCharacter(
-            Ch_id=18,
-            name='學者',
+        BaseCharacter(Ch_id=18, name='學者',
             anxiety_threshold=2,
             initial_location='醫院',
             forbidden_area=None,
@@ -497,18 +446,14 @@ def load_Basecharacters():
                     owner_name='學者',
                     name= '學者：此角色的不安、友好、陰謀歸零。之後，若使用劇本中有使用"EX"的話，將該值增加或者減少1',
                     required_friendship=  3,
-                    active= True, # 主動能力
                     target_condition= lambda target, owner: target == owner,
-                    effect=lambda game, owner, target, extra: target.scholar_effect(extra),
-                    limit_use= False,
+                    effect=lambda game, owner, target, extra: owner.scholar_effect(game, extra),
                     require_extra_selection = True  # 需要額外選擇
                 )
             ],
             special_ability='在輪迴開始時，腳本家可以對此角色+1不安、友好或陰謀（三選一）'
         ),
-        BaseCharacter(
-            Ch_id=19,
-            name='幻象',
+        BaseCharacter(Ch_id=19, name='幻象',
             anxiety_threshold=3, 
             initial_location='神社', 
             forbidden_area=None, 
@@ -519,9 +464,8 @@ def load_Basecharacters():
                     owner_name='幻象',
                     name='幻象：將與此角色同地區的1名角色移動至任何地區（1輪迴限用1次）',
                     required_friendship=3,
-                    active=True,  # 主動能力
                     target_condition=lambda target, owner: target.current_location == owner.current_location,
-                    effect=lambda game, owner, target, extra: target.move_anywhere(extra),
+                    effect=lambda game, owner, target, extra: target.move_to_anywhere(extra),
                     limit_use=True,  # 限用能力
                     require_extra_selection = True  # 需要額外選擇
                 ),
@@ -530,17 +474,13 @@ def load_Basecharacters():
                     owner_name='幻象',
                     name= '幻象：將此角色從遊戲版圖中移除，代表她不與任何角色相鄰，也不存在於任何一個地區',
                     required_friendship=  4,
-                    active= True, # 主動能力
                     target_condition= lambda target, owner: target == owner,
                     effect=lambda game, owner, target, extra: setattr(target, 'current_location', None),
-                    limit_use= False
                 )
             ],
             special_ability='不能在此角色上設置行動卡。設置在此角色所在地區的行動卡，會同時作用於此角色'
         ),
-        BaseCharacter(
-            Ch_id=20,
-            name='異質者',
+        BaseCharacter(Ch_id=20, name='異質者',
             anxiety_threshold=3, 
             initial_location='學校', 
             forbidden_area=None, 
@@ -551,10 +491,8 @@ def load_Basecharacters():
                     owner_name='異質者',
                     name='異質者：公開此角色的身份；這個能力不能在第一輪迴使用，這個能力不能被友好無視或者友好無效',
                     required_friendship=3,
-                    active=True,  # 主動能力
                     target_condition= lambda target, owner: target == owner,
                     effect=lambda game, owner, target, extra: target.reveal_role(game),
-                    limit_use= False
                 )
             ],
             special_ability='劇本構築時，這個角色的身份，必須從主規則、副規則賦予的身分以外，挑選並得到一個身份'

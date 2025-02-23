@@ -1,16 +1,13 @@
-import random
-from common.character import CharacterManager
-from common.area_and_date import areas
-from common.player import Player
-from game_gui import GameGUI
+
 from common.action import Action
 
 class PlayerDetectiveActionPhase:
     def __init__(self, game, game_gui):
         self.game = game  # 整合 Game，讓 Phase 可以存取玩家
         self.game_gui = game_gui  # 讓行動階段控制 GUI
-        self.scriptwriter_selections = []  # AI 劇本家的行動
+
         self.phase_type = "action"  # ✅ 新增此屬性
+        self.scriptwriter_selections = []  # AI 劇本家的行動
         self.player_selections = []  # 玩家偵探的行動
     
     def execute(self):
@@ -21,12 +18,11 @@ class PlayerDetectiveActionPhase:
         # 請求玩家輸入
 
     def scriptwriter_select_actions(self):
-        """ 劇本家 AI 自動選擇 3 個不同的目標和行動 """
         scriptwriter = self.game.players["劇本家"]
-        available_targets = self.get_available_targets()
         selected_targets = []
         
         for _ in range(3):
+            available_targets = self.get_available_action_targets()  # 每次更新可用目標
             remaining_targets = [t for t in available_targets if t not in selected_targets]
             if not remaining_targets:
                 break
@@ -40,31 +36,16 @@ class PlayerDetectiveActionPhase:
                     "action": action
                 })
                 selected_targets.append(target)
-        print(f"🤖 劇本家 AI 選擇了行動：{[action['action'].name for action in self.scriptwriter_selections]}，目標：{[action['target'] for action in self.scriptwriter_selections]}")
     
-    def confirm_action_selection(self):
-        selections = self.game_gui.get_player_action_selection()
-        
-        if not selections:
-            return  # ✅ 玩家選擇無效，應該重新選擇，而不是繼續執行
-
-        self.player_selections = selections
-
-        self.player_selections = selections
-        self.execute_actions()  # ✅ 直接執行，因為 `get_player_action_selection()` 已經過濾無效選擇
-        self.game_gui.show_message(f"選擇了行動：{[action['action'].name for action in self.player_selections]}，目標：{[action['target'] for action in self.player_selections]}")
-        self.game_gui.update_area_widgets()  # ✅ 更新區域資訊
-
     def select_target_by_priority(self, targets):
         """ 劇本家 AI 根據優先順序選擇目標（焦慮值高的角色優先） """
         character_manager = self.game.character_manager
         character_dict = {c.name: c for c in character_manager.characters}
-        
         highest_anxiety = -1
         priority_target = None
         
         for target in targets:
-            if target in character_dict:
+            if target in character_dict and target != "幻象": # 不可對幻象設置行動
                 character = character_dict[target]
                 if character.anxiety > highest_anxiety:
                     highest_anxiety = character.anxiety
@@ -85,31 +66,78 @@ class PlayerDetectiveActionPhase:
                         return action
         
         for action in player.available_actions.values():
-            if action.can_use():
+            if action.times_used < action.usage_limit:
                 return action
         return None
 
-    def get_available_targets(self):
+    def get_available_action_targets(self):
         """ 獲取所有可用的目標（角色 + 地區） """
-        targets = [char.name for char in self.game.character_manager.characters]
+        targets = [char.name for char in self.game.character_manager.characters if char.alive]
         targets.extend(["醫院", "神社", "都市", "學校"])
-        return targets
-   
+        if "幻象" in targets:
+            targets.remove("幻象")  # 不可對幻象設置行動
+
+        return tuple(targets)
+
+    def confirm_action_selection(self):
+        selections = []
+        invalid_selection = False
+        used_actions = set()  # 紀錄本回合內已使用的行動
+        character_seted = set()  # 紀錄本回合已經被偵探設置行動過的對象
+
+        for i in range(3):
+            target = self.game_gui.action_target_vars[i].get()
+            action_name = self.game_gui.action_comboboxes[i].get()
+            action = next((a for a in self.game.players["偵探"].available_actions.values() if a.name == action_name), None)
+            if target and action:
+                if action.times_used >= action.usage_limit:  # 檢查限用能力是否超出使用次數
+                    invalid_selection = True
+            
+                if action.usage_limit == 1 and action_name in used_actions: # 檢查限用能力，一天不可用兩次
+                    print(f"行動「{action_name}」一輪迴只能使用一次！")
+                    invalid_selection = True
+
+                if action.is_daily_limited and action_name in used_actions: # daily_limited檢查
+                    print(f"行動「{action_name}」一天只能使用一次！")
+                    invalid_selection = True
+                
+                if target in character_seted: # 不可以對同一個目標設置兩個行動
+                    print(f"目標「{target}」不可以設置複數行動！")
+                    invalid_selection = True
+
+                selections.append({"target": target, "action": action})
+                used_actions.add(action_name)  # 標記該行動已選擇
+                character_seted.add(target)
+            else:
+                invalid_selection = True  # 標記有錯誤，等迴圈結束再處理
+        if invalid_selection:
+            print("請選擇有效的目標和行動")
+            return  # 停止執行
+        if selections:
+            self.player_selections = selections
+        else:
+            return  # ✅ 玩家選擇無效，應該重新選擇，而不是繼續執行
+        self.execute_actions()  # ✅ 直接執行
+        self.game_gui.show_message(f"選擇了行動：{[action['action'].name for action in self.player_selections]}，目標：{[action['target'] for action in self.player_selections]}")
+
+
     def execute_actions(self):
         """執行所有行動（AI + 玩家），按照遊戲的結算順序處理"""
         all_actions = self.scriptwriter_selections + self.player_selections
-
         # ✅ 按照目標整理行動
         action_dict = {}
         for selection in all_actions:
-            target = selection["target"]
+            target_name = selection["target"]
+            target = self.game.character_manager.get_character_by_name(target_name)
+            if not target:
+                target = self.game.area_manager.fecth_area_by_name(target_name)
             action = selection["action"]
-            if target not in action_dict:
+            if target_name not in action_dict:
                 action_dict[target] = []
             action_dict[target].append(action)
 
-        # ✅ 開始按照規則執行行動
-        for target, actions in action_dict.items():
+        # ✅ 開始按照行動 ID 排序執行行動
+        for target, actions in sorted(action_dict.items(), key=lambda x: min(a.action_id for a in x[1])):
             # 1️⃣ **先標記原始行動為已使用**
             for action in actions:
                 action.used = True  # 確保所有原始行動都被標記
@@ -126,22 +154,20 @@ class PlayerDetectiveActionPhase:
                     continue
                 
                 print(f"✅ {target} 執行行動：{action.name}")
-                action.effect(self.get_target_instance(target))
-
-
-
-           
+                action.effect(target)
+        self.game_gui.update_area_widgets()  # ✅ 更新區域資訊
+          
 
     def combine_action(self, actions):
         """ 根據規則合成行動，若無合成則回傳 None """
         action_map = {
-            (101, 201): 101, (102, 201): 103, (103, 201): 102, 
-            (101, 202): 103, (102, 202): 102, (103, 202): 101,
-            (101, 203): 999, (102, 203): 999, (103, 203): 999,
-            (101, 204): 999, (102, 204): 999, (103, 204): 999, 
-            (101, 205): 999, (102, 205): 999, (103, 205): 999,
-            (106, 214): 999, (107, 214): 999, (109, 210): 999,
-            (110, 210): 999, (110, 211): 999, (110, 212): 999, (110, 213): 999     
+            (131, 132): 131, (141, 132): 151, (151, 132): 142, # 橫/綜/斜 + 橫 = 橫/斜/縱
+            (131, 142): 151, (141, 142): 141, (151, 142): 132, # 橫/綜/斜 + 縱 = 斜/縱/橫
+            (131, 102): 999, (141, 102): 999, (151, 102): 999, # 禁止移動A
+            (131, 112): 999, (141, 112): 999, (151, 112): 999, # 禁止移動B
+            (131, 122): 999, (141, 122): 999, (151, 122): 999, # 禁止移動C
+            (212, 201): 999, (411, 402): 999, (421, 402): 999, # 禁止不安、陰謀
+            (301, 312): 999, (301, 322): 999, (301, 332): 999, (301, 342): 999     # 禁止友好
         }
 
         action_ids = {action.action_id for action in actions}
@@ -150,15 +176,15 @@ class PlayerDetectiveActionPhase:
             if {a, b}.issubset(action_ids):
                 # 根據合成結果創建對應的行動
                 action_effects = {
-                    101: lambda target: target.move_horizontal(),
-                    102: lambda target: target.move_vertical(),
-                    103: lambda target: target.move_diagonal(),
-                    999: lambda target: target.change_anxiety(0),
+                    131: lambda target: target.move_horizontal(),
+                    141: lambda target: target.move_vertical(),
+                    151: lambda target: target.move_diagonal(),
+                    999: lambda target: None,
                 }
                 action_names = {
-                    101: "橫向移動",
-                    102: "縱向移動",
-                    103: "斜角移動",
+                    131: "橫向移動",
+                    141: "縱向移動",
+                    151: "斜角移動",
                     999: "無此行動"
                 }
                 combined_action = Action(result, action_names[result], action_effects[result], is_daily_limited=True)
@@ -167,20 +193,5 @@ class PlayerDetectiveActionPhase:
         return None  # 🚨 若無合成行動，回傳 None
 
 
-    def get_target_instance(self, target):
-        """ 回傳角色或地區物件 """
-        print(f"🔍 Debug: 現有地區名稱列表 -> {[a.name for a in self.game.areas]}")
-        print(f"🔍 Debug: 嘗試搜尋目標 -> {target}")
-        print(f"🔍 Debug: self.game.areas 類型 -> {type(self.game.areas)}")
-        
-        character = next((c for c in self.game.character_manager.characters if c.name == target), None)
-        area = next((a for a in self.game.areas if a.name == target), None)
-        print(f"🔍 Debug: 嘗試搜尋 {target} -> 角色: {character}, 地區: {area}")
-        if character:
-            return character
-            # 確保 areas 是列表時，使用 `next()` 搜尋    
-        elif area:
-            return area
-        return None
 
 

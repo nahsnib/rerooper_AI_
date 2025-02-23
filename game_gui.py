@@ -3,37 +3,39 @@ from tkinter import ttk, messagebox
 from functools import partial
 
 class GameGUI:
-    def __init__(self, root, game, characters, phase=None):  # ✅ 預設 phase=None
+    def __init__(self, root, game,  phase=None):  # ✅ 預設 phase=None
         self.root = root
         self.game = game
-        self.characters = characters
         self.phase = phase  # 可以是 None
         self.selected_targets = []
 
         self.ask_popup = None  # 🔹 用來存放詢問視窗
         self.ask_result = None  # 🔹 用來存放玩家選擇（True/False）
-
         self.create_widgets()
-
+        self.area_frame.grid()  # 確保地區資訊顯示
+        self.update_area_widgets()  # ✅ 這行非常重要！
+        self.create_action_phase_widgets()
+        self.create_ability_widgets()
 
     def set_phase(self, phase):
         self.phase = phase
-        
         # 🟢 行動階段
         if self.phase.phase_type == "action":
-            print(f"🎯 設定遊戲階段: {type(self.phase).__name__}")  # 🛠 除錯用
+
             self.update_action_combobox_values()
-            self.ability_frame.grid_remove()
+            self.ability_frame.grid_remove() 
             self.action_phase_frame.grid()
+
 
         # 🔵 友好能力階段
         elif self.phase.phase_type == "friendship":
+
             self.update_FA_selection()
-            self.action_phase_frame.grid_remove()
+            self.action_phase_frame.grid_remove() 
             self.ability_frame.grid()
 
-        self.area_frame.grid()  # 確保地區資訊顯示
-        self.update_area_widgets()  # ✅ 這行非常重要！
+
+
 
     def create_widgets(self):
         self.main_frame = tk.Frame(self.root)
@@ -45,13 +47,11 @@ class GameGUI:
         self.main_frame.columnconfigure(2, weight=2)  # C 行動階段
 
         self.create_time_and_area_widgets()
-        self.create_action_phase_widgets()
-        self.create_ability_widgets()
+
+ 
 
 
-    def create_time_and_area_widgets(self):
-
-        
+    def create_time_and_area_widgets(self):       
         self.time_frame = tk.Frame(self.main_frame)
         self.time_frame.grid(row=0, column=0, sticky="ns")
 
@@ -133,15 +133,17 @@ class GameGUI:
 
     def update_events(self):
         for widget in self.events_frame.winfo_children():
-            widget.destroy()
+            widget.destroy()  # 清除舊的事件顯示
 
         events = self.game.time_manager.get_scheduled_events(self.game.scheduled_events)
-        
-        # 按照事件的 date 屬性排序
-        sorted_events = sorted(events.items(), key=lambda x: x[1].date)
 
-        for date, event in sorted_events:
-            tk.Label(self.events_frame, text=f"{event.date}: {event.name}").pack(anchor="w")
+        # **按照日期順序顯示事件**
+        for date in range(1, self.game.time_manager.total_days + 1):  # 從第 1 天到最後一天
+            if date in events:  # **確保該日期有對應的事件**
+                event = events[date]  # **直接取得該日期的事件**
+                tk.Label(self.events_frame, text=f"{date}: {event.name}").pack(anchor="w")
+
+
 
 
 
@@ -158,24 +160,23 @@ class GameGUI:
         self.player_frame = tk.LabelFrame(self.action_phase_frame, text="偵探的行動", padx=5, pady=5)
         self.player_frame.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=5, pady=5)
 
-        self.target_vars = []
+        self.action_target_vars = []
         self.action_comboboxes = []
+        self.action_target_comboboxes = []
 
         for i in range(3):
             choice_frame = tk.Frame(self.player_frame)
             choice_frame.grid(row=i, column=0, columnspan=2, sticky="nsew", padx=5, pady=2)
 
-            target_var = tk.StringVar()
-            target_combobox = ttk.Combobox(choice_frame, textvariable=target_var, 
-                               values=self.get_available_action_targets(), width=15)
-            target_combobox.grid(row=0, column=0, padx=2)
-            self.target_vars.append(target_var)
+            action_target_var = tk.StringVar()
+            action_target_combobox = ttk.Combobox(choice_frame, textvariable=action_target_var, values=[], width=15)
+            action_target_combobox.grid(row=0, column=0, padx=2)
+            self.action_target_vars.append(action_target_var)
+            self.action_target_comboboxes.append(action_target_combobox)  # ✅ 這行確保 target_combobox 可被更新
+
 
             action_var = tk.StringVar()
-            # ✅ 避免 `self.phase` 為 `None` 時發生錯誤
-            action_combobox = ttk.Combobox(choice_frame, textvariable=action_var, 
-                                        values=[action.name for action in self.phase.game.players["偵探"].available_actions.values()] if self.phase else [], 
-                                        width=15)
+            action_combobox = ttk.Combobox(choice_frame, textvariable=action_var, values= [],  width=15)
             action_combobox.grid(row=0, column=1, padx=2)
             self.action_comboboxes.append(action_combobox)
 
@@ -190,44 +191,6 @@ class GameGUI:
             actions_text += f"{i}. 目標：{selection['target']}\n"
         self.scriptwriter_actions_label.config(text=actions_text)
 
-    def get_player_action_selection(self):
-        selections = []
-        invalid_selection = False
-        used_actions = set()  # 紀錄本回合內已使用的行動
-
-        for i in range(3):
-            target = self.target_vars[i].get()
-            action_name = self.action_comboboxes[i].get()
-            action = next((a for a in self.phase.game.players["偵探"].available_actions.values() if a.name == action_name), None)
-
-            if target and action:
-                if action.can_use():  # ✅ 先確認行動是否可用
-                    selections.append({"target": target, "action": action})
-                else:
-                    invalid_selection = True
-                    print(f"⚠️ {action_name} 已達使用上限，無法選擇！")
-
-                # 🛑 如果行動有 `usage_limit=1`，確保它沒被重複選擇
-                if action.usage_limit == 1 and action_name in used_actions:
-                    self.show_error(f"行動「{action_name}」一輪迴只能使用一次！")
-                    return []
-
-                # 🛑 如果行動是 `is_daily_limited`，檢查當天是否已使用過
-                if action.is_daily_limited and action_name in used_actions:
-                    self.show_error(f"行動「{action_name}」一天只能使用一次！")
-                    return []
-
-                
-                used_actions.add(action_name)  # 標記該行動已選擇
-            else:
-                invalid_selection = True  # 標記有錯誤，等迴圈結束再處理
-
-        if invalid_selection:
-            self.show_error("請選擇有效的目標和行動")
-            return []  # 返回空列表，而不是遞迴呼叫自己
-        
-        return selections  # 如果沒有錯誤，返回正確的選擇
-
     def update_action_combobox_values(self):
         """當 phase 被設置後，更新行動選單"""
         if not self.phase or not hasattr(self.phase, "game"):
@@ -237,21 +200,22 @@ class GameGUI:
         detective = self.phase.game.players.get("偵探")
         
         if detective:
-            available_actions = [action.name for action in detective.available_actions.values()]
-            print(f"✅ 更新 GUI 選單，偵探可用行動: {available_actions}")  # 🛠 除錯用
-
+            available_actions = [action.name for action in detective.available_actions.values() if action.times_used < action.usage_limit]
+            #print(f"✅ 更新 GUI 選單，偵探可用行動: {available_actions}")  # 🛠 除錯用
             for action_combobox in self.action_comboboxes:
                 action_combobox["values"] = available_actions
+                action_combobox.set(available_actions[0] if available_actions else "")  # 重新設定選單值
+
+            available_action_targets = self.phase.get_available_action_targets()
+            #print(f"✅ 更新目標選單，可選目標: {available_action_targets}")  # 🛠 除錯用
+            for action_target_combobox in self.action_target_comboboxes:  # ✅ 改成 `self.action_target_comboboxes`
+                action_target_combobox["values"] = available_action_targets
+                action_target_combobox.set(available_action_targets[0] if available_action_targets else "")  # 重新設定選單值            
+           
         else:
             print("❌ 無法找到偵探玩家")
         
-    def get_available_action_targets(self):
-        """獲取所有可選擇的目標（角色 + 地區）"""
-        targets = [character.name for character in self.game.character_manager.characters]  # 加入所有角色
-        targets.extend(["醫院", "神社", "都市", "學校"])  # 加入所有地區
-        return targets
-
-
+        
     def create_ability_widgets(self):
         self.ability_frame = tk.LabelFrame(self.main_frame, text="友好能力", padx=5, pady=5)
         self.ability_frame.grid(row=0, column=2, columnspan=2, sticky="nsew")
@@ -266,7 +230,7 @@ class GameGUI:
         # 更新可用能力列表
         self.phase.update_available_abilities()
         
-        # 建立下拉選單
+        # 建立下拉選單：能力
         self.ability_var = tk.StringVar()
         self.ability_combobox = ttk.Combobox(
             self.ability_frame, textvariable=self.ability_var,
@@ -281,7 +245,7 @@ class GameGUI:
         )
         self.confirm_FA_button.pack()
 
-        # 目標選擇下拉式選單
+        # 選擇下拉式選單：目標
         self.FA_target_var = tk.StringVar()
         self.FA_target_combobox = ttk.Combobox(self.ability_frame, textvariable=self.FA_target_var)
         self.FA_target_combobox.pack()
@@ -303,7 +267,7 @@ class GameGUI:
 
         self.confirm_extra_button = tk.Button(
             self.ability_frame, text="確認額外選擇",
-            command=self.phase.confirm_extra_selection(self.extra_var.get())
+            command=lambda: self.phase.confirm_extra_selection(self.extra_var.get())
         )
         self.confirm_extra_button.pack()
 
@@ -333,7 +297,6 @@ class GameGUI:
         self.extra_combobox.pack()  # 顯示選擇框
         self.confirm_extra_button.pack()  # 顯示確認按鈕
         
-        self.extra_var.set(list(choices.keys())[0])  # 預設選擇第一個選項
 
         # 重置選擇狀態
         self.extra_selected_choice = None
@@ -476,7 +439,7 @@ class GameHistory:
             "day": game.time_manager.current_day,
             "phase": game.current_phase,
             "areas": {area.name: area.get_snapshot() for area in game.areas},
-            "characters": {char.name: char.get_snapshot() for char in game.characters}
+            "characters": {char.name: char.get_snapshot() for char in game.character_manager.characters}
         }
         self.history_snapshots.append(snapshot)
 

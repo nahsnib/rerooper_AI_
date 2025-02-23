@@ -1,34 +1,34 @@
 
 from common.area_and_date import TimeManager
 from database.RuleTable import RuleTable
-from common.player import Player
+from common.player import load_players
 from ai.scriptwriter_ai import Scriptwriter_AI
 
 class Game:
-    def __init__(self,selected_main_rule,selected_sub_rules, total_days, total_cycles, character_manager, scheduled_events, area_manager):
-        self.rule_table = RuleTable()
+    def __init__(self,selected_rule_table, selected_main_rule,selected_sub_rules, 
+                character_manager, scheduled_events,time_manager, area_manager,passive_abilities):
+        self.selected_rule_table = selected_rule_table
         self.selected_main_rule = selected_main_rule
         self.selected_sub_rules = selected_sub_rules
-        self.time_manager = TimeManager(total_days, total_cycles)
-        self.scheduled_events = scheduled_events
-        self.character_manager = character_manager  # 🔥 儲存 character_manager
-        
-        self.passive_abilities = {}
+        self.scriptwriter_win_this_cycle = False
 
+        self.character_manager = character_manager  # 🔥 儲存 character_manager
+        self.scheduled_events = scheduled_events
+        self.time_manager = time_manager
         self.area_manager = area_manager  # 讓 `areas` 由外部傳入，提高靈活性
+        self.passive_abilities = passive_abilities
+
+
 
         self.game_gui = None  # 預設為 None，初始化時再設定
-
         self.EX_gauge = 0  # EX 槽
         self.happened_events = {}
         self.public_information = []  # 存儲公開資訊（字串格式）
 
         
         # 初始化玩家，並傳入 `game` 參考
-        self.players = {
-            "偵探": Player("偵探"),
-            "劇本家": Player("劇本家")
-        }
+        self.players = load_players()
+
         # 初始化劇本家AI
         self.scriptwriter_AI = Scriptwriter_AI(self)
 
@@ -67,6 +67,20 @@ class Game:
             self.revealed_sub_rules.append(next_rule)  # 記錄已公開的規則
             self.add_public_info(f"情報販子揭露了一條副規則：{next_rule}")  # 加入公開訊息
 
+    def gain_passive_ability(self,char, ability_id):
+        # 從全局能力表或某個能力管理系統獲取該能力
+        new_ability = RuleTable.get_passive_ability(ability_id)
+        
+        if new_ability:
+            new_ability.owner = char  # 設定擁有者
+            self.passive_abilities.append(new_ability)  # 加入角色的被動能力清單
+            
+         # 確保該能力的 condition 存在於 game.passive_abilities 字典中
+        if new_ability.condition in self.passive_abilities:
+            self.passive_abilities[new_ability.condition].append(new_ability)
+            
+    def get_characters_in_area(self, area):
+        return [char for char in self.character_manager.characters if char.current_location == area]
 
     def daily_reset_actions(self):
         """夜晚時，重置所有玩家的每日行動"""
