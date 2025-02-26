@@ -3,14 +3,19 @@ from common.area_and_date import TimeManager
 from database.RuleTable import RuleTable
 from common.player import load_players
 from ai.scriptwriter_ai import Scriptwriter_AI
+from scriptwriter.ai_gameset import AIGameSet
+from game_phases.player_detective.phase_manager import Phase
+import copy
+
+
 
 class Game:
-    def __init__(self,selected_rule_table, selected_main_rule,selected_sub_rules, 
-                character_manager, scheduled_events,time_manager, area_manager,passive_abilities):
+    def __init__(self,selected_rule_table = None, selected_main_rule = None,selected_sub_rules = None, passive_abilities = None,
+                character_manager = None, scheduled_events = None,time_manager = None, area_manager = None,phase_manager = None):
         self.selected_rule_table = selected_rule_table
         self.selected_main_rule = selected_main_rule
         self.selected_sub_rules = selected_sub_rules
-        self.scriptwriter_win_this_cycle = False
+        
 
         self.character_manager = character_manager  # 🔥 儲存 character_manager
         self.scheduled_events = scheduled_events
@@ -32,12 +37,57 @@ class Game:
         # 初始化劇本家AI
         self.scriptwriter_AI = Scriptwriter_AI(self)
 
-    def get_area_by_id(self, area_id):
-        return self.area_manager.fetch_area_by_id(area_id)
+        # 初始化遊戲階段管理器
+        self.phase_manager = phase_manager
 
-    def get_area_by_name(self, name):
-        return self.area_manager.fetch_area_by_name(name)
+        # 重要旗標：劇本家是否勝利，以及輪迴是否提前結束
+        self.cycle_end_flag = False
+        self.scriptwriter_win_this_cycle = False
+
+        # 初始化GUI
+
+
+    def initialize_and_record_game(self, pre_game):
+        gameset = AIGameSet(pre_game)
+        self.gameset = copy.deepcopy(gameset)
+        return self.gameset.pre_game
+    
+
+    def reset_game_state(self):
+        """重置遊戲到初始輪迴點"""
+        if self.gameset is None:
+            print("⚠️ 警告：未初始化遊戲設定，請先呼叫 initialize_and_record_game()！")
+            return
         
+        print("🔄 重置遊戲狀態至初始輪迴點...")
+
+        
+        # 重新深拷貝一次，確保不影響原始初始設定
+        new_game = copy.deepcopy(self.gameset.pre_game)
+
+        # 重新覆蓋 Game 的屬性
+        save = self.before_game_reset()
+        self.__dict__.update(new_game.__dict__)
+        self.after_game_reset(save)
+
+    def before_game_reset(self):
+        """紀錄不應該被重置的數據"""
+        return {
+            "remain_cycles": self.time_manager.remain_cycles,
+            "public_information": self.public_information,
+        }
+
+    def after_game_reset(self, saved_data):
+        """恢復不應該被重置的數據"""
+        self.time_manager.remain_cycles = saved_data["remain_cycles"]
+        self.public_information = saved_data["public_information"]
+
+    def check_passive_ability(self,type):
+        abilities = self.passive_abilities.get(type, [])
+        for ability in abilities:
+            if ability.owner.alive:
+                ability.effect(self, ability.owner)
+
     def set_gui(self, game_gui):
         """初始化 GUI 介面"""
         self.game_gui = game_gui
@@ -79,8 +129,8 @@ class Game:
         if new_ability.condition in self.passive_abilities:
             self.passive_abilities[new_ability.condition].append(new_ability)
             
-    def get_characters_in_area(self, area):
-        return [char for char in self.character_manager.characters if char.current_location == area]
+    def death_flag(self):
+        self.scriptwriter_win_this_cycle = True
 
     def daily_reset_actions(self):
         """夜晚時，重置所有玩家的每日行動"""

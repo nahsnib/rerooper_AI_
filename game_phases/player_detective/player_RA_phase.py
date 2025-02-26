@@ -52,3 +52,10 @@ class PlayerRAPhase:
             print(result)
         
         print("RA Phase 結束")
+
+    def on_start(self):
+        print("RA階段開始")
+    
+    def on_end(self):
+        print("RA階段結束，清除暫存數據")
+        # 這裡可以清除行動記錄、計算效果等

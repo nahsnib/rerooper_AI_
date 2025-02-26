@@ -1,5 +1,5 @@
 
-from database.Basecharacter import get_Basecharacter_by_id, FriendshipAbility
+from database.Basecharacter import get_Basecharacter_by_id, FriendshipAbility, load_Basecharacters
 from database.RuleTable import Role
 import random
 import logging
@@ -18,6 +18,7 @@ class Character:
         self.special_ability = special_ability
         self.role = Role()  # 初始化角色身分名稱
         self.pickup = False  # 是否為隨機選擇的角色
+        self.revealed = False # 是否已經被揭露；預設無，但一旦揭露就永久無法還原
 
         # 浮動資訊
         self.anxiety = 0
@@ -53,14 +54,16 @@ class Character:
         self.conspiracy = 0
         game.EX_gauge += extra
 
-    def change_anxiety(self, amount):
+    def change_anxiety(self,game, amount):
         self.anxiety = max(0, self.anxiety + int(amount))  # 最低 0
+        self.trigger_passive_ability(game,"change_anxiety")
 
     def change_friendship(self, amount):
         self.friendship = max(0, self.friendship + amount)  # 最低 0
 
-    def change_conspiracy(self, amount):
+    def change_conspiracy(self,game, amount):
         self.conspiracy = max(0, self.conspiracy + amount)  # 最低 0
+        self.trigger_passive_ability(game,"change_conspiracy")
 
     def move_to_anywhere(self, new_location):
         """ 玩家選擇角色要移動的地點 """
@@ -119,6 +122,7 @@ class Character:
             self.role_ability_usage[ability] = False
 
     def reveal_role(self,game):
+        self.revealed = True
         print(f"{self.name} 的身份是{self.role.name}")
         if self.name == '異質者' and game.time_manager.total_cycles == game.time_manager.remains_cycles:
             return print("異質者的友好能力在最初輪迴不可使用！")
@@ -165,6 +169,23 @@ class Character:
 
         # 若無法阻止，則角色死亡
         target.alive = False
+        target.trigger_passive_ability(game,"on_death")
+
+    def trigger_passive_ability(self, game, type):
+        """
+        根據觸發條件執行角色的被動能力。
+        :param game: 當前遊戲實例。
+        :param reason: 觸發條件（如 "on_death", "night_phase"）。
+        """
+        abilities = game.passive_abilities.get(type, [])
+        if not abilities:
+            return  # 沒有對應的被動能力則直接返回
+
+        for ability in abilities:
+            if ability.owner == self:
+                print(f"觸發被動能力: {ability.name} ({ability.description})")
+                ability.effect(game, self)
+
 
     def butterfly_effect(self, game):
         """交由AI決定一個屬性+1"""
@@ -172,13 +193,13 @@ class Character:
         if choice == "friendship":
             self.change_friendship(1)
         elif choice == "anxiety":
-            self.change_anxiety(1)
+            self.change_anxiety(game,1)
         elif choice == "conspiracy":
-            self.change_conspiracy(1)
+            self.change_conspiracy(game,1)
 
     def murder_effect(self, game):
         # 獲取當前地區的所有角色（不包含自身）
-        characters_in_area = [char for char in game.get_characters_in_area(self.current_location) if char != self]
+        characters_in_area = [char for char in game.character_manager.get_characters_in_area(self.current_location) if char != self]
 
         # 若當前區域只剩一個其他角色，則執行殺害
         if len(characters_in_area) == 1:
@@ -200,9 +221,9 @@ class Character:
 
 
 class CharacterManager():
-    def __init__(self,character_db):
+    def __init__(self):
         self.characters = []
-        self.character_db = character_db  # 存入角色資料庫
+        self.character_db = load_Basecharacters()  # 存入角色資料庫
 
     def add_character(self, character):
         self.characters.append(character)
@@ -214,8 +235,10 @@ class CharacterManager():
         """根據名稱查找角色"""
         return next((char for char in self.characters if char.name == name), None)
 
-    def initialize_characters(self, count_range=(10, 14), id_range=(1, 20)):
+    def initialize_characters(self):
         """隨機選擇角色並初始化"""
+        count_range = (10, 14)
+        id_range = (1, 20)
         pickup_Ch_ids = random.sample(range(*id_range), random.randint(*count_range))
         
         for Ch_id in pickup_Ch_ids:
@@ -242,6 +265,7 @@ class CharacterManager():
             friendship_abilities=base_character.friendship_abilities,
             special_ability=base_character.special_ability
     )
+
     def get_valid_targets(self, fa: FriendshipAbility, all_characters):
         """篩選符合該友好能力目標條件的角色"""
         if not fa.target_required:
@@ -254,7 +278,9 @@ class CharacterManager():
             and fa.target_condition(target, self)  # 必須符合技能條件
         ]
 
-
+    def get_characters_in_area(self, area):
+        return [char for char in self.characters if char.current_location == area]
+    
 
 if __name__ == "__main__":
     character_manager = CharacterManager()

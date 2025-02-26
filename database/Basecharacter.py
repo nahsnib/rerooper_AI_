@@ -84,7 +84,7 @@ def load_Basecharacters():
                     owner_name='男學生',
                     required_friendship= 2,
                     target_condition= lambda target, owner: target != owner and target.current_location == owner.current_location and '學生' in target.attributes,
-                    effect=lambda game, owner, target,extra: target.change_anxiety(-1),
+                    effect=lambda game, owner, target,extra: target.change_anxiety(game,-1),
                 )
             ]
         ),
@@ -100,7 +100,7 @@ def load_Basecharacters():
                     owner_name='女學生',
                     required_friendship=  2,
                     target_condition= lambda target, owner: target != owner and target.current_location == owner.current_location and '學生' in target.attributes,
-                    effect=lambda game, owner, target, extra: target.change_anxiety(-1),
+                    effect=lambda game, owner, target, extra: target.change_anxiety(game,-1),
                 )
             ]
         ),
@@ -132,7 +132,7 @@ def load_Basecharacters():
                     owner_name='巫女',
                     required_friendship=  3 ,
                     target_condition= lambda target, owner: target == '神社',
-                    effect=lambda game, owner, target, extra: game.area_manager.areas[2].change_conspiracy(-1),
+                    effect=lambda game, owner, target, extra: game.area_manager.areas[2].change_conspiracy(game,-1),
                 ),
                 FriendshipAbility(
                     FA_id= 402,
@@ -221,7 +221,7 @@ def load_Basecharacters():
                     required_friendship=2,
                     active=True,  # 主動能力
                     target_condition=lambda target, owner: target.current_location == owner.current_location and target != owner,
-                    effect=lambda game, owner, target, extra: target.change_anxiety(extra),  
+                    effect=lambda game, owner, target, extra: target.change_anxiety(game, extra),  
                     limit_use=False,
                     require_extra_selection = True  # 需要額外選擇
                 ),
@@ -318,7 +318,7 @@ def load_Basecharacters():
                     active= True, # 主動能力
                     target_condition = lambda target, owner: (target.current_location == owner.current_location) 
                         or ( target.name == owner.current_location),
-                    effect=lambda game, owner, target, extra: target.change_conspiracy(-1),
+                    effect=lambda game, owner, target, extra: target.change_conspiracy(game,-1),
                     limit_use= False,
                 )
             ],
@@ -337,7 +337,7 @@ def load_Basecharacters():
                     required_friendship=  3,
                     active= True, # 主動能力
                     target_condition= lambda target, owner:  target != owner and target.current_location == owner.current_location,
-                    effect=lambda game, owner, target, extra: target.change_anxiety(-1),
+                    effect=lambda game, owner, target, extra: target.change_anxiety(game, -1),
                     limit_use= False
                 ),
                 FriendshipAbility(
@@ -365,7 +365,7 @@ def load_Basecharacters():
                     required_friendship=  2,
                     active= True, # 主動能力
                     target_condition= lambda target, owner: target != owner and target.current_location == owner.current_location,
-                    effect=lambda game, owner, target, extra: target.change_anxiety(1),
+                    effect=lambda game, owner, target, extra: target.change_anxiety(game, 1),
                     limit_use= False
                 ),
                 FriendshipAbility(
@@ -376,7 +376,7 @@ def load_Basecharacters():
                     active= True, # 主動能力
                     target_condition= lambda target, owner: ( target != owner and target.current_location == owner.current_location
                     ) or target.name == owner.current_location,
-                    effect=lambda game, owner, target, extra: target.change_conspiracy(1),
+                    effect=lambda game, owner, target, extra: target.change_conspiracy(game,1),
                     limit_use= False
                 )
             ]
@@ -414,7 +414,7 @@ def load_Basecharacters():
                     required_friendship=  2,
                     active= True, # 主動能力
                     target_condition= lambda target, owner:  target != owner and target.current_location == owner.current_location and target.anxiety >= target.anxiety_threshold,
-                    effect=lambda game, owner, target, extra: target.change_anxiety(-1),
+                    effect=lambda game, owner, target, extra: target.change_anxiety(game,-1),
                     limit_use= False
                 )
             ]

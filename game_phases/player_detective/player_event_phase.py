@@ -1,8 +1,5 @@
 import random
 
-from database.RuleTable import RuleTable
-from common.character import CharacterManager
-from scriptwriter.ai_gameset import AIGameSet
 
 class EventPhase:
     def __init__(self, game):
@@ -16,7 +13,7 @@ class EventPhase:
             print(f"事件: {event.name} | 犯人: {event.criminal.name} | ID: {id(event)}")
         print("=================")
         if not events_today:
-            return self.end_phase()
+            return self.on_end()
         
         for event in events_today:
             criminal = event.criminal
@@ -33,7 +30,7 @@ class EventPhase:
             print(f"🔥 觸發事件: {event.name} | 犯人: {criminal.name}")
             self.execute_event(event, criminal)
         
-        self.end_phase()
+        self.on_end()
         
     def execute_event(self, event, criminal):
         event.happened = True
@@ -67,6 +64,9 @@ class EventPhase:
         print(message)
         input("點選確定繼續...")
 
-    def end_phase(self):
-        print("事件階段結束")
-        input("點選確定繼續...")
+    def on_start(self):
+        print("事件階段開始")
+    
+    def on_end(self):
+        print("事件階段結束，清除暫存數據")
+        # 這裡可以清除行動記錄、計算效果等

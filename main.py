@@ -1,43 +1,22 @@
-# main.py
 import tkinter as tk
-from tkinter import messagebox
-from gameloop import GameLoop
-from common.character import CharacterManager
-from scriptwriter.ai_gameset import AIGameSet
+from game_gui import GameGUI
+from game import Game
 
-def start_game(role, gameset):
-    character_manager = CharacterManager()
-
-    # 獲取公開信息
-    public_info = gameset.get_public_info()
-    total_days = public_info["total_days"]
-    total_cycles = public_info["total_cycles"]
-    scheduled_events = public_info["scheduled_events"]
-
-    game = GameLoop(character_manager, role, total_days, total_cycles, scheduled_events)
-    game.run()  # 假設在 game.py 中有 run 方法來啟動遊戲循環
+def main():
+    pre_game = Game()
+    game = Game()  # 創建遊戲對象
+    root = tk.Tk()
+    game_gui = GameGUI(root, pre_game, None)
+    pre_game.game_gui = game_gui  # ✅ 這行確保 Game 類別能夠存取 GUI
+    game = game.initialize_and_record_game(pre_game)  # 初始化並記錄遊戲
+    game.phase_manager.run()  # 如果遊戲有主要運行迴圈，則啟動它
+    try:
+        pre_game = Game()
+        game = Game()  # 創建遊戲對象
+        game = game.initialize_and_record_game(pre_game)  # 初始化並記錄遊戲
+        game.phase_manager.run()  # 如果遊戲有主要運行迴圈，則啟動它
+    except Exception as e:
+        print(f"遊戲初始化失敗: {e}")  # 防止遊戲因錯誤而崩潰
 
 if __name__ == "__main__":
-    # 創建一個隱藏的根窗口，用於顯示提示訊息和簡單對話框
-    root = tk.Tk()
-    root.withdraw()  # 隱藏主窗口
-
-    # 提供選擇方式：提示視窗
-    response = messagebox.askquestion("選擇角色", "你想擔任偵探還是劇本家？\n選擇 '是' 表示偵探，選擇 '否' 表示劇本家")
-    if response == 'yes':
-        role = "偵探"
-    else:
-        role = "劇本家"
-
-    # 顯示提示訊息
-    messagebox.showinfo("提示", "測試版僅提供玩家扮演偵探")
-
-    # 初始化 AIGameSet
-    character_manager = CharacterManager()
-    gameset = AIGameSet(character_manager)
-
-    # 呼叫 start_game，強制使用 "偵探" 作為角色
-    start_game("偵探", gameset)
-
-    # 主窗口銷毀
-    root.destroy()
+    main()

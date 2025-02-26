@@ -192,6 +192,10 @@ class PlayerDetectiveActionPhase:
 
         return None  # 🚨 若無合成行動，回傳 None
 
-
-
+    def on_start(self):
+        print("行動階段開始")
+    
+    def on_end(self):
+        print("行動階段結束，清除暫存數據")
+        # 這裡可以清除行動記錄、計算效果等
 

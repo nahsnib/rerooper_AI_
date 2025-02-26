@@ -90,6 +90,7 @@ class Rule:
     def __init__(self, id, name, description, assign_roles, special_effect=None):
         self.id = id  # 新增的編號屬性
         self.name = name  # 規則名稱
+        self.description = description  # 規則描述
         self.assign_roles = assign_roles  # 涉及的身分列表
         self.special_effect = special_effect  # 特殊效果函數
 
@@ -124,30 +125,18 @@ class PassiveRoleAbility:
 
 main_rules_BTX=[
     Rule(101, "殺人計畫", None, assign_roles={"關鍵人物", "殺手", "黑幕"}),
-    Rule(102, "被封印之物",None, assign_roles={"黑幕", "邪教徒"},
-         special_effect= PassiveRoleAbility(
-            id=8964102,
-            name="被封印之物",
-            description="輪迴結束時，若神社陰謀>=2，劇本家勝利",
-            trigger_condition="end_of_cycle",
-            effect=lambda game, owner: game.XXXXX() if game.area_manager.area[2].陰謀 >1
-        )),
-    Rule(103, "和我簽下契約吧！", "輪迴結束時，若關鍵人物陰謀>1，腳本家勝利。關鍵人物必須為少女", assign_roles={"關鍵人物"},
-         special_effect=lambda game_state: game_state.end_loop("腳本家勝利")),
+    Rule(102, "被封印之物",None, assign_roles={"黑幕", "邪教徒"}, special_effect=lambda game_state: game_state.end_loop("腳本家勝利")),
+    Rule(103, "和我簽下契約吧！", "輪迴結束時，若關鍵人物陰謀>1，腳本家勝利。關鍵人物必須為少女", assign_roles={"關鍵人物"}, special_effect=lambda game_state: game_state.end_loop("腳本家勝利")),
     Rule(104, "未來改變作戰", "蝴蝶效應事件發生後，該輪迴結束時腳本家勝利。", assign_roles={"邪教徒", "時間旅行者"}),
-    Rule(105, "巨型定時炸彈", "輪迴結束時，若魔女的初期所在區域陰謀>1，腳本家勝利。", assign_roles={"魔女"},
-         special_effect=lambda game_state: game_state.end_loop("腳本家勝利"))
+    Rule(105, "巨型定時炸彈", "輪迴結束時，若魔女的初期所在區域陰謀>1，腳本家勝利。", assign_roles={"魔女"}, special_effect=lambda game_state: game_state.end_loop("腳本家勝利"))
 ],
 sub_rules_BTX=[
     Rule(111,"友情小圈圈", None, assign_roles={"朋友","朋友", "誤導者"}),
     Rule(112, "戀愛的模樣", None, assign_roles={"病嬌", "戀人"}),
     Rule(113, "殺人魔潛伏", None, assign_roles={"朋友", "殺人魔"}),
-    Rule(114, "人心惶惶", "每輪迴一次，腳本家可以在能力階段使任意地區+1陰謀。", assign_roles={"誤導者"},
-         special_effect=lambda game_state: game_state.add_conspiracy_points_to_any_area()),
-    Rule(115, "惡性譫妄病毒", "本遊戲中，普通人不安>2時，變成殺人魔。", assign_roles={"誤導者"},
-         special_effect=lambda game_state: game_state.transform_normal_to_murderer()),
-    Rule(116, "因果之線", "輪迴重啟後，前一輪迴友好>0的角色+2不安。", assign_roles={"因子"},
-         special_effect=lambda game_state: game_state.add_anxiety_to_characters_with_friendship_above(0, 2))
+    Rule(114, "人心惶惶", "每輪迴一次，腳本家可以在能力階段使任意地區+1陰謀。", assign_roles={"誤導者"}, special_effect=lambda game_state: game_state.add_conspiracy_points_to_any_area()),
+    Rule(115, "惡性譫妄病毒", "本遊戲中，普通人不安>2時，變成殺人魔。", assign_roles={"誤導者"}, special_effect=lambda game_state: game_state.transform_normal_to_murderer()),
+    Rule(116, "因果之線", "輪迴重啟後，前一輪迴友好>0的角色+2不安。", assign_roles={"因子"}, special_effect=lambda game_state: game_state.add_anxiety_to_characters_with_friendship_above(0, 2))
 ]
 events_BTX=[ 
     Event(
@@ -164,8 +153,8 @@ events_BTX=[
         victim_count = 2,
         victim_condition=lambda game, criminal, victim: victim.alive,  # 任何受害者皆可
         effect=lambda game, criminal, victims: (
-                victims[0].change_anxiety(2),
-                victims[1].change_conspiracy(1)
+                victims[0].change_anxiety(game,2),
+                victims[1].change_conspiracy(game,1)
             ) if len(victims) >= 2 else None  # 確保有足夠的受害者
         ),
     Event(
@@ -185,7 +174,7 @@ events_BTX=[
             (
                 [criminal.kill_character(game, victim) for victim in victims]
                 if hospital.conspiracy > 0 else None,
-                #game.win_cycle() if hospital.conspiracy > 1 else None
+                game.death_flag() if hospital.conspiracy > 1 else None
             )
         )
     ),
@@ -203,7 +192,7 @@ events_BTX=[
         victim_condition=lambda game, criminal, victim: victim == 'Area', # 特殊需求，指定地區為受害者
         effect=lambda game, criminal, victim: (
             criminal.move_to_anywhere(victim.name),
-            victim.change_conspiracy(1)
+            victim.change_conspiracy(game, 1)
         )
     ),
     Event(
@@ -228,7 +217,7 @@ events_BTX=[
         id=109,
         name="褻瀆",
         victim_required=False,
-        effect=lambda game, criminal, victim: game.area_manager.fetch_area_by_name("神社").change_conspiracy(1)
+        effect=lambda game, criminal, victim: game.area_manager.fetch_area_by_name("神社").change_conspiracy(game, 1)
     )
 ],
 roles_BTX=[
@@ -257,9 +246,8 @@ roles_BTX=[
             trigger_condition="night_phase",
             effect=lambda game, owner: [
                 owner.kill_character(game, key)
-                for key in game.character_manager.characters  # 遍歷所有角色
-                if key.role_name == "關鍵人物"  # 確保對方是關鍵人物
-                and key.current_location == owner.current_location  # 確保與殺手在同地區
+                for key in game.character_manager.get_characters_in_area(owner.current_location)  # 遍歷該地區所有角色
+                if key.role.name == "關鍵人物"  # 確保對方是關鍵人物
                 and key.conspiracy >= 2  # 確保關鍵人物的陰謀值達到 2 以上
                 ]
             )
@@ -272,7 +260,7 @@ roles_BTX=[
             description="同地區的一個角色或者該地區+1陰謀",
             requires_target = True,
             target_condition=lambda game, owner, target: target.current_location == owner.current_location or target.name == owner.current_location,
-            effect=lambda game, target: target.change_conspiracy(1) 
+            effect=lambda game, target: target.change_conspiracy(game, 1) 
             )
         ]
     ),

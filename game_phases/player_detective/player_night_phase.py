@@ -33,20 +33,22 @@ class NightPhase:
                     ability.effect(character, self.game)
                     print(f"觸發 {character.name} 的被動能力：{ability.name}")
 
-    def execute_night_events(self):
-        for event in self.rule_table.get_night_events():
-            if event.trigger(self.game):
-                event.effect(self.game)
-                print(f"執行夜晚事件：{event.name}")
 
     def start(self):
         print("夜晚階段開始")
+        self.game.check_passive_ability("night_phase")
         self.reset_daily_limited_actions()
         self.reset_ability_usage()
         self.reset_character_states()
         self.trigger_passive_abilities()
-        self.execute_night_events()
         print("夜晚階段結束")
+
+    def on_start(self):
+        print("夜晚階段開始")
+    
+    def on_end(self):
+        print("夜晚階段結束，清除暫存數據")
+        # 這裡可以清除行動記錄、計算效果等
 
 if __name__ == "__main__":
     game = None  # 這裡應該傳入實際的 Game 物件

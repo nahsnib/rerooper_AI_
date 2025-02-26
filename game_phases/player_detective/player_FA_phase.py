@@ -1,7 +1,4 @@
-import random
-from common.character import CharacterManager
-from common.player import Player
-from game_gui import GameGUI
+
 
 class PlayerFriendshipAbilityPhase:
     def __init__(self, game, game_gui):
@@ -162,7 +159,10 @@ class PlayerFriendshipAbilityPhase:
 
 
 
-    def end_phase(self):
-        """結束友好能力階段"""
-        self.game_gui.show_message("結束友好能力階段")
+    def on_start(self):
+        print("FA階段開始")
+    
+    def on_end(self):
+        print("FA階段結束，清除暫存數據")
+        # 這裡可以清除行動記錄、計算效果等
 

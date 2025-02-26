@@ -15,8 +15,9 @@ class Area:
         if character in self.characters:
             self.characters.remove(character)
 
-    def change_conspiracy(self, amount):
+    def change_conspiracy(self,game, amount):
         self.conspiracy = max(0, self.conspiracy + amount)  # 陰謀值最低為 0
+        game.check_passive_ability("area_conspiracy")
 
     def __repr__(self):
         return f"Area({self.id}, {self.name})"
@@ -66,10 +67,10 @@ class AreaManager:
 
 
 class TimeManager:
-    def __init__(self, total_days, total_cycles):
+    def __init__(self, current_day ,total_days, total_cycles):
         self.total_days = total_days
         self.total_cycles = total_cycles
-        self.current_day = 1
+        self.current_day = current_day
         self.remaining_cycles = total_cycles
 
     def increment_day(self):

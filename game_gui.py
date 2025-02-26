@@ -109,7 +109,7 @@ class GameGUI:
         area_info = {}
 
         # 建立 name → area 的映射，確保能正確找到區域
-        area_by_name = {area.name: area for area in self.game.area_manager.areas.values()}
+        area_by_name = {area.name: area for area in self.game.area_manager.areas}
 
         for area_name in ["醫院", "神社", "都市", "學校"]:
             area = area_by_name.get(area_name, None)
@@ -274,7 +274,7 @@ class GameGUI:
         # 🟢 加入「結束友好能力階段」按鈕
         end_button = tk.Button(
             self.ability_frame, text="結束友好能力階段",
-            command=self.phase.end_phase,
+            command=self.game.phase_manager.end_current_phase,
             fg="white", bg="red", font=("Arial", 12, "bold")
         )
         end_button.pack()
