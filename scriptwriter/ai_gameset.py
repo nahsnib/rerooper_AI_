@@ -24,7 +24,8 @@ class AIGameSet:
         self.pre_game.area_manager = AreaManager()
         self.pre_game.area_manager.initialize_areas()
         self.pre_game.phase_manager = PhaseManager()
-
+        self.pre_game.time_manager = TimeManager(1, random.randint(4, 7), 5)
+        
         # 步驟 1: 隨機選擇主要規則表
         self.pre_game.selected_rule_table = RuleTable.get_rule_table_by_id(random.randint(1,3))
         #print("選擇的規則表: ", self.pre_game.selected_rule_table.name) 
@@ -40,8 +41,7 @@ class AIGameSet:
         self.pre_game.character_manager.initialize_characters()  # 讓 Manager 選角色
         #print("選擇的角色: ", [character.name for character in self.pre_game.character_manager.characters])
 
-        # 步驟 4: 建立時間管理器，並隨機建立輪迴數與時間（現階段都用5輪迴）
-        self.pre_game.time_manager = TimeManager(1, random.randint(4, 7), 5)
+       
 
         # 步驟 4: 秘密分配角色身分
 

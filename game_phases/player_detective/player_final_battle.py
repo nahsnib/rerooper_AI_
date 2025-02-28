@@ -7,8 +7,11 @@ class FinalBattle:
         self.rule_table = game.selected_rule_table
         self.chance = 3
         self.selections = {}  # 存儲玩家的選擇
-        self.create_gui()
 
+    def execute(self):
+        self.create_gui()
+        self.root.mainloop()
+    
     def create_gui(self):
         self.root = tk.Tk()
         self.root.title("Final Battle")
@@ -25,8 +28,6 @@ class FinalBattle:
         self.create_the_answer()
         self.create_other_info()
         
-        self.root.mainloop()
-
     def create_character_and_role_pair(self):
         # 第一區：角色選擇
         self.pair_frame = tk.Frame(self.main_frame)

@@ -34,9 +34,6 @@ class GameGUI:
             self.action_phase_frame.grid_remove() 
             self.ability_frame.grid()
 
-
-
-
     def create_widgets(self):
         self.main_frame = tk.Frame(self.root)
         self.main_frame.grid(row=0, column=0, sticky="nsew")
@@ -47,9 +44,6 @@ class GameGUI:
         self.main_frame.columnconfigure(2, weight=2)  # C 行動階段
 
         self.create_time_and_area_widgets()
-
- 
-
 
     def create_time_and_area_widgets(self):       
         self.time_frame = tk.Frame(self.main_frame)

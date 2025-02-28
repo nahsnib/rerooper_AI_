@@ -27,7 +27,7 @@ def main():
     game.game_gui = game_gui  # ✅ 這行確保 Game 類別能夠存取 GUI
     game_gui.update_area_widgets()  # ✅ 這行確保地區顯示
 
-    friendship_phase = PlayerFriendshipAbilityPhase(game, game_gui)
+    friendship_phase = PlayerFriendshipAbilityPhase(game)
     game_gui.set_phase(friendship_phase)
 
     friendship_phase.execute()

@@ -1,9 +1,8 @@
 
 
 class PlayerFriendshipAbilityPhase:
-    def __init__(self, game, game_gui):
+    def __init__(self, game):
         self.game = game
-        self.game_gui = game_gui
         self.phase_type = "friendship"  # ✅ 新增此屬性
         self.selected_ability = None
         self.selected_target = None
@@ -14,8 +13,7 @@ class PlayerFriendshipAbilityPhase:
 
     def execute(self):
         """啟動 GUI，讓玩家選擇能力"""
-        
-        self.game_gui.update_FA_selection()
+        self.game.game_gui.update_FA_selection()
 
     def update_available_abilities(self):
         """歷遍所有角色，更新可用的友好能力"""
@@ -73,13 +71,13 @@ class PlayerFriendshipAbilityPhase:
 
         # 🔒 如果至少有一個目標，鎖定能力選擇
         if self.available_targets != []:
-            self.game_gui.ability_combobox["state"] = "disabled"
-            self.game_gui.confirm_FA_button["state"] = "disabled"
+            self.game.game_gui.ability_combobox["state"] = "disabled"
+            self.game.game_gui.confirm_FA_button["state"] = "disabled"
         else :
             print(f"{self.selected_ability.name}無可用目標")
             return 
         # 更新 GUI
-        self.game_gui.update_FA_targets_selection()
+        self.game.game_gui.update_FA_targets_selection()
      
 
     def confirm_FA_target_selection(self, target_name):
@@ -122,7 +120,7 @@ class PlayerFriendshipAbilityPhase:
             self.extra_choices = []  # 預設為空列表，避免錯誤
 
         # 更新 GUI 顯示
-        self.game_gui.update_extra_selection(self.extra_choices)
+        self.game.game_gui.update_extra_selection(self.extra_choices)
 
 
     def confirm_extra_selection(self, choice):
@@ -149,10 +147,10 @@ class PlayerFriendshipAbilityPhase:
             self.selected_target = None
             self.extra_choices = None
             # 解除友好能力選單與按鈕的鎖定
-            self.game_gui.ability_combobox["state"] = "normal"  # 解鎖能力選擇
+            self.game.game_gui.ability_combobox["state"] = "normal"  # 解鎖能力選擇
             # ✅ 確保更新 GUI，而非錯誤呼叫
-            self.game_gui.update_FA_selection()
-            self.game_gui.update_area_widgets()
+            self.game.game_gui.update_FA_selection()
+            self.game.game_gui.update_area_widgets()
 
 
 

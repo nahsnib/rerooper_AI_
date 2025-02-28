@@ -2,10 +2,8 @@
 from common.action import Action
 
 class PlayerDetectiveActionPhase:
-    def __init__(self, game, game_gui):
+    def __init__(self, game):
         self.game = game  # 整合 Game，讓 Phase 可以存取玩家
-        self.game_gui = game_gui  # 讓行動階段控制 GUI
-
         self.phase_type = "action"  # ✅ 新增此屬性
         self.scriptwriter_selections = []  # AI 劇本家的行動
         self.player_selections = []  # 玩家偵探的行動
@@ -13,7 +11,7 @@ class PlayerDetectiveActionPhase:
     def execute(self):
         """ 執行整個行動階段，先讓劇本家選擇行動，然後請求玩家輸入 """
         self.scriptwriter_select_actions()  # 讓 AI 劇本家選擇行動
-        self.game_gui.update_scriptwriter_actions(self.scriptwriter_selections)
+        self.game.game_gui.update_scriptwriter_actions(self.scriptwriter_selections)
         
         # 請求玩家輸入
 
@@ -86,8 +84,8 @@ class PlayerDetectiveActionPhase:
         character_seted = set()  # 紀錄本回合已經被偵探設置行動過的對象
 
         for i in range(3):
-            target = self.game_gui.action_target_vars[i].get()
-            action_name = self.game_gui.action_comboboxes[i].get()
+            target = self.game.game_gui.action_target_vars[i].get()
+            action_name = self.game.game_gui.action_comboboxes[i].get()
             action = next((a for a in self.game.players["偵探"].available_actions.values() if a.name == action_name), None)
             if target and action:
                 if action.times_used >= action.usage_limit:  # 檢查限用能力是否超出使用次數
@@ -118,7 +116,7 @@ class PlayerDetectiveActionPhase:
         else:
             return  # ✅ 玩家選擇無效，應該重新選擇，而不是繼續執行
         self.execute_actions()  # ✅ 直接執行
-        self.game_gui.show_message(f"選擇了行動：{[action['action'].name for action in self.player_selections]}，目標：{[action['target'] for action in self.player_selections]}")
+        self.game.game_gui.show_message(f"選擇了行動：{[action['action'].name for action in self.player_selections]}，目標：{[action['target'] for action in self.player_selections]}")
 
 
     def execute_actions(self):
@@ -155,7 +153,7 @@ class PlayerDetectiveActionPhase:
                 
                 print(f"✅ {target} 執行行動：{action.name}")
                 action.effect(target)
-        self.game_gui.update_area_widgets()  # ✅ 更新區域資訊
+        self.game.game_gui.update_area_widgets()  # ✅ 更新區域資訊
           
 
     def combine_action(self, actions):

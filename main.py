@@ -1,22 +1,26 @@
-import tkinter as tk
-from game_gui import GameGUI
+
 from game import Game
+import tkinter as tk
+from scriptwriter.ai_gameset import AIGameSet
+from game_gui import GameGUI
 
 def main():
-    pre_game = Game()
-    game = Game()  # 創建遊戲對象
     root = tk.Tk()
-    game_gui = GameGUI(root, pre_game, None)
-    pre_game.game_gui = game_gui  # ✅ 這行確保 Game 類別能夠存取 GUI
-    game = game.initialize_and_record_game(pre_game)  # 初始化並記錄遊戲
+    root.title("測試友好能力階段")
+
+    # 1️⃣ 產生遊戲設定
+    pre_game = Game()
+    gameset = AIGameSet(pre_game)
+    
+    # 2️⃣ 使用 AIGameSet 的數據建立 Game 物件
+    game = gameset.pre_game
+
+    game_gui = GameGUI(root, game, None)
+    game.game_gui = game_gui  # ✅ 這行確保 Game 類別能夠存取 GUI
+    game_gui.update_area_widgets()  # ✅ 這行確保地區顯示
+    print(f"game: {game}")  
+    print(f"game.game_gui: {getattr(game, 'game_gui', None)}")  
     game.phase_manager.run()  # 如果遊戲有主要運行迴圈，則啟動它
-    try:
-        pre_game = Game()
-        game = Game()  # 創建遊戲對象
-        game = game.initialize_and_record_game(pre_game)  # 初始化並記錄遊戲
-        game.phase_manager.run()  # 如果遊戲有主要運行迴圈，則啟動它
-    except Exception as e:
-        print(f"遊戲初始化失敗: {e}")  # 防止遊戲因錯誤而崩潰
 
 if __name__ == "__main__":
     main()

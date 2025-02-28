@@ -104,12 +104,16 @@ class ActiveRoleAbility:
         self.effect = effect  # 能力效果函數
         self.target_condition = target_condition  # 是否需要選擇目標
         self.owner_name = owner_name if owner_name else ""  # 擁有者名稱
+        self.usage = True # 是否可使用，預設可
+        self.limit_use = False # 是否為輪迴限用，預設為非
 
     def use(self, user, target=None):
         """執行主動能力"""
         if self.requires_target and target is None:
             raise ValueError(f"{self.name} 需要指定一個目標")
+        self.usage = False
         self.effect(user, target) if self.requires_target else self.effect(user)
+        
 
 class PassiveRoleAbility:
     def __init__(self, id, name, description, trigger_condition, effect, owner_name=None):

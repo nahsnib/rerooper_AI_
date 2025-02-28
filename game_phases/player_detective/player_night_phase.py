@@ -6,7 +6,7 @@ class NightPhase:
     def __init__(self, game):
         self.game = game
         self.character_manager = game.character_manager
-        self.rule_table = game.rule_table
+        self.selected_rule_table = game.selected_rule_table
 
     def reset_daily_limited_actions(self):
         for character in self.character_manager.get_all_characters():

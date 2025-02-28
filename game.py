@@ -4,7 +4,6 @@ from database.RuleTable import RuleTable
 from common.player import load_players
 from ai.scriptwriter_ai import Scriptwriter_AI
 from scriptwriter.ai_gameset import AIGameSet
-from game_phases.player_detective.phase_manager import Phase
 import copy
 
 
@@ -23,9 +22,6 @@ class Game:
         self.area_manager = area_manager  # 讓 `areas` 由外部傳入，提高靈活性
         self.passive_abilities = passive_abilities
 
-
-
-        self.game_gui = None  # 預設為 None，初始化時再設定
         self.EX_gauge = 0  # EX 槽
         self.happened_events = {}
         self.public_information = []  # 存儲公開資訊（字串格式）
@@ -44,12 +40,12 @@ class Game:
         self.cycle_end_flag = False
         self.scriptwriter_win_this_cycle = False
 
-        # 初始化GUI
 
 
     def initialize_and_record_game(self, pre_game):
         gameset = AIGameSet(pre_game)
         self.gameset = copy.deepcopy(gameset)
+        self.gameset.pre_game.phase_manager.set_phases(pre_game)
         return self.gameset.pre_game
     
 
