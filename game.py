@@ -1,6 +1,6 @@
 
 from common.area_and_date import TimeManager
-from database.RuleTable import RuleTable
+from database.RuleTable import RuleTable, PassiveRoleAbility
 from common.player import load_players
 from ai.scriptwriter_ai import Scriptwriter_AI
 from scriptwriter.ai_gameset import AIGameSet
@@ -26,6 +26,9 @@ class Game:
         self.happened_events = {}
         self.public_information = []  # 存儲公開資訊（字串格式）
 
+        # 特殊旗標們
+        self.madoka_flag = False # 這個旗標僅用於"和我簽下契約吧！"
+        self.reincarnation_character_ids = None
         
         # 初始化玩家，並傳入 `game` 參考
         self.players = load_players()
@@ -66,17 +69,28 @@ class Game:
         self.__dict__.update(new_game.__dict__)
         self.after_game_reset(save)
 
+
+
     def before_game_reset(self):
         """紀錄不應該被重置的數據"""
+        revealed_character_ids = [char.id for char in self.character_manager.characters if char.revealed]
+        reincarnation_character_ids = [char.Ch_id for char in self.character_manager.characters if char.friendship > 0]
         return {
-            "remain_cycles": self.time_manager.remain_cycles,
-            "public_information": self.public_information,
+            "revealed_character_ids": revealed_character_ids,
+            "reincarnation_character_ids":reincarnation_character_ids, # 因果之線專用
+            "remain_cycles": self.time_manager.remain_cycles,  # ✅ 不可變數據，不需要 deepcopy
+            "public_information": copy.deepcopy(self.public_information),  # 🔴 需要 deepcopy，避免遊戲重置影響原始數據
         }
 
     def after_game_reset(self, saved_data):
         """恢復不應該被重置的數據"""
+        for char in self.character_manager.characters:
+            if char.id in saved_data["revealed_character_ids"]:
+                char.revealed = True
+        self.reincarnation_character_ids = saved_data["reincarnation_character_ids"] # 因果之線專用
         self.time_manager.remain_cycles = saved_data["remain_cycles"]
-        self.public_information = saved_data["public_information"]
+        self.public_information = copy.deepcopy(saved_data["public_information"])  # 🔴 確保恢復時使用新的複製
+
 
     def check_passive_ability(self,type):
         abilities = self.passive_abilities.get(type, [])
@@ -113,9 +127,9 @@ class Game:
             self.revealed_sub_rules.append(next_rule)  # 記錄已公開的規則
             self.add_public_info(f"情報販子揭露了一條副規則：{next_rule}")  # 加入公開訊息
 
-    def gain_passive_ability(self,char, ability_id):
+    def gain_passive_ability(self,char,ruletable_id, ability_id):
         # 從全局能力表或某個能力管理系統獲取該能力
-        new_ability = RuleTable.get_passive_ability(ability_id)
+        new_ability = PassiveRoleAbility.get_ability(ruletable_id, ability_id)
         
         if new_ability:
             new_ability.owner = char  # 設定擁有者
@@ -125,7 +139,15 @@ class Game:
         if new_ability.condition in self.passive_abilities:
             self.passive_abilities[new_ability.condition].append(new_ability)
             
-    def death_flag(self):
+    def immediately_lose(self, reason = None):
+        self.scriptwriter_win_this_cycle = True
+        self.phase_manager.end_current_phase()
+
+    def special_flag(self, reason):
+        if reason == "madoka":
+            self.madoka_flag = True
+
+    def lose_flag(self,reason = None):
         self.scriptwriter_win_this_cycle = True
 
     def daily_reset_actions(self):

@@ -3,7 +3,7 @@
 class PlayerFriendshipAbilityPhase:
     def __init__(self, game):
         self.game = game
-        self.phase_type = "friendship"  # ✅ 新增此屬性
+        self.phase_type = "FA"  # ✅ 新增此屬性
         self.selected_ability = None
         self.selected_target = None
         self.extra_choice = []
@@ -82,6 +82,8 @@ class PlayerFriendshipAbilityPhase:
 
     def confirm_FA_target_selection(self, target_name):
         """確認目標後，執行能力"""
+        if not self.selected_ability:
+            return
         # 🟢 1.嘗試尋找角色作為目標
         self.selected_target = next((c for c in self.game.character_manager.characters if c.name == target_name), None)
 
@@ -163,4 +165,5 @@ class PlayerFriendshipAbilityPhase:
     def on_end(self):
         print("FA階段結束，清除暫存數據")
         # 這裡可以清除行動記錄、計算效果等
+        self.game.phase_manager.advance_phase()
 

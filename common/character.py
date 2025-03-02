@@ -1,6 +1,6 @@
 
 from database.Basecharacter import get_Basecharacter_by_id, FriendshipAbility, load_Basecharacters
-from database.RuleTable import Role
+from database.RuleTable import Role, PassiveRoleAbility, ActiveRoleAbility
 import random
 import logging
 from game_gui import GameGUI
@@ -47,6 +47,13 @@ class Character:
         self.event_crimes = []
         self.reset_ability_usage()
         self.guilty = 0
+
+    def daily_reset(self):
+        for ability in self.friendship_abilities:
+            ability.daily_used = True
+        role = self.role
+        for RA in role.active_RAs:
+            RA.usage = True
 
     def scholar_effect(self, game,extra):
         self.friendship = 0
@@ -280,7 +287,32 @@ class CharacterManager():
 
     def get_characters_in_area(self, area):
         return [char for char in self.characters if char.current_location == area]
-    
+
+    def collective_panic(self):
+        for char in self.characters:
+            if char.role.name == "誤導者":
+                char.role.active_RAs.append(
+                ActiveRoleAbility(id=89641142, name="collective panic",
+                    description="每輪迴一次，腳本家可以在能力階段使任意地區+1陰謀。（現階段改成送給誤導者一個額外能力）",
+                    requires_target=True,
+                    target_condition=lambda game, owner, target: target.name in ["醫院", "神社", "都市", "學校"],
+                    effect=lambda game, target: target.change_conspiracy(game, 1),
+                    limit_use = True
+                ))
+
+    def DeliriumVirus(self, game):
+        for char in self.characters:
+            if char.role.name == "普通人":
+                game.gain_passive_ability(self,char,1, 89641512) 
+                
+    def line_of_reincarnation(self, game):
+        for char in self.characters:
+            if char.Ch_id in game.reincarnation_character_ids:
+                char.change_anxiety(game, 2) 
+                
+                
+            
+
 
 if __name__ == "__main__":
     character_manager = CharacterManager()

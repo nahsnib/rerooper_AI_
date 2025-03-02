@@ -4,8 +4,8 @@ import random
 class EventPhase:
     def __init__(self, game):
         self.game = game
-
-    def main(self):
+        self.phase_type = "event"
+    def execute(self):
         today = self.game.time_manager.current_day
         events_today = [event for event in self.game.scheduled_events.values() if event.date == today]
         print("=== 今日事件 ===")
@@ -69,4 +69,5 @@ class EventPhase:
     
     def on_end(self):
         print("事件階段結束，清除暫存數據")
+        self.game.phase_manager.advance_phase()
         # 這裡可以清除行動記錄、計算效果等

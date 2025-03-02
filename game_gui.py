@@ -19,6 +19,7 @@ class GameGUI:
 
     def set_phase(self, phase):
         self.phase = phase
+        print(phase.phase_type)
         # 🟢 行動階段
         if self.phase.phase_type == "action":
 
@@ -26,13 +27,15 @@ class GameGUI:
             self.ability_frame.grid_remove() 
             self.action_phase_frame.grid()
 
-
         # 🔵 友好能力階段
-        elif self.phase.phase_type == "friendship":
-
+        elif self.phase.phase_type == "FA":
             self.update_FA_selection()
             self.action_phase_frame.grid_remove() 
             self.ability_frame.grid()
+
+        else:
+            self.action_phase_frame.grid_remove() 
+            self.ability_frame.grid_remove() 
 
     def create_widgets(self):
         self.main_frame = tk.Frame(self.root)
@@ -250,7 +253,7 @@ class GameGUI:
         )
         self.confirm_FA_target_button.pack()
 
-        # 🟢 額外選擇下拉式選單
+        # 🟢 選擇下拉式選單：額外
         self.extra_var = tk.StringVar()
         self.extra_combobox = ttk.Combobox(self.ability_frame, textvariable=self.extra_var)
         self.extra_combobox.pack()
@@ -266,12 +269,12 @@ class GameGUI:
         self.confirm_extra_button.pack()
 
         # 🟢 加入「結束友好能力階段」按鈕
-        end_button = tk.Button(
+        self.end_button = tk.Button(
             self.ability_frame, text="結束友好能力階段",
-            command=self.game.phase_manager.end_current_phase,
+            command=lambda: self.phase.on_end(),
             fg="white", bg="red", font=("Arial", 12, "bold")
         )
-        end_button.pack()
+        self.end_button.pack()
 
 
     def update_FA_targets_selection(self):

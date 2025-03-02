@@ -22,6 +22,8 @@ class RuleTable:
     def add_role(self, role):
         self.roles.append(role)
 
+
+
     def add_special_rule(self, rule):
         self.special_rules.append(rule)
     
@@ -86,13 +88,18 @@ class Role:
         """依序輸入選定主要規則表以及身分名稱，輸出身分"""
         return next(role for role in rule_table.roles if role.name == role_name)
 
+    def gain_passive_ability(self,ruletable_id, ability_id):
+            # 先判斷是哪一張規則表
+            # 接著判斷是哪個角色能力
+            # 正式擴充能力資料庫
+        return next((ability for ability in RAs_BTX if ability.id == ability_id), None)
+
 class Rule:
-    def __init__(self, id, name, description, assign_roles, special_effect=None):
+    def __init__(self, id, name, assign_roles,  passive_RAs):
         self.id = id  # 新增的編號屬性
         self.name = name  # 規則名稱
-        self.description = description  # 規則描述
+        self.passive_RAs = passive_RAs   # 特殊規則，以被動能力製作
         self.assign_roles = assign_roles  # 涉及的身分列表
-        self.special_effect = special_effect  # 特殊效果函數
 
 
 class ActiveRoleAbility:
@@ -114,6 +121,9 @@ class ActiveRoleAbility:
         self.usage = False
         self.effect(user, target) if self.requires_target else self.effect(user)
         
+    def get_ability(ruletable_id, ability_id):
+        rule_tables = {1: RAs_BTX()}  # 可擴展不同的規則表
+        return next((ability for ability in rule_tables.get(ruletable_id, []) if ability.id == ability_id), None)
 
 class PassiveRoleAbility:
     def __init__(self, id, name, description, trigger_condition, effect, owner_name=None):
@@ -124,25 +134,31 @@ class PassiveRoleAbility:
         self.effect = effect  # 能力效果函數
         self.owner_name = owner_name if owner_name else "" # 擁有者名稱
 
-    def get_passive_ability(ability_id):
-        return next((ability for ability in load_rule_table() if ability.id == ability_id), None)
+    def get_ability(ruletable_id, ability_id):
+        rule_tables = {1: RAs_BTX()}  # 可擴展不同的規則表
+        return next((ability for ability in rule_tables.get(ruletable_id, []) if ability.id == ability_id), None)
 
-main_rules_BTX=[
-    Rule(101, "殺人計畫", None, assign_roles={"關鍵人物", "殺手", "黑幕"}),
-    Rule(102, "被封印之物",None, assign_roles={"黑幕", "邪教徒"}, special_effect=lambda game_state: game_state.end_loop("腳本家勝利")),
-    Rule(103, "和我簽下契約吧！", "輪迴結束時，若關鍵人物陰謀>1，腳本家勝利。關鍵人物必須為少女", assign_roles={"關鍵人物"}, special_effect=lambda game_state: game_state.end_loop("腳本家勝利")),
-    Rule(104, "未來改變作戰", "蝴蝶效應事件發生後，該輪迴結束時腳本家勝利。", assign_roles={"邪教徒", "時間旅行者"}),
-    Rule(105, "巨型定時炸彈", "輪迴結束時，若魔女的初期所在區域陰謀>1，腳本家勝利。", assign_roles={"魔女"}, special_effect=lambda game_state: game_state.end_loop("腳本家勝利"))
-],
-sub_rules_BTX=[
-    Rule(111,"友情小圈圈", None, assign_roles={"朋友","朋友", "誤導者"}),
-    Rule(112, "戀愛的模樣", None, assign_roles={"病嬌", "戀人"}),
-    Rule(113, "殺人魔潛伏", None, assign_roles={"朋友", "殺人魔"}),
-    Rule(114, "人心惶惶", "每輪迴一次，腳本家可以在能力階段使任意地區+1陰謀。", assign_roles={"誤導者"}, special_effect=lambda game_state: game_state.add_conspiracy_points_to_any_area()),
-    Rule(115, "惡性譫妄病毒", "本遊戲中，普通人不安>2時，變成殺人魔。", assign_roles={"誤導者"}, special_effect=lambda game_state: game_state.transform_normal_to_murderer()),
-    Rule(116, "因果之線", "輪迴重啟後，前一輪迴友好>0的角色+2不安。", assign_roles={"因子"}, special_effect=lambda game_state: game_state.add_anxiety_to_characters_with_friendship_above(0, 2))
+
+def main_rules_BTX():
+    return[
+    Rule(101, "殺人計畫", assign_roles=["關鍵人物", "殺手", "黑幕"],passive_RAs=[]),
+    Rule(102, "被封印之物", assign_roles=["黑幕", "邪教徒"], passive_RAs=[PassiveRoleAbility.get_ability(1, 89641021)]),
+    Rule(103, "和我簽下契約吧！", assign_roles=["關鍵人物"], passive_RAs=[PassiveRoleAbility.get_ability(1, 89641031), PassiveRoleAbility.get_ability(1, 89641032)]),
+    Rule(104, "未來改變作戰", assign_roles=["邪教徒", "時間旅行者"],passive_RAs=[PassiveRoleAbility.get_ability(1, 89641041)]),
+    Rule(105, "巨型定時炸彈", assign_roles=["魔女"],  passive_RAs=[PassiveRoleAbility.get_ability(1, 89641051)]),
+    ]
+def sub_rules_BTX():
+    return[
+    Rule(111,"友情小圈圈", assign_roles=["朋友","朋友", "誤導者"], passive_RAs=[]),
+    Rule(112, "戀愛的模樣", assign_roles=["病嬌", "戀人"], passive_RAs=[]),
+    Rule(113, "殺人魔潛伏", assign_roles=["朋友", "殺人魔"], passive_RAs=[]),
+    Rule(114, "人心惶惶", assign_roles=["誤導者"],  passive_RAs=[PassiveRoleAbility.get_ability(1,89641141)]),
+    Rule(115, "惡性譫妄病毒", assign_roles=["誤導者"], passive_RAs=[PassiveRoleAbility.get_ability(1,89641151)]),
+    Rule(116, "因果之線", assign_roles=[], passive_RAs=[PassiveRoleAbility.get_ability(1,89641161)]),
+    Rule(117, "不定因子", assign_roles=["因子"], passive_RAs=[]),
 ]
-events_BTX=[ 
+def events_BTX():
+    return[ 
     Event(
         id=101,
         name="殺人事件",
@@ -178,7 +194,7 @@ events_BTX=[
             (
                 [criminal.kill_character(game, victim) for victim in victims]
                 if hospital.conspiracy > 0 else None,
-                game.death_flag() if hospital.conspiracy > 1 else None
+                game.immediately_lose() if hospital.conspiracy > 1 else None
             )
         )
     ),
@@ -223,156 +239,192 @@ events_BTX=[
         victim_required=False,
         effect=lambda game, criminal, victim: game.area_manager.fetch_area_by_name("神社").change_conspiracy(game, 1)
     )
-],
-roles_BTX=[
-    Role(101, "關鍵人物", traits=[],passive_RAs=[
-        PassiveRoleAbility(
-            id=1011,
-            name="The key",
+]
+def roles_BTX():
+    return [
+        Role(101, "關鍵人物", traits=[], passive_RAs=[
+            PassiveRoleAbility.get_ability(1, 1011)
+        ]),
+        Role(102, "殺手", traits=["友好無視"], passive_RAs=[
+            PassiveRoleAbility.get_ability(1, 1021),
+            PassiveRoleAbility.get_ability(1, 1022),
+        ]),
+        Role(103, "黑幕", traits=["友好無視"], active_RAs=[
+            ActiveRoleAbility.get_ability(1, 1031)
+        ]),
+        Role(104, "邪教徒", traits=["友好無效"]),
+        Role(105, "魔女", traits=["友好無效"]),
+        Role(106, "時間旅行者", traits=["不死"], passive_RAs=[
+            PassiveRoleAbility.get_ability(1, 1061)
+        ]),
+        Role(107, "朋友", traits=[], passive_RAs=[
+            PassiveRoleAbility.get_ability(1, 1071),
+            PassiveRoleAbility.get_ability(1, 1072)
+        ]),
+        Role(108, "誤導者", traits=[], active_RAs=[
+            ActiveRoleAbility.get_ability(1, 1081)
+        ]),
+        Role(109, "病嬌", traits=[], passive_RAs=[
+            PassiveRoleAbility.get_ability(1, 1091),
+            PassiveRoleAbility.get_ability(1, 1092)
+        ]),
+        Role(110, "戀人", traits=[], passive_RAs=[
+            PassiveRoleAbility.get_ability(1, 1101)
+        ]),
+        Role(111, "殺人魔", traits=[], passive_RAs=[
+            PassiveRoleAbility.get_ability(1, 1111)
+        ]),
+        Role(112, "因子", traits=["友好無視"], passive_RAs=[
+            PassiveRoleAbility.get_ability(1, 1121)
+        ], active_RAs=[
+            ActiveRoleAbility.get_ability(1, 1122)
+        ])
+    ]
+def RAs_BTX():
+    return [
+        PassiveRoleAbility(id=1011, name="The key",
             description="此角色死亡時，劇本家勝利，輪迴結束。",
             trigger_condition="on_death",
-            effect=lambda game, owner: game.cycle_end("lose") 
-            )
-        ]
-    ),
-    Role(102, "殺手",traits=["友好無視"], passive_RAs=[
-        PassiveRoleAbility(
-            id=1021,
-            name="The killer",
+            effect=lambda game, owner: game.immediately_lose()
+        ),
+        PassiveRoleAbility(id=1021, name="The killer",
             description="夜晚階段時，如果自己陰謀>=4，劇本家勝利，輪迴結束。",
             trigger_condition="night_phase",
-            effect=lambda game, owner: game.cycle_end("lose") if owner.conspiracy >= 4 else None
-            ),          
-        PassiveRoleAbility(
-            id=1022,
-            name="Kill Key",
+            effect=lambda game, owner: game.immediately_lose() if owner.conspiracy >= 4 else None
+        ),
+        PassiveRoleAbility(id=1022, name="Kill Key",
             description="夜晚階段時，如果與同地區有陰謀值>=2的關鍵人物，將其殺害。",
             trigger_condition="night_phase",
             effect=lambda game, owner: [
                 owner.kill_character(game, key)
-                for key in game.character_manager.get_characters_in_area(owner.current_location)  # 遍歷該地區所有角色
-                if key.role.name == "關鍵人物"  # 確保對方是關鍵人物
-                and key.conspiracy >= 2  # 確保關鍵人物的陰謀值達到 2 以上
-                ]
-            )
-        ]
-    ),
-    Role(103, "黑幕",traits=["友好無視"], active_RAs=[
-        ActiveRoleAbility(
-            id=1031,
-            name="conspirator",
+                for key in game.character_manager.get_characters_in_area(owner.current_location)
+                if key.role.name == "關鍵人物" and key.conspiracy >= 2
+            ]
+        ),
+        ActiveRoleAbility(id=1031, name="conspirator",
             description="同地區的一個角色或者該地區+1陰謀",
-            requires_target = True,
+            requires_target=True,
             target_condition=lambda game, owner, target: target.current_location == owner.current_location or target.name == owner.current_location,
-            effect=lambda game, target: target.change_conspiracy(game, 1) 
-            )
-        ]
-    ),
-    Role(104, "邪教徒",traits=["友好無效"]),
-    Role(105, "魔女",traits=["友好無效"]),
-    Role(106, "時間旅行者",traits=["不死"], passive_RAs=[
-        PassiveRoleAbility(
-            id=1061,
-            name="Time traveler",
+            effect=lambda game, target: target.change_conspiracy(game, 1)
+        ),
+        PassiveRoleAbility(id=1061, name="Time traveler",
             description="輪迴結束時，如果自己友好<=2，劇本家勝利，輪迴結束。",
             trigger_condition="cycle_end",
-            effect=lambda game, owner: game.cycle_end("lose") if owner.conspiracy > 3 else None
-            )
-        ]
-    ),
-    Role(107, "朋友",traits=[], passive_RAs=[
-        PassiveRoleAbility(
-            id=1071,
-            name="The friend",
+            effect=lambda game, owner: game.lose_flag() if owner.friendship < 3 else None
+        ),
+        PassiveRoleAbility(id=1071, name="The friend",
             description="輪迴結束時，如果未能存活，劇本家勝利，身分公開。",
             trigger_condition="cycle_end",
             effect=lambda game, owner: (
-                owner.reveal_role(),  # 確保角色公開身份
-                game.cycle_end("lose") if not owner.alive else None  # 若未存活則敗北
+                owner.reveal_role(game),
+                game.lose_flag() if not owner.alive else None
             )
         ),
-        PassiveRoleAbility(
-            id=1072,
-            name="everlasting friendship",
+        ActiveRoleAbility(id=1081, name="Misleader",
+            description="同地區的一個角色+1不安",
+            requires_target=True,
+            target_condition=lambda game, owner, target: target.current_location == owner.current_location,
+            effect=lambda game, target: target.change_anxiety(game, 1)
+        ),
+        PassiveRoleAbility(id=1072, name="everlasting friendship",
             description="輪迴開始時，如果身分已經公開，+1友好",
             trigger_condition="cycle_start",
             effect=lambda game, owner: owner.change_friendship(1) if owner.revealed else None
-        )
-    ]
-    ),
-    Role(108, "誤導者",traits=[], active_RAs=[
-            ActiveRoleAbility(
-                id=1081,
-                name="disturber",
-                description="同地區的一個角色+1不安",
-                requires_target = True,
-                target_condition=lambda game, owner, target:target.current_location == owner.current_location,
-                effect=lambda game, target: target.change_anxiety(1) 
-                )
-            ]
         ),
-    Role(109, "病嬌",traits=[], passive_RAs=[
-        PassiveRoleAbility(
-            id=1091,
-            name="Lover",
+        PassiveRoleAbility(id=1091, name="Lover",
             description="死亡時，戀人+6不安",
             trigger_condition="on_death",
             effect=lambda game, owner: [
-                lover.anxiety(6)
-                for lover in game.character_manager.characters  # 遍歷所有角色
-                if lover.role.name == "戀人"  # 確保對方是戀人
-                and lover.alive
-                ]
+                lover.change_anxiety(game, 6)
+                for lover in game.character_manager.characters
+                if lover.role.name == "戀人" and lover.alive
+            ]
         ),
-        PassiveRoleAbility(
-            id=1092,
-            name="Yandere",
+        PassiveRoleAbility(id=1092, name="Yandere",
             description="夜晚時，如果自己不安>2且陰謀>0，則劇本家勝利，輪迴結束",
             trigger_condition="night_phase",
-            effect=lambda game, owner: game.cycle_end("lose") if owner.conspiracy > 0 and owner.anxiety>2  else None          
-            )
-        ]
+            effect=lambda game, owner: game.immediately_lose() if owner.conspiracy > 0 and owner.anxiety > 2 else None
         ),
-    Role(110, "戀人",traits=[], passive_RAs=[
-        PassiveRoleAbility(
-            id=1101,
-            name="Lover",
+        PassiveRoleAbility(id=1101, name="Lover",
             description="死亡時，病嬌+6不安",
             trigger_condition="on_death",
             effect=lambda game, owner: [
-                lover.anxiety(6)
-                for lover in game.character_manager.characters  # 遍歷所有角色
-                if lover.role.name == "病嬌"  # 確保對方是病嬌
-                and lover.alive
+                lover.change_anxiety(game, 6)
+                for lover in game.character_manager.characters
+                if lover.role.name == "病嬌" and lover.alive
             ]
-            )]
         ),
-    Role(111, "殺人魔",traits=[], passive_RAs=[
-        PassiveRoleAbility(
-            id=1111,
-            name="Murder",
+        PassiveRoleAbility(id=1111, name="Murder",
             description="夜晚時，若有任何角色與其獨處，殺害該角色",
             trigger_condition="night_phase",
             effect=lambda game, owner: owner.murder_effect(game)
-        )]
         ),
-    Role(112, "因子",traits=["友好無視"], passive_RAs=[
-        PassiveRoleAbility(
-            id=1121,
-            name="factor_key",
+        PassiveRoleAbility(id=1121, name="factor key",
             description="當學校的陰謀>1，獲得關鍵人物的能力",
             trigger_condition="area_conspiracy",
-            effect=lambda game, owner: game.gain_passive_ability(owner,1011) if game.area_manager.fecth_area_by_name('學校').conspiracy >1 else None                
-        )],
-        active_RAs=[
-        ActiveRoleAbility(
-            id=1122,
-            name="factor_disturber",
-            description="如果都市的陰謀>1，對同地區的一名角色+1不安",
-            target_condition=lambda game, owner, target: owner.current_location==target.current and game.area_maneager.fecth_area_by_name('都市').conspiracy >1,
-            effect=lambda game, owner, target: target.change_anxiety(1) 
+            effect=lambda game, owner: game.gain_passive_ability(owner, 1011) if game.area_manager.fetch_area_by_name('學校').conspiracy > 1 else None
         ),
-    ])    ]
+        ActiveRoleAbility(id=1122, name="factor misleader",
+            description="當都市的陰謀>1，獲得誤導者的能力",
+            requires_target=True,
+            target_condition=lambda game, owner, target: target.current_location == owner.current_location and game.area_manager.fetch_area_by_name('都市').conspiracy > 1 ,
+            effect=lambda game, target: target.change_anxiety(game, 1)
+        ),
+        PassiveRoleAbility(id=89641021, name="Unseal",
+            description="輪迴結束時，若神社陰謀>=2，主角敗北。",
+            trigger_condition="cycle_end",
+            effect=lambda game, owner: game.lose_flag() if game.area_manager.areas[2].conspiracy > 1 else None
+            ),
+        PassiveRoleAbility(id=89641031, name="Despair",
+            description="輪迴結束時，若關鍵人物陰謀>=2，主角敗北。",
+            trigger_condition="cycle_end",
+            effect=lambda game, owner: [game.lose_flag() 
+                for key in game.character_manager.characters  # 遍歷所有角色
+                if key.role.name == "關鍵人物"  # 確保對方是關鍵人物
+                and key.conspiracy >= 2  # 確保關鍵人物的陰謀值達到 2 以上
+                ]
+            ),
+        PassiveRoleAbility(id=89641032, name="Mahoshoujou",
+            description="關鍵人物一定是少女。",
+            trigger_condition="assign_roles",
+            effect=lambda game, owner: game.special_flag("madoka")
+            ),
+        PassiveRoleAbility(id=89641041, name="Stein;Gate",
+            description="輪迴結束時，若本輪迴中事件「蝴蝶效應」有發生過，主角敗北。",
+            trigger_condition="cycle_end",
+            effect=lambda game, owner: [game.lose_flag() 
+                for event in game.scheduled_events  # 遍歷所有事件
+                if event.name == "蝴蝶效應" and event.happened # 找到蝴蝶效應，而且他有發生過
+            ]),
+        PassiveRoleAbility(id=89641051, name="HugeTimeBomb",
+            description="輪迴結束時，若魔女的初期地區陰謀>=2，主角敗北。",
+            trigger_condition="cycle_end",
+            effect=lambda game, owner:[game.lose_flag() 
+                for key in game.character_manager.characters  # 遍歷所有角色
+                if key.role.name == "關鍵人物"  # 確保對方是關鍵人物
+                and game.area_manager.get_area_by_name(key.initial_location).conspiracy>= 2  # 確保關鍵人物的初期地區的陰謀值達到 2 以上
+            ]),
+        PassiveRoleAbility(id=89641141, name="collective panic",
+            description="每輪迴一次，腳本家可以在能力階段使任意地區+1陰謀。（現階段改成送給誤導者一個額外能力）",
+            trigger_condition="assign_roles",
+            effect=lambda game, owner:game.character_manager.collective_panic()
+            ),
+        PassiveRoleAbility(id=89641151, name="Delirium Virus",
+            description="本遊戲中，普通人不安>2時，取得殺人魔的能力。",
+            trigger_condition="assigh_roles",
+            effect=lambda game, owner: game.character_manager.DeliriumVirus(game)
+        ),
+        PassiveRoleAbility(id=89641152, name="Murder by Delirium Virus",
+            description="夜晚且不安>2時，若有任何角色與其獨處，殺害該角色",
+            trigger_condition="night_phase",
+            effect=lambda game, owner:[ owner.murder_effect(game) if owner.anxiety > 2 and owner.role.name =="普通人" else None]
+        ),
+        PassiveRoleAbility(id=89641161, name="LineOfReincarnation",
+            description= "輪迴重啟後，前一輪迴友好>0的角色+2不安。",
+            trigger_condition="cycle_start",
+            effect=lambda game, owner: game.character_manager.line_of_reincarnation(game)
+            ),
+    ]
 
 
 def load_rule_table():
@@ -381,28 +433,28 @@ def load_rule_table():
         RuleTable(
             id=1,
             name=  "Basic Tragedy X",
-            main_rules=main_rules_BTX,
-            sub_rules=sub_rules_BTX,
-            events= events_BTX,
-            roles=roles_BTX,
+            main_rules=main_rules_BTX(),
+            sub_rules=sub_rules_BTX(),
+            events= events_BTX(),
+            roles=roles_BTX(),
             special_rules=[],
         ),
         RuleTable(
             id=2,
             name=  "Mystery Circle",
-            main_rules=main_rules_BTX,
-            sub_rules=sub_rules_BTX,
-            events= events_BTX,
-            roles=roles_BTX,
+            main_rules=main_rules_BTX(),
+            sub_rules=sub_rules_BTX(),
+            events= events_BTX(),
+            roles=roles_BTX(),
             special_rules=[],
         ),
         RuleTable(
             id=3,
             name=  "Weird Mythology",
-            main_rules=main_rules_BTX,
-            sub_rules=sub_rules_BTX,
-            events= events_BTX,
-            roles=roles_BTX,
+            main_rules=main_rules_BTX(),
+            sub_rules=sub_rules_BTX(),
+            events= events_BTX(),
+            roles=roles_BTX(),
             special_rules=[],
         )
     ]

@@ -154,7 +154,7 @@ class PlayerDetectiveActionPhase:
                 print(f"✅ {target} 執行行動：{action.name}")
                 action.effect(target)
         self.game.game_gui.update_area_widgets()  # ✅ 更新區域資訊
-          
+        self.on_end()  
 
     def combine_action(self, actions):
         """ 根據規則合成行動，若無合成則回傳 None """
@@ -194,6 +194,14 @@ class PlayerDetectiveActionPhase:
         print("行動階段開始")
     
     def on_end(self):
+        """行動階段結束，通知 phase_manager 進入下一個階段"""
         print("行動階段結束，清除暫存數據")
-        # 這裡可以清除行動記錄、計算效果等
+        
+        # 🟢 1. 清理行動紀錄（如有需要）
+        #self.clear_action_records()
+        
+        # 🟢 2. 讓 phase_manager 進入下一個階段
+        self.game.phase_manager.advance_phase()
+        
+
 

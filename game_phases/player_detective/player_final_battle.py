@@ -7,6 +7,7 @@ class FinalBattle:
         self.rule_table = game.selected_rule_table
         self.chance = 3
         self.selections = {}  # 存儲玩家的選擇
+        self.phase_type = "final battle"
 
     def execute(self):
         self.create_gui()

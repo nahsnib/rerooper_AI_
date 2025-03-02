@@ -17,9 +17,6 @@ class Player:
 
     def daily_reset_actions(self):
         """夜晚時，重置每日可用行動"""
-        for action in self.available_actions.values():
-            if action.is_daily_limited:
-                action.reset()
         self.used_actions.clear()
 
     def cycle_reset_actions(self):
