@@ -143,6 +143,9 @@ class Game:
         self.scriptwriter_win_this_cycle = True
         self.phase_manager.end_current_phase()
 
+    def change_EX(self, amount):
+        self.EX_gauge += amount
+
     def special_flag(self, reason):
         if reason == "madoka":
             self.madoka_flag = True

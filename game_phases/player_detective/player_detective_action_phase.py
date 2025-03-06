@@ -70,7 +70,7 @@ class PlayerDetectiveActionPhase:
 
     def get_available_action_targets(self):
         """ 獲取所有可用的目標（角色 + 地區） """
-        targets = [char.name for char in self.game.character_manager.characters if char.alive]
+        targets = [char.name for char in self.game.character_manager.characters if (char.alive and char.can_set_action)]
         targets.extend(["醫院", "神社", "都市", "學校"])
         if "幻象" in targets:
             targets.remove("幻象")  # 不可對幻象設置行動

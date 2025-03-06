@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from functools import partial
+from game_history import GameHistoryGUI
 
 class GameGUI:
     def __init__(self, root, game,  phase=None):  # ✅ 預設 phase=None
@@ -55,6 +56,10 @@ class GameGUI:
         self.area_frame = tk.Frame(self.main_frame)
         self.area_frame.grid(row=0, column=1, sticky="nsew")
 
+        tk.Label(self.time_frame, text="使用劇本表:").pack(anchor="w")
+        self.remaining_cycles_label = tk.Label(self.time_frame, text=str(self.game.selected_rule_talbe, self.game.EX_gauge))
+        self.remaining_cycles_label.pack(anchor="w")
+
         tk.Label(self.time_frame, text="剩餘輪迴數量:").pack(anchor="w")
         self.remaining_cycles_label = tk.Label(self.time_frame, text=str(self.game.time_manager.remaining_cycles))
         self.remaining_cycles_label.pack(anchor="w")
@@ -69,7 +74,7 @@ class GameGUI:
         self.events_frame.pack(anchor="w")
         self.update_events()
 
-                # 🔽 新增 "已公開情報" 標籤 🔽
+        # 🔽 新增 "已公開情報" 標籤 🔽
         tk.Label(self.time_frame, text="📢 已公開情報：").pack(anchor="w")
 
         # 🔽 創建滾動視窗來顯示公開資訊 🔽
@@ -83,6 +88,12 @@ class GameGUI:
         self.scrollbar.pack(side="right", fill="y")
 
         self.info_text.config(yscrollcommand=self.scrollbar.set, state="disabled")  # 讓內容不可編輯
+
+        # 🔽 新增「啟動遊戲履歷」按鈕 🔽
+        self.history_button = tk.Button(self.time_frame, text="啟動遊戲履歷", command=self.show_game_history)
+        self.history_button.pack(anchor="w", pady=5)
+
+
 
     def update_public_information(self):
         """更新公開資訊的滾動顯示"""
@@ -350,100 +361,17 @@ class GameGUI:
             self.ask_popup.destroy()
         self.ask_popup = None
 
-
-
-
-
-
-
     def show_message(self, message):
         messagebox.showinfo("訊息", message)
     
     def show_error(self, message):
         messagebox.showerror("錯誤", message)
     
-    def create_snapshot_button(self):
-        """新增快照按鈕"""
-        self.snapshot_button = tk.Button(self.time_frame, text="📸 記錄當前狀態", command=self.record_snapshot)
-        self.snapshot_button.pack(anchor="w")
+    def show_game_history(self):
+        """開啟遊戲履歷 GUI"""
+        history_window = tk.Toplevel(self.root)  # 創建新視窗
+        history_window.title("遊戲履歷")
+        history_window.geometry("500x200")  # 調整視窗大小
 
-    def record_snapshot(self):
-        """記錄當前狀態"""
-        self.game.history.take_snapshot(self.game)
-        self.update_history_dropdown()
-
-    def create_history_view(self):
-        """新增履歷檢視的 UI"""
-        tk.Label(self.time_frame, text="🔍 回顧遊戲履歷：").pack(anchor="w")
-
-        self.history_var = tk.StringVar(self.time_frame)
-        self.history_dropdown = tk.OptionMenu(self.time_frame, self.history_var, *self.game.history.get_snapshots())
-        self.history_dropdown.pack(anchor="w")
-
-        self.view_history_button = tk.Button(self.time_frame, text="🔎 檢視", command=self.view_history)
-        self.view_history_button.pack(anchor="w")
-
-    def update_history_dropdown(self):
-        """更新下拉選單的內容"""
-        menu = self.history_dropdown["menu"]
-        menu.delete(0, "end")
-        for label in self.game.history.get_snapshots():
-            menu.add_command(label=label, command=lambda value=label: self.history_var.set(value))
-
-    def view_history(self):
-        """檢視選定的快照"""
-        selected_label = self.history_var.get()
-        index = self.game.history.get_snapshots().index(selected_label)
-        snapshot = self.game.history.get_snapshot_by_index(index)
-
-        if snapshot:
-            self.show_history_window(snapshot)
-
-    def show_history_window(self, snapshot):
-        """顯示快照的獨立視窗"""
-        history_window = tk.Toplevel(self.root)
-        history_window.title(f"回顧 - {snapshot['label']}")
-
-        tk.Label(history_window, text=snapshot["label"], font=("Arial", 12, "bold")).pack()
-
-        # 顯示地區狀態
-        for area_name, area_data in snapshot["areas"].items():
-            tk.Label(history_window, text=f"📍 {area_name}").pack(anchor="w")
-            for key, value in area_data.items():
-                tk.Label(history_window, text=f"   {key}: {value}").pack(anchor="w")
-
-        # 顯示角色狀態
-        for char_name, char_data in snapshot["character_manager.characters"].items():
-            tk.Label(history_window, text=f"🧑 {char_name}").pack(anchor="w")
-            for key, value in char_data.items():
-                tk.Label(history_window, text=f"   {key}: {value}").pack(anchor="w")
-
-
-    def ask_user(self, message):
-        """ 顯示詢問對話框，返回玩家的選擇（是 True / 否 False） """
-        return messagebox.askyesno("能力發動確認", message)
-
-class GameHistory:
-    def __init__(self):
-        """初始化快照記錄"""
-        self.history_snapshots = []  # 存放所有快照 (list of dict)
-
-    def take_snapshot(self, game):
-        """記錄當前遊戲狀態"""
-        snapshot = {
-            "label": f"輪迴 {game.time_manager.remaining_cycles} / 日期 {game.time_manager.current_day} / 階段 {game.current_phase}",
-            "time": game.time_manager.remaining_cycles,
-            "day": game.time_manager.current_day,
-            "phase": game.current_phase,
-            "areas": {area.name: area.get_snapshot() for area in game.areas},
-            "characters": {char.name: char.get_snapshot() for char in game.character_manager.characters}
-        }
-        self.history_snapshots.append(snapshot)
-
-    def get_snapshots(self):
-        """取得所有快照標籤清單"""
-        return [snap["label"] for snap in self.history_snapshots]
-
-    def get_snapshot_by_index(self, index):
-        """根據索引取得快照內容"""
-        return self.history_snapshots[index] if 0 <= index < len(self.history_snapshots) else None
+        # 創建 GameHistoryGUI 並傳遞 game 和 game_history
+        GameHistoryGUI(history_window, self.game, self.game.history)

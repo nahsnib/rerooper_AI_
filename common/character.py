@@ -26,12 +26,14 @@ class Character:
         self.friendship = 0
         self.alive = True
         self.is_criminal = False
+        self.must_criminal = 0 
         self.event_crimes = []
         if self.initial_location == None:       # 設置當前地區為初始地區，若沒有則隨機選擇
             self.move_to_anywhere(random.choice(['醫院', '神社', '都市', '醫院']))
         else :
             self.current_location = self.initial_location
         self.guilty = 0
+        self.can_set_action = True
 
     def char_cycle_reset(self):
         self.anxiety = 0
@@ -310,7 +312,18 @@ class CharacterManager():
             if char.Ch_id in game.reincarnation_character_ids:
                 char.change_anxiety(game, 2) 
                 
-                
+    def isolate_area(self, game, criminal):
+        isolate_area = criminal.current_location
+        other_areas =["醫院", "神社", "都市", "學校"]
+        if isolate_area in other_areas:
+            other_areas.remove(isolate_area)
+        for char in self.characters:
+            if char.alive:
+                if char.current_location == isolate_area:
+                    char.forbidden_area.extend(other_areas)
+                else:
+                    char.forbidden_area.append(isolate_area)
+
             
 
 

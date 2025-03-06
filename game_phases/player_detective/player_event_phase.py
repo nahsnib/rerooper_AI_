@@ -21,7 +21,7 @@ class EventPhase:
             if not criminal or not criminal.alive:
                 continue
             
-            if criminal.anxiety < criminal.anxiety_threshold and criminal.guilty != 1:
+            if criminal.anxiety < (criminal.anxiety_threshold + event.anxiety_threshold_modifier)  and criminal.guilty != 1:
                 continue
             
             if criminal.guilty == -1:

@@ -70,7 +70,8 @@ class TimeManager:
     def __init__(self, current_day ,total_days, total_cycles):
         self.total_days = total_days
         self.total_cycles = total_cycles
-        self.current_day = current_day
+        self.current_cycle = 1      # 預設從1開始
+        self.current_day = 1      # 預設從1開始
         self.remaining_cycles = total_cycles
 
     def increment_day(self):
