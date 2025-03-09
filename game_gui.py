@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from functools import partial
-from game_history import GameHistoryGUI
+from game_history import GameHistoryGUI, Historymanager
 
 class GameGUI:
     def __init__(self, root, game,  phase=None):  # ✅ 預設 phase=None
@@ -10,6 +10,8 @@ class GameGUI:
         self.phase = phase  # 可以是 None
         self.selected_targets = []
 
+        self.game_history = Historymanager()   # 🔥 創建遊戲歷史記錄管理
+
         self.ask_popup = None  # 🔹 用來存放詢問視窗
         self.ask_result = None  # 🔹 用來存放玩家選擇（True/False）
         self.create_widgets()
@@ -17,6 +19,9 @@ class GameGUI:
         self.update_area_widgets()  # ✅ 這行非常重要！
         self.create_action_phase_widgets()
         self.create_ability_widgets()
+
+        # 🔥 設定 `phase_manager` 讓它知道如何記錄歷史
+        self.game.phase_manager.set_history_callback(self.record_game_history)
 
     def set_phase(self, phase):
         self.phase = phase
@@ -57,12 +62,14 @@ class GameGUI:
         self.area_frame.grid(row=0, column=1, sticky="nsew")
 
         tk.Label(self.time_frame, text="使用劇本表:").pack(anchor="w")
-        self.remaining_cycles_label = tk.Label(self.time_frame, text=str(self.game.selected_rule_talbe, self.game.EX_gauge))
+        self.remaining_cycles_label = tk.Label(self.time_frame, text=str(self.game.selected_rule_table.name))
         self.remaining_cycles_label.pack(anchor="w")
 
-        tk.Label(self.time_frame, text="剩餘輪迴數量:").pack(anchor="w")
-        self.remaining_cycles_label = tk.Label(self.time_frame, text=str(self.game.time_manager.remaining_cycles))
+        tk.Label(self.time_frame, text="剩餘輪迴數量以及當前EX:").pack(anchor="w")
+        loop_info = f"{self.game.time_manager.remaining_cycles} , {self.game.EX_gauge}"
+        self.remaining_cycles_label =  tk.Label(self.time_frame, text=loop_info)
         self.remaining_cycles_label.pack(anchor="w")
+
 
         tk.Label(self.time_frame, text="當前日期/總日期").pack(anchor="w")
         date_info = f"{self.game.time_manager.current_day} / {self.game.time_manager.total_days}"
@@ -369,9 +376,14 @@ class GameGUI:
     
     def show_game_history(self):
         """開啟遊戲履歷 GUI"""
-        history_window = tk.Toplevel(self.root)  # 創建新視窗
+        history_window = tk.Toplevel(self.root)  # ✅ 創建新視窗
         history_window.title("遊戲履歷")
-        history_window.geometry("500x200")  # 調整視窗大小
+        history_window.geometry("500x200")  # ✅ 設定大小
 
-        # 創建 GameHistoryGUI 並傳遞 game 和 game_history
-        GameHistoryGUI(history_window, self.game, self.game.history)
+        # ✅ 正確傳遞 `root` 和 `game_history`
+        GameHistoryGUI(self.game_history, history_window)
+
+
+    def record_game_history(self):
+        """記錄遊戲歷史"""
+        self.game_history.record_history(self.game)  # 🔥 記錄當前遊戲狀態

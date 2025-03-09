@@ -86,9 +86,14 @@ class Role:
         self.passive_RAs = passive_RAs if passive_RAs is not None else []  # 能力列表
 
     @classmethod
-    def get_role_by_role_name(cls, rule_table, role_name):
+    def get_role_by_role_name(cls, ruletable_id, role_name):
         """根據角色名稱從規則表獲取角色"""
-        return rule_table.get(role_name, None)
+        for ruletable in load_rule_table():
+            if ruletable.id == ruletable_id:
+                for role in ruletable.roles:
+                    if role.name == role_name:
+                        return role
+
 
     def gain_passive_ability(self,ruletable_id, ability_id):
             # 先判斷是哪一張規則表
@@ -104,7 +109,7 @@ class Rule:
         self.assign_roles = assign_roles  # 涉及的身分列表
 
 class ActiveRoleAbility:
-    def __init__(self, id, name, description, effect, target_condition, requires_target = False ,owner_name=None):
+    def __init__(self, id, name, description, effect, target_condition,compulsion = False, requires_target = False ,owner_name=None):
         self.id = id  # 能力的唯一編號
         self.name = name  # 能力名稱
         self.description = description  # 能力描述
@@ -114,7 +119,7 @@ class ActiveRoleAbility:
         self.owner_name = owner_name if owner_name else ""  # 擁有者名稱
         self.usage = True # 是否可使用，預設可
         self.limit_use = False # 是否為輪迴限用，預設為非
-        self.compulsion = False
+        self.compulsion = compulsion # 是否為強制使用，預設為非
 
     def use(self, user, target=None):
         """執行主動能力"""
@@ -128,14 +133,14 @@ class ActiveRoleAbility:
         return next((ability for ability in rule_tables.get(ruletable_id, []) if ability.id == ability_id), None)
 
 class PassiveRoleAbility:
-    def __init__(self, id, name, description, trigger_condition, effect, owner_name=None):
+    def __init__(self, id, name, description, trigger_condition, effect,limit_use = False, owner_name=None):
         self.id = id  # 能力的唯一編號
         self.name = name  # 能力名稱
         self.description = description  # 能力描述
         self.trigger_condition = trigger_condition  # 觸發條件函數
         self.effect = effect  # 能力效果函數
         self.owner_name = owner_name if owner_name else "" # 擁有者名稱
-        self.limit_use = False # 是否為輪迴限用，預設為非
+        self.limit_use = limit_use # 是否為輪迴限用，預設為非
 
     def get_ability(ruletable_id, ability_id):
         rule_tables = {1: RAs_BTX(), 2:RAs_MC(), 3:RAs_WM}  # 可擴展不同的規則表
@@ -376,12 +381,12 @@ def RAs_BTX():
         PassiveRoleAbility(id=89641021, name="Unseal",
             description="輪迴結束時，若神社陰謀>=2，主角敗北。",
             trigger_condition="cycle_end",
-            effect=lambda game, owner: game.lose_flag() if game.area_manager.areas[2].conspiracy > 1 else None
+            effect=lambda game: game.lose_flag() if game.area_manager.areas[2].conspiracy > 1 else None
             ),
         PassiveRoleAbility(id=89641031, name="Despair",
             description="輪迴結束時，若關鍵人物陰謀>=2，主角敗北。",
             trigger_condition="cycle_end",
-            effect=lambda game, owner: [game.lose_flag() 
+            effect=lambda game: [game.lose_flag() 
                 for key in game.character_manager.characters  # 遍歷所有角色
                 if key.role.name == "關鍵人物"  # 確保對方是關鍵人物
                 and key.conspiracy >= 2  # 確保關鍵人物的陰謀值達到 2 以上
@@ -390,19 +395,19 @@ def RAs_BTX():
         PassiveRoleAbility(id=89641032, name="Mahoshoujou",
             description="關鍵人物一定是少女。",
             trigger_condition="assign_roles",
-            effect=lambda game, owner: game.special_flag("madoka")
+            effect=lambda game: game.special_flag("madoka")
             ),
         PassiveRoleAbility(id=89641041, name="Stein;Gate",
             description="輪迴結束時，若本輪迴中事件「蝴蝶效應」有發生過，主角敗北。",
             trigger_condition="cycle_end",
-            effect=lambda game, owner: [game.lose_flag() 
+            effect=lambda game: [game.lose_flag() 
                 for event in game.scheduled_events  # 遍歷所有事件
                 if event.name == "蝴蝶效應" and event.happened # 找到蝴蝶效應，而且他有發生過
             ]),
         PassiveRoleAbility(id=89641051, name="HugeTimeBomb",
             description="輪迴結束時，若魔女的初期地區陰謀>=2，主角敗北。",
             trigger_condition="cycle_end",
-            effect=lambda game, owner:[game.lose_flag() 
+            effect=lambda game:[game.lose_flag() 
                 for key in game.character_manager.characters  # 遍歷所有角色
                 if key.role.name == "關鍵人物"  # 確保對方是關鍵人物
                 and game.area_manager.get_area_by_name(key.initial_location).conspiracy>= 2  # 確保關鍵人物的初期地區的陰謀值達到 2 以上
@@ -410,12 +415,12 @@ def RAs_BTX():
         PassiveRoleAbility(id=89641141, name="collective panic",
             description="每輪迴一次，腳本家可以在能力階段使任意地區+1陰謀。（現階段改成送給誤導者一個額外能力）",
             trigger_condition="assign_roles",
-            effect=lambda game, owner:game.character_manager.collective_panic()
+            effect=lambda game:game.character_manager.collective_panic()
             ),
         PassiveRoleAbility(id=89641151, name="Delirium Virus",
             description="本遊戲中，普通人不安>2時，取得殺人魔的能力。",
             trigger_condition="assigh_roles",
-            effect=lambda game, owner: game.character_manager.DeliriumVirus(game)
+            effect=lambda game: game.character_manager.DeliriumVirus(game)
         ),
         PassiveRoleAbility(id=89641152, name="Murder by Delirium Virus",
             description="夜晚且不安>2時，若有任何角色與其獨處，殺害該角色",
@@ -425,7 +430,7 @@ def RAs_BTX():
         PassiveRoleAbility(id=89641161, name="LineOfReincarnation",
             description= "輪迴重啟後，前一輪迴友好>0的角色+2不安。",
             trigger_condition="cycle_start",
-            effect=lambda game, owner: game.character_manager.line_of_reincarnation(game)
+            effect=lambda game: game.character_manager.line_of_reincarnation(game)
             ),
     ]
 def main_rules_MC():
@@ -694,69 +699,55 @@ def RAs_MC():
         PassiveRoleAbility(id=2112, name="Event trigger",
             description="當恐慌=0，事件階段時，同地區的犯人必定犯案",
             trigger_condition="before_crime",
-            effect=lambda game, owner: game.character_manager.Eventtrigger()
+            effect=lambda game, owner: game.character_manager.Eventtrigger(game, owner) if game.EX_gauge == 0 else None
         ),
         PassiveRoleAbility(id=2121, name="Perfect Criminal",
             description="事件階段時，若有自己為犯人的事件，則必定會犯案",
             trigger_condition="assign_criminals",
             effect=lambda game, owner: setattr(owner, "guilty", 1)
         ),
-        PassiveRoleAbility(id=2131, name="Twins",
+        PassiveRoleAbility(id=2131, name="Twins_before",
             description="事件階段時，若自己犯案，則案發地點改為對角的區域",
             trigger_condition="before_crime",
-            effect=lambda game, owner: game.character_manager.Twins()
+            effect=lambda game, owner: owner.Twins(game)
         ),
-
-
+        PassiveRoleAbility(id=2132, name="Twins_after",
+            description="事件階段時，若自己犯案，則案發地點改為對角的區域",
+            trigger_condition="after_crime",
+            effect=lambda game, owner: owner.Twins(game)
+        ),
         
         PassiveRoleAbility(id=89642021, name="MultipleUnsolveCases",
             description="輪迴結束時，若恐慌>=3，主角敗北。",
             trigger_condition="cycle_end",
-            effect=lambda game, owner: game.lose_flag() if game.EX_gauge > 2 else None
+            effect=lambda game: game.lose_flag() if game.EX_gauge > 2 else None
             ),
         PassiveRoleAbility(id=89642031, name="Ropewalking Plan",
             description="輪迴結束時，若恐慌<=1，主角敗北。",
             trigger_condition="cycle_end",
-            effect=lambda game, owner: game.lose_flag() if game.EX_gauge < 2 else None
+            effect=lambda game: game.lose_flag() if game.EX_gauge < 2 else None
             ),
         PassiveRoleAbility(id=89642041, name="Black School",
             description="第N輪迴結束時，若學校陰謀>=N，主角敗北。",
             trigger_condition="cycle_end",
-            effect=lambda game, owner: game.lose_flag() if game.get_area_by_name("學校").conspiracy>= game.time_manager.current_cycle else None
+            effect=lambda game: game.lose_flag() if game.get_area_by_name("學校").conspiracy>= game.time_manager.current_cycle else None
             ),
-        PassiveRoleAbility(id=89641041, name="Strychnine",
+        PassiveRoleAbility(id=89642051, name="Strychnine",
             description="判定殺人事件、自殺這兩個事件時，陰謀算做不安",
             trigger_condition="before_crime",
-            effect=lambda game, owner: game.Strychnine()
+            effect=lambda game: game.special_flag("Strychnine")
             ),
-        PassiveRoleAbility(id=89641051, name="HugeTimeBomb",
-            description="輪迴結束時，若魔女的初期地區陰謀>=2，主角敗北。",
-            trigger_condition="cycle_end",
-            effect=lambda game, owner:[game.lose_flag() 
-                for key in game.character_manager.characters  # 遍歷所有角色
-                if key.role.name == "關鍵人物"  # 確保對方是關鍵人物
-                and game.area_manager.get_area_by_name(key.initial_location).conspiracy>= 2  # 確保關鍵人物的初期地區的陰謀值達到 2 以上
-            ]),
-        PassiveRoleAbility(id=89641141, name="collective panic",
-            description="每輪迴一次，腳本家可以在能力階段使任意地區+1陰謀。（現階段改成送給誤導者一個額外能力）",
-            trigger_condition="assign_roles",
-            effect=lambda game, owner:game.character_manager.collective_panic()
-            ),
-        PassiveRoleAbility(id=89641151, name="Delirium Virus",
-            description="本遊戲中，普通人不安>2時，取得殺人魔的能力。",
-            trigger_condition="assigh_roles",
-            effect=lambda game, owner: game.character_manager.DeliriumVirus(game)
-        ),
-        PassiveRoleAbility(id=89641152, name="Murder by Delirium Virus",
-            description="夜晚且不安>2時，若有任何角色與其獨處，殺害該角色",
-            trigger_condition="night_phase",
-            effect=lambda game, owner:[ owner.murder_effect(game) if owner.anxiety > 2 and owner.role.name =="普通人" else None]
-        ),
-        PassiveRoleAbility(id=89641161, name="LineOfReincarnation",
-            description= "輪迴重啟後，前一輪迴友好>0的角色+2不安。",
+        PassiveRoleAbility(id=89642111, name="Isolation hospital",
+            description="重啟輪迴時，若前一輪迴恐慌<3，+1恐慌。",
             trigger_condition="cycle_start",
-            effect=lambda game, owner: game.character_manager.line_of_reincarnation(game)
+            effect=lambda game:game.change_EX(1) if game.Isolation_hospital_flag  else None,
             ),
+        PassiveRoleAbility(id=89642121, name="Gunpowder aroma",
+            description="輪迴結束時，若所有生存角色的不安總和超過11，主角敗北。",
+            trigger_condition="cycle_end",
+            effect=lambda game: game.lose_flag() if sum(char.anxiety for char in game.character_manager.characters if char.alive) > 11 else None
+            ),
+
     ]
 def main_rules_WM():
     return[

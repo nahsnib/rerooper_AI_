@@ -5,7 +5,9 @@ from game_phases.player_detective.player_event_phase import EventPhase
 from game_phases.player_detective.player_night_phase import NightPhase
 from game_phases.player_detective.player_final_battle import FinalBattle
 from game_phases.player_detective.player_cycle_end import CycleEnd
+
 import tkinter as tk
+
 
 class PhaseManager:
     def __init__(self):
@@ -16,9 +18,9 @@ class PhaseManager:
         self.event_phase = None
         self.final_battle_phase = None
         self.current_phase = None
-        self.cycle_end_triggered = False # 強制結束的旗標，預設非
-        
-
+        self.cycle_end_triggered = False # 強制結束的旗標，預設非        
+        self.history_callback = None
+     
     def set_phases(self, game):
         self.game = game
         self.action_phase = PlayerDetectiveActionPhase(game)
@@ -28,10 +30,8 @@ class PhaseManager:
         self.night_phase = NightPhase(game)
         self.cycle_end = CycleEnd(game)
         self.final_battle_phase = FinalBattle(game)
-        self.current_phase = self.action_phase  # 初始設定當前階段為行動階段
-
-
-    
+        self.current_phase = self.night_phase  # 初始設定當前階段為行動階段
+   
     def determine_next_phase(self):
         """決定下一個階段"""
         phase_order = [self.action_phase, self.ra_phase, self.fa_phase, self.event_phase, self.night_phase]
@@ -44,7 +44,6 @@ class PhaseManager:
             return phase_order[index + 1] if index + 1 < len(phase_order) else self.cycle_end
         else:
             return self.action_phase
-
     
     def run_final_battle(self):
         """執行最終決戰"""
@@ -68,6 +67,8 @@ class PhaseManager:
 
     def advance_phase(self):
         """推進到下一個階段"""
+        if self.history_callback:
+            self.history_callback()  # 讓外部的 `GameGUI` 記錄歷史
 
         next_phase = self.determine_next_phase()
         self.start_phase(next_phase)
@@ -79,3 +80,7 @@ class PhaseManager:
         
         self.current_phase = None
         print("當前階段已結束，等待進入下一階段")
+
+    def set_history_callback(self, callback):
+        """設定記錄歷史的回調函數"""
+        self.history_callback = callback

@@ -4,6 +4,7 @@ from database.RuleTable import RuleTable, PassiveRoleAbility
 from common.player import load_players
 from ai.scriptwriter_ai import Scriptwriter_AI
 from scriptwriter.ai_gameset import AIGameSet
+import tkinter as tk
 import copy
 
 
@@ -28,6 +29,8 @@ class Game:
 
         # 特殊旗標們
         self.madoka_flag = False # 這個旗標僅用於"和我簽下契約吧！"
+        self.Strychnine_flag = False # 這個旗標僅用於"番木鱉鹼"
+        self.Isolation_hospital_flag = False # 這個旗標僅用於"隔離病房"
         self.reincarnation_character_ids = None
         
         # 初始化玩家，並傳入 `game` 參考
@@ -42,8 +45,6 @@ class Game:
         # 重要旗標：劇本家是否勝利，以及輪迴是否提前結束
         self.cycle_end_flag = False
         self.scriptwriter_win_this_cycle = False
-
-
 
     def initialize_and_record_game(self, pre_game):
         gameset = AIGameSet(pre_game)
@@ -75,9 +76,14 @@ class Game:
         """紀錄不應該被重置的數據"""
         revealed_character_ids = [char.id for char in self.character_manager.characters if char.revealed]
         reincarnation_character_ids = [char.Ch_id for char in self.character_manager.characters if char.friendship > 0]
+        if self.EX_gauge <3:
+            Isolation_hospital_flag = True
+        else:
+            Isolation_hospital_flag = False
         return {
             "revealed_character_ids": revealed_character_ids,
             "reincarnation_character_ids":reincarnation_character_ids, # 因果之線專用
+            "Isolation_hospital_flag": Isolation_hospital_flag,
             "remain_cycles": self.time_manager.remain_cycles,  # ✅ 不可變數據，不需要 deepcopy
             "public_information": copy.deepcopy(self.public_information),  # 🔴 需要 deepcopy，避免遊戲重置影響原始數據
         }
@@ -88,6 +94,7 @@ class Game:
             if char.id in saved_data["revealed_character_ids"]:
                 char.revealed = True
         self.reincarnation_character_ids = saved_data["reincarnation_character_ids"] # 因果之線專用
+        self.Isolation_hospital_flag = saved_data["Isolation_hospital_flag"]
         self.time_manager.remain_cycles = saved_data["remain_cycles"]
         self.public_information = copy.deepcopy(saved_data["public_information"])  # 🔴 確保恢復時使用新的複製
 
@@ -95,6 +102,8 @@ class Game:
     def check_passive_ability(self,type):
         abilities = self.passive_abilities.get(type, [])
         for ability in abilities:
+            if ability.id >10000:   # 這是全局能力
+                ability.effect(self)
             if ability.owner.alive:
                 ability.effect(self, ability.owner)
 
@@ -149,6 +158,8 @@ class Game:
     def special_flag(self, reason):
         if reason == "madoka":
             self.madoka_flag = True
+        elif reason == "Strychnine":
+            self.Strychnine_flag = True
 
     def lose_flag(self,reason = None):
         self.scriptwriter_win_this_cycle = True

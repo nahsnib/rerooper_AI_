@@ -41,9 +41,11 @@ class AIGameSet:
         print("選擇的副規則: ", [rule.name for rule in self.pre_game.selected_sub_rules])
 
         # 步驟 2-1:如果選定的規則有特殊被動，記錄起來
-        self.collect_passive_abilities(self.pre_game.selected_main_rule.passive_RAs)
-        self.collect_passive_abilities(self.pre_game.selected_sub_rules[0].passive_RAs)
-        self.collect_passive_abilities(self.pre_game.selected_sub_rules[1].passive_RAs)
+        if self.pre_game.selected_main_rule.passive_RAs:
+            self.collect_passive_abilities(self.pre_game.selected_main_rule.passive_RAs)
+        for subrule in self.pre_game.selected_sub_rules:
+            if subrule.passive_RAs:
+                self.collect_passive_abilities(subrule.passive_RAs)
         self.print_passive_ability()
 
         # 步驟 3: 建立角色管理器，並且選擇角色
@@ -86,7 +88,7 @@ class AIGameSet:
         # 2️⃣ **檢查總數限制**
         role_counts = Counter(role_name_list)  # 計算每種角色的需求數
         for role_name, count in role_counts.items():
-            role = Role.get_role_by_role_name(self.pre_game.selected_rule_table, role_name)
+            role = Role.get_role_by_role_name(self.pre_game.selected_rule_table.id, role_name)
             if role and role.total_limit is not None and count > role.total_limit:
                 role_counts[role_name] = role.total_limit  # 限制數量
 
@@ -106,7 +108,7 @@ class AIGameSet:
             else:
                 raise ValueError("沒有符合條件的『少女』來擔任關鍵人物！")
 
-            role = Role.get_role_by_role_name(self.pre_game.selected_rule_table, "關鍵人物")
+            role = Role.get_role_by_role_name(self.pre_game.selected_rule_table.id, "關鍵人物")
             chosen_character.role = role
             role_name_list.remove("關鍵人物")
 
@@ -119,13 +121,17 @@ class AIGameSet:
         for role_name in role_name_list:
             chosen_character = random.choice(available_characters)
             available_characters.remove(chosen_character)
-            role = Role.get_role_by_role_name(self.pre_game.selected_rule_table, role_name)
+            role = Role.get_role_by_role_name(self.pre_game.selected_rule_table.id, role_name)
+            if role == None:
+                raise ValueError(f"找不到名為 {role_name} 的角色")
             chosen_character.role = role
 
             for passive_ability in role.passive_RAs:
-                passive_ability.owner = chosen_character
+                if passive_ability:
+                    passive_ability.owner = chosen_character
             for active_ability in role.active_RAs:
-                active_ability.owner = chosen_character
+                if active_ability:
+                    active_ability.owner = chosen_character
 
         # 5️⃣ **記錄所有角色的被動能力**
         self.collect_passive_abilities(chosen_character.role.passive_RAs)
@@ -135,9 +141,10 @@ class AIGameSet:
 
     def collect_passive_abilities(self, passive_abilities):
         """ 輸入被動能力，依據其標籤自動歸類 """
-        for passive_ability in passive_abilities:         
-            if passive_ability.trigger_condition in self.pre_game.passive_abilities:
-                self.pre_game.passive_abilities[passive_ability.trigger_condition].append(passive_ability)
+        if passive_abilities:
+            for passive_ability in passive_abilities:         
+                if passive_ability.trigger_condition in self.pre_game.passive_abilities:
+                    self.pre_game.passive_abilities[passive_ability.trigger_condition].append(passive_ability)
 
 
 

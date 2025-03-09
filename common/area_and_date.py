@@ -1,5 +1,4 @@
 
-from game_history import GameHistory
 
 class Area:
     def __init__(self, id, name):

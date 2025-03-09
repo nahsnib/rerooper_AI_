@@ -31,8 +31,8 @@ class PlayerRAPhase:
         return [
             (character, ability)
             for character in self.game.character_manager.characters
-            for ability in character.role.active_RAs
-            if ability.usage
+            for ability in character.role.active_RAs 
+            if ability and ability.usage
         ]
 
     def execute_ability(self, character, ability, target=None):

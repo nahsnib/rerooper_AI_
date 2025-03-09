@@ -20,7 +20,10 @@ class EventPhase:
             
             if not criminal or not criminal.alive:
                 continue
-            
+            # 特殊追加規則"番木鱉鹼"，會讓案件的不安門檻調整
+            if self.game.Strychnine_flag and event.name in {"殺人事件", "自殺"} :
+                event.anxiety_threshold_modifier -= criminal.conspriracy
+
             if criminal.anxiety < (criminal.anxiety_threshold + event.anxiety_threshold_modifier)  and criminal.guilty != 1:
                 continue
             

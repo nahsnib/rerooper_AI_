@@ -54,8 +54,8 @@ class Character:
         for ability in self.friendship_abilities:
             ability.daily_used = True
         role = self.role
-        for RA in role.active_RAs:
-            RA.usage = True
+        for ability in role.active_RAs:
+            ability.usage = True
 
     def scholar_effect(self, game,extra):
         self.friendship = 0
@@ -225,6 +225,20 @@ class Character:
         else:
             return False  
 
+    def Twins(self, game):
+        for event in self.event_crimes:
+            if event.date == game.time_manager.current_day:
+                location_map = {
+                    "醫院": "學校",
+                    "學校": "醫院",
+                    "都市": "神社",
+                    "神社": "都市" 
+                }
+                self.current_location = location_map.get(self.current_location, self.current_location)
+                return
+        return
+        
+
     def __str__(self):
         return f"Character({self.name}, Anxiety: {self.anxiety}, Conspiracy: {self.conspiracy}, Friendship: {self.friendship}, Location: {self.current_location}, Alive: {self.alive}, Event Crimes: {self.event_crimes})"
 
@@ -324,7 +338,11 @@ class CharacterManager():
                 else:
                     char.forbidden_area.append(isolate_area)
 
-            
+    def Eventtrigger(self, game, owner):
+        for event in game.scheduled_events.values(): # 檢查所有事件
+            if event.date == game.time_manager.current_day and event.criminal in self.get_characters_in_area(owner.current_location):   # 若事件日期與當前日期相同且犯人與名偵探在同一地區
+                if event.criminal.guilty != -1:  # 無罪旗標優先於犯案旗標
+                    event.criminal.guilty = 1 # 犯人的必定犯案旗標豎立
 
 
 if __name__ == "__main__":
